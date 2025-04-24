@@ -263,11 +263,16 @@ footer {
   .sidebar {
     width: 100%;
     box-shadow: none;
-    padding: 0;
+    padding: 16px 0;
+    background-color: transparent;
   }
 
   #history-section {
-    margin-top: 16px;
+    margin-top: 24px;
+    padding: 16px;
+    background-color: var(--md-sys-color-surface);
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   }
 }
 
