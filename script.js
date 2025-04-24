@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const errorMessage = document.getElementById('error-message');
   const imageActions = document.getElementById('image-actions');
   const historyList = document.getElementById('history-list');
+  const italicToggle = document.getElementById('italic-toggle');
 
   // Log elements for debugging
   console.log('latexInput:', latexInput);
@@ -31,9 +32,10 @@ document.addEventListener('DOMContentLoaded', () => {
   console.log('errorMessage:', errorMessage);
   console.log('imageActions:', imageActions);
   console.log('historyList:', historyList);
+  console.log('italicToggle:', italicToggle);
 
   // Check if critical elements exist
-  if (!latexInput || !latexImage || !latexPreview || !errorMessage || !imageActions || !historyList) {
+  if (!latexInput || !latexImage || !latexPreview || !errorMessage || !imageActions || !historyList || !italicToggle) {
     console.error('One or more DOM elements not found.');
     if (errorMessage) {
       errorMessage.textContent = 'Error: Required DOM elements not found.';
@@ -97,7 +99,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     try {
-      const encodedLatex = encodeURIComponent(`\\dpi{300} \\color{black} \\mathrm{${latex}}`);
+      // Conditionally apply \mathrm{} based on italic toggle
+      const formattedLatex = italicToggle.checked ? latex : `\\mathrm{${latex}}`;
+      const encodedLatex = encodeURIComponent(`\\dpi{300} \\color{black} ${formattedLatex}`);
       imageUrl = `https://latex.codecogs.com/svg?${encodedLatex}`;
       console.log('Generated URL:', imageUrl);
 
@@ -153,7 +157,11 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      const response = await fetch(imageUrl);
+      // Apply same formatting as renderLaTeX
+      const formattedLatex = italicToggle.checked ? latex : `\\mathrm{${latex}}`;
+      const encodedLatex = encodeURIComponent(`\\dpi{300} \\color{black} ${formattedLatex}`);
+      const tempImageUrl = `https://latex.codecogs.com/svg?${encodedLatex}`;
+      const response = await fetch(tempImageUrl);
       if (!response.ok) {
         throw new Error('Failed to fetch SVG');
       }
