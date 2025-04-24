@@ -1,3 +1,6 @@
+// Feature flag for scaling functionality
+const enableScaling = false; // Set to true to enable scaling, false to disable
+
 // Check if Material Web Components are loaded
 if (!customElements.get('md-filled-text-field')) {
   console.error('Material Web Components not loaded. Ensure the library is included.');
@@ -8,19 +11,21 @@ const latexImage = document.getElementById('latex-image');
 const latexPreview = document.getElementById('latex-preview');
 const errorMessage = document.getElementById('error-message');
 const imageActions = document.getElementById('image-actions');
-const scaleSlider = document.getElementById('scale-slider');
-const scaleValue = document.getElementById('scale-value');
 const historyList = document.getElementById('history-list');
 let imageUrl = '';
 let latexHistory = JSON.parse(sessionStorage.getItem('latexHistory')) || [];
 
-// Update scale value display
-scaleSlider.addEventListener('input', () => {
-  const sliderValue = parseFloat(scaleSlider.value);
-  scaleValue.textContent = sliderValue.toFixed(1);
-  const adjustedScale = sliderValue; // Maps to 10pt at scale 1.0
-  latexImage.style.transform = `scale(${adjustedScale})`;
-});
+// Scaling functionality (only if enabled)
+if (enableScaling) {
+  const scaleSlider = document.getElementById('scale-slider');
+  const scaleValue = document.getElementById('scale-value');
+
+  scaleSlider.addEventListener('input', () => {
+    const sliderValue = parseFloat(scaleSlider.value);
+    scaleValue.textContent = sliderValue.toFixed(1);
+    latexImage.style.transform = `scale(${sliderValue})`;
+  });
+}
 
 // Load and display history
 function updateHistory() {
@@ -57,15 +62,20 @@ async function renderLaTeX() {
   }
 
   try {
-    const encodedLatex = encodeURIComponent(`\\mathrm{${latex}}`);
-    imageUrl = `https://latex.codecogs.com/svg?\\dpi{300}\\color{black}${encodedLatex}`;
+    const encodedLatex = encodeURIComponent(`\\dpi{300} \\color{black} \\mathrm{${latex}}`);
+    imageUrl = `https://latex.codecogs.com/svg?${encodedLatex}`;
     console.log('Generated URL:', imageUrl);
 
     latexImage.src = imageUrl;
     latexImage.style.display = 'inline-block';
-    const sliderValue = parseFloat(scaleSlider.value);
-    const adjustedScale = sliderValue;
-    latexImage.style.transform = `scale(${adjustedScale})`;
+    
+    // Apply scaling only if enabled
+    if (enableScaling) {
+      const scaleSlider = document.getElementById('scale-slider');
+      const sliderValue = parseFloat(scaleSlider.value);
+      latexImage.style.transform = `scale(${sliderValue})`;
+    }
+    
     latexImage.onerror = () => {
       console.error('Failed to load LaTeX image from:', imageUrl);
       showError('Error rendering LaTeX. Please check your syntax or try again later.');
@@ -92,14 +102,57 @@ async function copyImage() {
     showError('Clipboard API not supported in this browser.');
     return;
   }
+
   try {
+    const latex = latexInput.value.trim();
+    if (!latex) {
+      showError('No LaTeX to render');
+      return;
+    }
+
     const response = await fetch(imageUrl);
-    const blob = await response.blob();
+    if (!response.ok) {
+      throw new Error('Failed to fetch SVG');
+    }
+    let svgText = await response.text();
+
+    // Parse SVG
+    const parser = new DOMParser();
+    const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
+    const svgElement = svgDoc.querySelector('svg');
+    if (!svgElement) {
+      throw new Error('Invalid SVG content');
+    }
+
+    // Apply scaling only if enabled
+    if (enableScaling) {
+      const scaleSlider = document.getElementById('scale-slider');
+      const scale = parseFloat(scaleSlider.value);
+      let width = svgElement.getAttribute('width') || svgElement.getAttribute('viewBox')?.split(' ')[2] || 100;
+      let height = svgElement.getAttribute('height') || svgElement.getAttribute('viewBox')?.split(' ')[3] || 100;
+      width = parseFloat(width) * scale;
+      height = parseFloat(height) * scale;
+      svgElement.setAttribute('width', `${width}`);
+      svgElement.setAttribute('height', `${height}`);
+      const viewBox = svgElement.getAttribute('viewBox');
+      if (viewBox) {
+        const [minX, minY, vbWidth, vbHeight] = viewBox.split(' ').map(Number);
+        svgElement.setAttribute('viewBox', `${minX} ${minY} ${vbWidth * scale} ${vbHeight * scale}`);
+      }
+    }
+
+    // Serialize SVG
+    const serializer = new XMLSerializer();
+    svgText = serializer.serializeToString(svgDoc);
+
+    // Copy to clipboard
+    const blob = new Blob([svgText], { type: 'image/svg+xml' });
     await navigator.clipboard.write([
       new ClipboardItem({ 'image/svg+xml': blob })
     ]);
-    // Removed alert('SVG image copied to clipboard!');
+    console.log('SVG copied to clipboard');
   } catch (err) {
+    console.error('Copy error:', err);
     showError('Failed to copy image: ' + err.message);
   }
 }
@@ -109,9 +162,45 @@ async function downloadImage() {
     showError('Nothing to download.');
     return;
   }
+
   try {
     const response = await fetch(imageUrl);
-    const blob = await response.blob();
+    if (!response.ok) {
+      throw new Error('Failed to fetch SVG');
+    }
+    let svgText = await response.text();
+
+    // Parse SVG
+    const parser = new DOMParser();
+    const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
+    const svgElement = svgDoc.querySelector('svg');
+    if (!svgElement) {
+      throw new Error('Invalid SVG content');
+    }
+
+    // Apply scaling only if enabled
+    if (enableScaling) {
+      const scaleSlider = document.getElementById('scale-slider');
+      const scale = parseFloat(scaleSlider.value);
+      let width = svgElement.getAttribute('width') || svgElement.getAttribute('viewBox')?.split(' ')[2] || 100;
+      let height = svgElement.getAttribute('height') || svgElement.getAttribute('viewBox')?.split(' ')[3] || 100;
+      width = parseFloat(width) * scale;
+      height = parseFloat(height) * scale;
+      svgElement.setAttribute('width', `${width}`);
+      svgElement.setAttribute('height', `${height}`);
+      const viewBox = svgElement.getAttribute('viewBox');
+      if (viewBox) {
+        const [minX, minY, vbWidth, vbHeight] = viewBox.split(' ').map(Number);
+        svgElement.setAttribute('viewBox', `${minX} ${minY} ${vbWidth * scale} ${vbHeight * scale}`);
+      }
+    }
+
+    // Serialize SVG
+    const serializer = new XMLSerializer();
+    svgText = serializer.serializeToString(svgDoc);
+
+    // Download
+    const blob = new Blob([svgText], { type: 'image/svg+xml' });
     const blobUrl = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = blobUrl;
@@ -121,6 +210,7 @@ async function downloadImage() {
     document.body.removeChild(link);
     window.URL.revokeObjectURL(blobUrl);
   } catch (err) {
+    console.error('Download error:', err);
     showError('Download failed: ' + err.message);
   }
 }
@@ -130,14 +220,17 @@ async function shareImage() {
     showError('Nothing to share.');
     return;
   }
-  
+
   if (!navigator.share) {
     showError('Sharing not supported in this browser.');
     return;
   }
-  
+
   try {
     const response = await fetch(imageUrl);
+    if (!response.ok) {
+      throw new Error('Failed to fetch SVG');
+    }
     const blob = await response.blob();
     const file = new File([blob], 'latex-image.svg', { type: 'image/svg+xml' });
     await navigator.share({
