@@ -96,20 +96,24 @@
         </div>
 
         <div class="instructions">
-          Enter LaTeX commands (e.g., <code>E = mc^2</code> or <code>\sum_{n=1}^{\infty} \frac{1}{n^2}</code>)
+          Enter LaTeX commands (e.g., <code>E = mc^2</code> or <code>\sum_{n=1}^{\infty} \frac{1}{n^2}</code>).
+        </div>
+
+        <div class="instructions">
+         Use <code>$...$</code> for math mode (italicized equations) or plain text for upright text.
         </div>
 
         <div class="button-group">
-          <md-outlined-button onclick="setExample('E = mc^2')" id="example1" data-tooltip="E=mc² example">
-            E = mc²
+          <md-outlined-button onclick="setExample('$\\nabla \\cdot \\mathbf{E} = \\frac{\\rho}{\\varepsilon_0}$')" id="example1" data-tooltip="E=mc² example">
+            div E = ρ / ε₀
           </md-outlined-button>
-          <md-outlined-button onclick="setExample('x_c')" id="example2" data-tooltip="Subscript example">
-            Subscript (x_c)
+          <md-outlined-button onclick="setExample('$V_{gs}$')" id="example2" data-tooltip="Subscript example">
+            Subscript (V_gs)
           </md-outlined-button>
-          <md-outlined-button onclick="setExample('\\frac{a}{b}')" id="example3" data-tooltip="Fraction example">
+          <md-outlined-button onclick="setExample('$\\frac{a}{b}$')" id="example3" data-tooltip="Fraction example">
             Fraction (a/b)
           </md-outlined-button>
-          <md-outlined-button onclick="setExample('\\sum_{n=1}^{\\infty} \\frac{1}{n^2}')" id="example4" data-tooltip="Sum example">
+          <md-outlined-button onclick="setExample('$\\sum_{n=1}^{\\infty} \\frac{1}{n^2}$')" id="example4" data-tooltip="Sum example">
             Sum
           </md-outlined-button>
         </div>
@@ -118,13 +122,11 @@
           id="latex-input"
           type="textarea"
           rows="3"
-          placeholder="Enter LaTeX command here..."
+          placeholder="Enter LaTeX command here (e.g., $R_{DS}$ for equations, R\textsubscript{DS} for text)..."
           aria-label="LaTeX input"
         ></md-filled-text-field>
 
         <div class="action-buttons">
-          <md-checkbox id="italic-toggle" data-tooltip="Render equation in italics"></md-checkbox>
-          <label for="italic-toggle">Italicize Equation</label>
           <md-filled-button onclick="renderLaTeX()" id="render-button" data-tooltip="Render LaTeX as SVG">
             Render
           </md-filled-button>

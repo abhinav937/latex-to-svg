@@ -23,7 +23,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const errorMessage = document.getElementById('error-message');
   const imageActions = document.getElementById('image-actions');
   const historyList = document.getElementById('history-list');
-  const italicToggle = document.getElementById('italic-toggle');
 
   // Log elements for debugging
   console.log('latexInput:', latexInput);
@@ -32,10 +31,9 @@ document.addEventListener('DOMContentLoaded', () => {
   console.log('errorMessage:', errorMessage);
   console.log('imageActions:', imageActions);
   console.log('historyList:', historyList);
-  console.log('italicToggle:', italicToggle);
 
   // Check if critical elements exist
-  if (!latexInput || !latexImage || !latexPreview || !errorMessage || !imageActions || !historyList || !italicToggle) {
+  if (!latexInput || !latexImage || !latexPreview || !errorMessage || !imageActions || !historyList) {
     console.error('One or more DOM elements not found.');
     if (errorMessage) {
       errorMessage.textContent = 'Error: Required DOM elements not found.';
@@ -92,15 +90,28 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   window.renderLaTeX = async function () {
-    const latex = latexInput.value.trim();
+    let latex = latexInput.value.trim();
     if (!latex) {
       showError('Please enter a LaTeX command.');
       return;
     }
 
     try {
-      // Conditionally apply \mathrm{} based on italic toggle
-      const formattedLatex = italicToggle.checked ? latex : `\\mathrm{${latex}}`;
+      let formattedLatex = latex;
+      let isMathMode = false;
+
+      // Check for $$...$$ (math mode)
+      const mathModeMatch = latex.match(/^\$\$(.*)\$\$$/s);
+      if (mathModeMatch) {
+        isMathMode = true;
+        formattedLatex = mathModeMatch[1].trim();
+        // Preprocess \textbf to \mathbf in math mode
+        formattedLatex = formattedLatex.replace(/\\textbf\{((?:[^{}]|\{[^{}]*\})*)\}/g, '\\mathbf{$1}');
+      } else {
+        // Text mode: wrap in \text{}
+        formattedLatex = `\\text{${formattedLatex}}`;
+      }
+
       const encodedLatex = encodeURIComponent(`\\dpi{300} \\color{black} ${formattedLatex}`);
       imageUrl = `https://latex.codecogs.com/svg?${encodedLatex}`;
       console.log('Generated URL:', imageUrl);
@@ -130,7 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         latexImage.onerror = () => {
           console.error('Failed to load LaTeX image from:', imageUrl);
-          showError('Error rendering LaTeX. Please check your syntax or try again later.');
+          showError(`Error rendering LaTeX. Check syntax (e.g., use $$...$$ for equations, \\mathbf{} for bold in math mode, \\textbf{} for bold in text mode). See Help for details.`);
           latexImage.style.display = 'none';
           imageActions.style.display = 'none';
           reject(new Error('Image loading failed'));
@@ -138,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     } catch (err) {
       console.error('Render error:', err);
-      showError('Invalid LaTeX command: ' + err.message);
+      showError(`Invalid LaTeX command: ${err.message}. Try $$...$$ for equations or \\textbf{} for bold text.`);
       latexImage.style.display = 'none';
       imageActions.style.display = 'none';
     }
@@ -151,14 +162,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     try {
-      const latex = latexInput.value.trim();
+      let latex = latexInput.value.trim();
       if (!latex) {
         showError('No LaTeX to render');
         return;
       }
 
-      // Apply same formatting as renderLaTeX
-      const formattedLatex = italicToggle.checked ? latex : `\\mathrm{${latex}}`;
+      let formattedLatex = latex;
+      let isMathMode = false;
+
+      // Check for $$...$$ (math mode)
+      const mathModeMatch = latex.match(/^\$\$(.*)\$\$$/s);
+      if (mathModeMatch) {
+        isMathMode = true;
+        formattedLatex = mathModeMatch[1].trim();
+        // Preprocess \textbf to \mathbf in math mode
+        formattedLatex = formattedLatex.replace(/\\textbf\{((?:[^{}]|\{[^{}]*\})*)\}/g, '\\mathbf{$1}');
+      } else {
+        // Text mode: wrap in \text{}
+        formattedLatex = `\\text{${formattedLatex}}`;
+      }
+
       const encodedLatex = encodeURIComponent(`\\dpi{300} \\color{black} ${formattedLatex}`);
       const tempImageUrl = `https://latex.codecogs.com/svg?${encodedLatex}`;
       const response = await fetch(tempImageUrl);
