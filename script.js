@@ -1,11 +1,9 @@
 // Feature flag for scaling functionality
 const enableScaling = false; // Set to true to enable scaling, false to disable
 
-// Wait for DOM to fully load
 document.addEventListener('DOMContentLoaded', () => {
   console.log('DOM fully loaded');
 
-  // Check if Material Web Components are loaded
   if (!customElements.get('md-filled-text-field')) {
     console.error('Material Web Components not loaded. Ensure the library is included.');
     const errorMessage = document.getElementById('error-message');
@@ -16,7 +14,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
-  // Get DOM elements with safety checks
   const latexInput = document.getElementById('latex-input');
   const latexImage = document.getElementById('latex-image');
   const latexPreview = document.getElementById('latex-preview');
@@ -24,7 +21,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const imageActions = document.getElementById('image-actions');
   const historyList = document.getElementById('history-list');
 
-  // Log elements for debugging
   console.log('latexInput:', latexInput);
   console.log('latexImage:', latexImage);
   console.log('latexPreview:', latexPreview);
@@ -32,7 +28,6 @@ document.addEventListener('DOMContentLoaded', () => {
   console.log('imageActions:', imageActions);
   console.log('historyList:', historyList);
 
-  // Check if critical elements exist
   if (!latexInput || !latexImage || !latexPreview || !errorMessage || !imageActions || !historyList) {
     console.error('One or more DOM elements not found.');
     if (errorMessage) {
@@ -45,7 +40,6 @@ document.addEventListener('DOMContentLoaded', () => {
   let imageUrl = '';
   let latexHistory = JSON.parse(sessionStorage.getItem('latexHistory')) || [];
 
-  // Scaling functionality (only if enabled)
   if (enableScaling) {
     const scaleSlider = document.getElementById('scale-slider');
     const scaleValue = document.getElementById('scale-value');
@@ -62,7 +56,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Load and display history
   function updateHistory() {
     historyList.innerHTML = '';
     latexHistory.forEach((latex, index) => {
@@ -100,15 +93,12 @@ document.addEventListener('DOMContentLoaded', () => {
       let formattedLatex = latex;
       let isMathMode = false;
 
-      // Check for $$...$$ (math mode)
       const mathModeMatch = latex.match(/^\$\$(.*)\$\$$/s);
       if (mathModeMatch) {
         isMathMode = true;
         formattedLatex = mathModeMatch[1].trim();
-        // Preprocess \textbf to \mathbf in math mode
         formattedLatex = formattedLatex.replace(/\\textbf\{((?:[^{}]|\{[^{}]*\})*)\}/g, '\\mathbf{$1}');
       } else {
-        // Text mode: wrap in \text{}
         formattedLatex = `\\text{${formattedLatex}}`;
       }
 
@@ -116,20 +106,17 @@ document.addEventListener('DOMContentLoaded', () => {
       imageUrl = `https://latex.codecogs.com/svg?${encodedLatex}`;
       console.log('Generated URL:', imageUrl);
 
-      // Reset image state
       latexImage.src = '';
       latexImage.style.display = 'none';
       imageActions.style.display = 'none';
 
-      // Set new image source
       latexImage.src = imageUrl;
 
-      // Use a Promise to handle image loading
       await new Promise((resolve, reject) => {
         latexImage.onload = () => {
           console.log('Image loaded successfully');
           latexImage.style.display = 'inline-block';
-          imageActions.style.display = 'flex'; // Ensure buttons are shown
+          imageActions.style.display = 'flex';
           hideError();
           if (!latexHistory.includes(latex)) {
             latexHistory.unshift(latex);
@@ -161,6 +148,15 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    const copyButton = document.getElementById('copy-button');
+    const copyIcon = copyButton.querySelector('md-icon'); // Correctly select the <md-icon> element
+
+    if (!copyIcon) {
+      console.error('Copy icon not found inside copy button.');
+      showError('Copy icon not found.');
+      return;
+    }
+
     try {
       let latex = latexInput.value.trim();
       if (!latex) {
@@ -171,15 +167,12 @@ document.addEventListener('DOMContentLoaded', () => {
       let formattedLatex = latex;
       let isMathMode = false;
 
-      // Check for $$...$$ (math mode)
       const mathModeMatch = latex.match(/^\$\$(.*)\$\$$/s);
       if (mathModeMatch) {
         isMathMode = true;
         formattedLatex = mathModeMatch[1].trim();
-        // Preprocess \textbf to \mathbf in math mode
         formattedLatex = formattedLatex.replace(/\\textbf\{((?:[^{}]|\{[^{}]*\})*)\}/g, '\\mathbf{$1}');
       } else {
-        // Text mode: wrap in \text{}
         formattedLatex = `\\text{${formattedLatex}}`;
       }
 
@@ -191,7 +184,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       let svgText = await response.text();
 
-      // Parse SVG
       const parser = new DOMParser();
       const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
       const svgElement = svgDoc.querySelector('svg');
@@ -199,7 +191,6 @@ document.addEventListener('DOMContentLoaded', () => {
         throw new Error('Invalid SVG content');
       }
 
-      // Apply scaling only if enabled
       if (enableScaling) {
         const scaleSlider = document.getElementById('scale-slider');
         const scale = parseFloat(scaleSlider.value);
@@ -216,16 +207,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
 
-      // Serialize SVG
       const serializer = new XMLSerializer();
       svgText = serializer.serializeToString(svgDoc);
 
-      // Copy to clipboard
       const blob = new Blob([svgText], { type: 'image/svg+xml' });
       await navigator.clipboard.write([
         new ClipboardItem({ 'image/svg+xml': blob })
       ]);
       console.log('SVG copied to clipboard');
+
+      // Change to check icon with animation
+      copyButton.classList.add('copied');
+      copyIcon.innerHTML = 'check'; // Update the icon by changing the innerHTML of <md-icon>
+
+      // Revert back to copy icon after 3 seconds
+      setTimeout(() => {
+        copyButton.classList.remove('copied');
+        copyIcon.innerHTML = 'content_copy'; // Revert to copy icon
+      }, 3500);
+
     } catch (err) {
       console.error('Copy error:', err);
       showError('Failed to copy image: ' + err.message);
@@ -245,7 +245,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       let svgText = await response.text();
 
-      // Parse SVG
       const parser = new DOMParser();
       const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
       const svgElement = svgDoc.querySelector('svg');
@@ -253,7 +252,6 @@ document.addEventListener('DOMContentLoaded', () => {
         throw new Error('Invalid SVG content');
       }
 
-      // Apply scaling only if enabled
       if (enableScaling) {
         const scaleSlider = document.getElementById('scale-slider');
         const scale = parseFloat(scaleSlider.value);
@@ -270,11 +268,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
 
-      // Serialize SVG
       const serializer = new XMLSerializer();
       svgText = serializer.serializeToString(svgDoc);
 
-      // Download
       const blob = new Blob([svgText], { type: 'image/svg+xml' });
       const blobUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -333,7 +329,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.dataset.theme = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
   };
 
-  // Add keypress event listener for Enter key
   latexInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
