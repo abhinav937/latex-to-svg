@@ -342,11 +342,10 @@ md-outlined-text-field {
   justify-content: center;
   align-items: center;
   position: relative;
-  overflow: visible !important;
-  z-index: auto;
-  width: 600px;
+  overflow: hidden;
+  max-width: 600px;
   max-height: 400px;
-  min-height: 200px;
+  width: 100%;
   height: auto;
 }
 
@@ -373,10 +372,4 @@ md-outlined-text-field {
   font-family: 'Roboto', sans-serif;
   font-size: 16px;
   min-width: 50px;
-}
-
-@media (max-width: 600px) {
-  #latex-preview {
-    width: 100%;
-  }
 }

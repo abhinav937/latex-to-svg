@@ -1,7 +1,4 @@
-// Feature flag for scaling functionality
-const enableScaling = true;
 const BASE_PT_SIZE = 12; // Baseline point size where scale = 1
-const VALID_PT_SIZES = [8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 60, 72];
 
 document.addEventListener('DOMContentLoaded', () => {
   console.log('DOM fully loaded');
@@ -48,43 +45,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Slider event listener for point size
   scaleSlider.addEventListener('input', () => {
-    let ptSize = parseFloat(scaleSlider.value);
-    // Snap to nearest valid point size
-    ptSize = VALID_PT_SIZES.reduce((prev, curr) => Math.abs(curr - ptSize) < Math.abs(prev - ptSize) ? curr : prev);
-    scaleSlider.value = ptSize;
+    const ptSize = parseFloat(scaleSlider.value);
     scaleValue.textContent = `${ptSize} pt`;
     const scale = ptSize / BASE_PT_SIZE;
     console.log(`Selected ptSize: ${ptSize}, Scale: ${scale}`);
     latexImage.style.transform = `scale(${scale})`;
-    // Adjust preview size if image is loaded
-    if (latexImage.src && latexImage.style.display !== 'none') {
-      adjustPreviewSize(ptSize, scale);
-    }
   });
-
-  function adjustPreviewSize(ptSize, scale) {
-    // Fixed width and default height
-    const fixedWidth = 600;
-    const fixedHeight = 400;
-    latexPreview.style.width = `${fixedWidth}px`;
-    latexPreview.style.maxHeight = `${fixedHeight}px`;
-    latexPreview.style.height = 'auto';
-
-    // Only adjust height if point size exceeds 60pt
-    if (ptSize > 60) {
-      // Get SVG height
-      let svgHeight = latexImage.naturalHeight || parseFloat(latexImage.getAttribute('height')) || 100;
-      // Apply scale and add padding (24px top and bottom)
-      svgHeight = svgHeight * scale + 48;
-      // Use maximum of fixed height and SVG height
-      const newHeight = Math.max(fixedHeight, svgHeight);
-      latexPreview.style.maxHeight = `${newHeight}px`;
-      latexPreview.style.height = `${newHeight}px`;
-      console.log(`Adjusted preview height: ${newHeight}px for ptSize ${ptSize}, scale ${scale}`);
-    } else {
-      console.log(`Using fixed preview size: ${fixedWidth}x${fixedHeight}px for ptSize ${ptSize}`);
-    }
-  }
 
   function updateHistory() {
     historyList.innerHTML = '';
@@ -153,7 +119,6 @@ document.addEventListener('DOMContentLoaded', () => {
           const ptSize = parseFloat(scaleSlider.value);
           const scale = ptSize / BASE_PT_SIZE;
           latexImage.style.transform = `scale(${scale})`;
-          adjustPreviewSize(ptSize, scale);
           hideError();
           if (!latexHistory.includes(latex)) {
             latexHistory.unshift(latex);
