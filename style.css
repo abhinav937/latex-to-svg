@@ -28,7 +28,7 @@ header {
   background-color: var(--md-sys-color-surface);
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   padding: 12px 16px;
-  z-index: 1000; /* Header has high z-index */
+  z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -63,20 +63,17 @@ nav a:hover {
   flex: 1;
 }
 
-/* Wrapper for main content and sidebar */
 .content-wrapper {
   display: flex;
   gap: 16px;
   flex-wrap: wrap;
 }
 
-/* Main content area */
 .main-content {
   flex: 1;
-  min-width: 0; /* Prevents overflow */
+  min-width: 0;
 }
 
-/* Sidebar styling */
 .sidebar {
   width: 250px;
   background-color: var(--md-sys-color-surface);
@@ -116,12 +113,6 @@ h1 {
   font-size: 14px;
 }
 
-md-filled-text-field {
-  width: 100%;
-  --md-filled-text-field-container-shape: 8px;
-  margin-bottom: 16px;
-}
-
 .button-group {
   display: flex;
   flex-wrap: wrap;
@@ -136,30 +127,6 @@ md-filled-text-field {
   gap: 8px;
   margin: 16px 0;
   justify-content: center;
-}
-
-#latex-preview {
-  background-color: var(--md-sys-color-surface);
-  padding: 24px;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  margin: 16px auto;
-  min-height: 150px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  max-width: 600px;
-  max-height: 400px;
-  position: relative; /* DO NOT create a stacking context */
-  overflow: visible !important; /* ensure tooltips can escape */
-  z-index: auto;
-}
-
-#latex-image {
-  max-width: 100%;
-  max-height: 100%;
-  height: 40px; /* Slightly increased height for better visibility */
-  background-color: var(--md-sys-color-surface);
 }
 
 #image-actions {
@@ -184,7 +151,6 @@ md-icon-button:hover {
   --md-sys-color-primary: var(--md-sys-color-primary);
 }
 
-/* Style for the copy button when in "copied" state */
 md-icon-button#copy-button.copied .material-symbols-outlined {
   animation: iconChange 0.3s ease-in-out forwards;
 }
@@ -193,7 +159,6 @@ md-icon-button#copy-button.copied .material-symbols-outlined {
   font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
 }
 
-/* Animation for icon change */
 @keyframes iconChange {
   0% {
     opacity: 0;
@@ -230,7 +195,7 @@ footer {
   color: var(--md-sys-color-on-surface);
   font-size: 14px;
   border-top: 1px solid #e0e0e0;
-  z-index: 100; /* Lower than preview and tooltips */
+  z-index: 100;
 }
 
 .footer-content {
@@ -262,56 +227,46 @@ footer {
   margin-top: 16px;
 }
 
-/* Tooltip Styling with Animation */
 [data-tooltip] {
   position: relative;
-  z-index: 1000; /* Ensure the parent has a high z-index */
+  z-index: 1000;
 }
 
 [data-tooltip]:hover::after {
   content: attr(data-tooltip);
   position: absolute;
-  bottom: 125%; /* Show above the element */
-  left: 50%; /* Center horizontally */
+  bottom: 125%;
+  left: 50%;
   transform: translateX(-50%);
-  background-color: #f0f0f0; /* Light background */
-  color: #000; /* Black text */
-  font-weight: 400; /* Lighter font weight */
+  background-color: #f0f0f0;
+  color: #000;
+  font-weight: 400;
   padding: 6px 10px;
   border-radius: 4px;
   font-size: 12px;
   white-space: nowrap;
   z-index: 9999;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); /* Elevated style */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   opacity: 0;
   animation: tooltipFadeIn 0.3s ease-in-out forwards;
-  animation-fill-mode: forwards; /* Ensures it stays visible */
 }
 
 [data-tooltip]:hover::before {
   content: '';
   position: absolute;
-  bottom: 100%; /* Position just below the tooltip */
+  bottom: 100%;
   left: 50%;
   transform: translateX(-50%);
   border: 6px solid transparent;
-  border-top-color: #f0f0f0; /* Match the light background */
+  border-top-color: #f0f0f0;
   z-index: 9999;
   opacity: 0;
   animation: tooltipFadeIn 0.3s ease-in-out forwards;
-  animation-fill-mode: forwards; /* Ensures it stays visible */
 }
 
-/* Tooltip animation */
 @keyframes tooltipFadeIn {
-  0% {
-    opacity: 0;
-    transform: translateY(5px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  0% { opacity: 0; transform: translateY(5px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes fadeIn {
@@ -319,7 +274,6 @@ footer {
   to { opacity: 1; }
 }
 
-/* Responsive design */
 @media (max-width: 768px) {
   .content-wrapper {
     flex-direction: column;
@@ -367,11 +321,62 @@ footer {
 
   [data-tooltip]:hover::after,
   [data-tooltip]:hover::before {
-    display: none; /* Hide tooltips on mobile to avoid hover issues */
+    display: none;
   }
+}
 
+md-outlined-text-field {
+  width: 100%;
+  --md-outlined-text-field-container-shape: 8px;
+  margin-bottom: 16px;
+}
+
+#latex-preview {
+  background-color: var(--md-sys-color-surface);
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  margin: 16px auto;
+  min-height: 150px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  overflow: visible !important;
+  z-index: auto;
+  width: 600px;
+  max-height: 400px;
+  min-height: 200px;
+  height: auto;
+}
+
+#latex-image {
+  max-width: 100%;
+  max-height: 100%;
+  height: auto;
+  background-color: var(--md-sys-color-surface);
+}
+
+.scale-control {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 16px 0;
+}
+
+.scale-control label {
+  font-family: 'Roboto', sans-serif;
+  font-size: 16px;
+}
+
+#scale-value {
+  font-family: 'Roboto', sans-serif;
+  font-size: 16px;
+  min-width: 50px;
+}
+
+@media (max-width: 600px) {
   #latex-preview {
-    max-width: 100%; /* Adjust for smaller screens */
-    max-height: 300px;
+    width: 100%;
   }
 }

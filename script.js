@@ -1,10 +1,12 @@
 // Feature flag for scaling functionality
-const enableScaling = false; // Set to true to enable scaling, false to disable
+const enableScaling = true;
+const BASE_PT_SIZE = 12; // Baseline point size where scale = 1
+const VALID_PT_SIZES = [8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 60, 72];
 
 document.addEventListener('DOMContentLoaded', () => {
   console.log('DOM fully loaded');
 
-  if (!customElements.get('md-filled-text-field')) {
+  if (!customElements.get('md-outlined-text-field') || !customElements.get('md-slider')) {
     console.error('Material Web Components not loaded. Ensure the library is included.');
     const errorMessage = document.getElementById('error-message');
     if (errorMessage) {
@@ -20,6 +22,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const errorMessage = document.getElementById('error-message');
   const imageActions = document.getElementById('image-actions');
   const historyList = document.getElementById('history-list');
+  const scaleSlider = document.getElementById('scale-slider');
+  const scaleValue = document.getElementById('scale-value');
 
   console.log('latexInput:', latexInput);
   console.log('latexImage:', latexImage);
@@ -27,8 +31,10 @@ document.addEventListener('DOMContentLoaded', () => {
   console.log('errorMessage:', errorMessage);
   console.log('imageActions:', imageActions);
   console.log('historyList:', historyList);
+  console.log('scaleSlider:', scaleSlider);
+  console.log('scaleValue:', scaleValue);
 
-  if (!latexInput || !latexImage || !latexPreview || !errorMessage || !imageActions || !historyList) {
+  if (!latexInput || !latexImage || !latexPreview || !errorMessage || !imageActions || !historyList || !scaleSlider || !scaleValue) {
     console.error('One or more DOM elements not found.');
     if (errorMessage) {
       errorMessage.textContent = 'Error: Required DOM elements not found.';
@@ -40,20 +46,44 @@ document.addEventListener('DOMContentLoaded', () => {
   let imageUrl = '';
   let latexHistory = JSON.parse(sessionStorage.getItem('latexHistory')) || [];
 
-  if (enableScaling) {
-    const scaleSlider = document.getElementById('scale-slider');
-    const scaleValue = document.getElementById('scale-value');
-
-    if (!scaleSlider || !scaleValue) {
-      console.error('Scaling elements not found.');
-      return;
+  // Slider event listener for point size
+  scaleSlider.addEventListener('input', () => {
+    let ptSize = parseFloat(scaleSlider.value);
+    // Snap to nearest valid point size
+    ptSize = VALID_PT_SIZES.reduce((prev, curr) => Math.abs(curr - ptSize) < Math.abs(prev - ptSize) ? curr : prev);
+    scaleSlider.value = ptSize;
+    scaleValue.textContent = `${ptSize} pt`;
+    const scale = ptSize / BASE_PT_SIZE;
+    console.log(`Selected ptSize: ${ptSize}, Scale: ${scale}`);
+    latexImage.style.transform = `scale(${scale})`;
+    // Adjust preview size if image is loaded
+    if (latexImage.src && latexImage.style.display !== 'none') {
+      adjustPreviewSize(ptSize, scale);
     }
+  });
 
-    scaleSlider.addEventListener('input', () => {
-      const sliderValue = parseFloat(scaleSlider.value);
-      scaleValue.textContent = sliderValue.toFixed(1);
-      latexImage.style.transform = `scale(${sliderValue})`;
-    });
+  function adjustPreviewSize(ptSize, scale) {
+    // Fixed width and default height
+    const fixedWidth = 600;
+    const fixedHeight = 400;
+    latexPreview.style.width = `${fixedWidth}px`;
+    latexPreview.style.maxHeight = `${fixedHeight}px`;
+    latexPreview.style.height = 'auto';
+
+    // Only adjust height if point size exceeds 60pt
+    if (ptSize > 60) {
+      // Get SVG height
+      let svgHeight = latexImage.naturalHeight || parseFloat(latexImage.getAttribute('height')) || 100;
+      // Apply scale and add padding (24px top and bottom)
+      svgHeight = svgHeight * scale + 48;
+      // Use maximum of fixed height and SVG height
+      const newHeight = Math.max(fixedHeight, svgHeight);
+      latexPreview.style.maxHeight = `${newHeight}px`;
+      latexPreview.style.height = `${newHeight}px`;
+      console.log(`Adjusted preview height: ${newHeight}px for ptSize ${ptSize}, scale ${scale}`);
+    } else {
+      console.log(`Using fixed preview size: ${fixedWidth}x${fixedHeight}px for ptSize ${ptSize}`);
+    }
   }
 
   function updateHistory() {
@@ -93,7 +123,8 @@ document.addEventListener('DOMContentLoaded', () => {
       let formattedLatex = latex;
       let isMathMode = false;
 
-      const mathModeMatch = latex.match(/^\$\$(.*)\$\$$/s);
+      // Handle $...$ and $$...$$ for math mode
+      const mathModeMatch = latex.match(/^\$+\$?(.*?)\$+\$?$/s);
       if (mathModeMatch) {
         isMathMode = true;
         formattedLatex = mathModeMatch[1].trim();
@@ -101,6 +132,8 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         formattedLatex = `\\text{${formattedLatex}}`;
       }
+
+      console.log('Formatted LaTeX:', formattedLatex, 'Math Mode:', isMathMode);
 
       const encodedLatex = encodeURIComponent(`\\dpi{300} \\color{black} ${formattedLatex}`);
       imageUrl = `https://latex.codecogs.com/svg?${encodedLatex}`;
@@ -117,6 +150,10 @@ document.addEventListener('DOMContentLoaded', () => {
           console.log('Image loaded successfully');
           latexImage.style.display = 'inline-block';
           imageActions.style.display = 'flex';
+          const ptSize = parseFloat(scaleSlider.value);
+          const scale = ptSize / BASE_PT_SIZE;
+          latexImage.style.transform = `scale(${scale})`;
+          adjustPreviewSize(ptSize, scale);
           hideError();
           if (!latexHistory.includes(latex)) {
             latexHistory.unshift(latex);
@@ -128,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         latexImage.onerror = () => {
           console.error('Failed to load LaTeX image from:', imageUrl);
-          showError(`Error rendering LaTeX. Check syntax (e.g., use $$...$$ for equations, \\mathbf{} for bold in math mode, \\textbf{} for bold in text mode). See Help for details.`);
+          showError(`Error rendering LaTeX. Check syntax (e.g., use $...$ or $$...$$ for equations, \\text{} for upright text). See Help for details.`);
           latexImage.style.display = 'none';
           imageActions.style.display = 'none';
           reject(new Error('Image loading failed'));
@@ -136,7 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     } catch (err) {
       console.error('Render error:', err);
-      showError(`Invalid LaTeX command: ${err.message}. Try $$...$$ for equations or \\textbf{} for bold text.`);
+      showError(`Invalid LaTeX command: ${err.message}. Try $...$ or $$...$$ for equations or \\text{} for upright text.`);
       latexImage.style.display = 'none';
       imageActions.style.display = 'none';
     }
@@ -149,7 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const copyButton = document.getElementById('copy-button');
-    const copyIcon = copyButton.querySelector('md-icon'); // Correctly select the <md-icon> element
+    const copyIcon = copyButton.querySelector('md-icon');
 
     if (!copyIcon) {
       console.error('Copy icon not found inside copy button.');
@@ -167,7 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
       let formattedLatex = latex;
       let isMathMode = false;
 
-      const mathModeMatch = latex.match(/^\$\$(.*)\$\$$/s);
+      const mathModeMatch = latex.match(/^\$+\$?(.*?)\$+\$?$/s);
       if (mathModeMatch) {
         isMathMode = true;
         formattedLatex = mathModeMatch[1].trim();
@@ -175,6 +212,8 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         formattedLatex = `\\text{${formattedLatex}}`;
       }
+
+      console.log('Copying LaTeX:', formattedLatex, 'Math Mode:', isMathMode);
 
       const encodedLatex = encodeURIComponent(`\\dpi{300} \\color{black} ${formattedLatex}`);
       const tempImageUrl = `https://latex.codecogs.com/svg?${encodedLatex}`;
@@ -191,20 +230,28 @@ document.addEventListener('DOMContentLoaded', () => {
         throw new Error('Invalid SVG content');
       }
 
-      if (enableScaling) {
-        const scaleSlider = document.getElementById('scale-slider');
-        const scale = parseFloat(scaleSlider.value);
-        let width = svgElement.getAttribute('width') || svgElement.getAttribute('viewBox')?.split(' ')[2] || 100;
-        let height = svgElement.getAttribute('height') || svgElement.getAttribute('viewBox')?.split(' ')[3] || 100;
-        width = parseFloat(width) * scale;
-        height = parseFloat(height) * scale;
-        svgElement.setAttribute('width', `${width}`);
-        svgElement.setAttribute('height', `${height}`);
-        const viewBox = svgElement.getAttribute('viewBox');
-        if (viewBox) {
-          const [minX, minY, vbWidth, vbHeight] = viewBox.split(' ').map(Number);
-          svgElement.setAttribute('viewBox', `${minX} ${minY} ${vbWidth * scale} ${vbHeight * scale}`);
-        }
+      const ptSize = parseFloat(scaleSlider.value);
+      const scale = ptSize / BASE_PT_SIZE;
+      console.log(`Copying SVG with ptSize: ${ptSize}, Scale: ${scale}`);
+      const group = svgDoc.createElementNS('http://www.w3.org/2000/svg', 'g');
+      group.setAttribute('transform', `scale(${scale})`);
+
+      while (svgElement.firstChild) {
+        group.appendChild(svgElement.firstChild);
+      }
+      svgElement.appendChild(group);
+
+      let width = svgElement.getAttribute('width') || svgElement.getAttribute('viewBox')?.split(' ')[2] || 100;
+      let height = svgElement.getAttribute('height') || svgElement.getAttribute('viewBox')?.split(' ')[3] || 100;
+      width = parseFloat(width) * scale;
+      height = parseFloat(height) * scale;
+      svgElement.setAttribute('width', `${width}`);
+      svgElement.setAttribute('height', `${height}`);
+
+      const viewBox = svgElement.getAttribute('viewBox');
+      if (viewBox) {
+        const [minX, minY, vbWidth, vbHeight] = viewBox.split(' ').map(Number);
+        svgElement.setAttribute('viewBox', `${minX} ${minY} ${vbWidth} ${vbHeight}`);
       }
 
       const serializer = new XMLSerializer();
@@ -216,16 +263,13 @@ document.addEventListener('DOMContentLoaded', () => {
       ]);
       console.log('SVG copied to clipboard');
 
-      // Change to check icon with animation
       copyButton.classList.add('copied');
-      copyIcon.innerHTML = 'check'; // Update the icon by changing the innerHTML of <md-icon>
+      copyIcon.innerHTML = 'check';
 
-      // Revert back to copy icon after 3 seconds
       setTimeout(() => {
         copyButton.classList.remove('copied');
-        copyIcon.innerHTML = 'content_copy'; // Revert to copy icon
+        copyIcon.innerHTML = 'content_copy';
       }, 3500);
-
     } catch (err) {
       console.error('Copy error:', err);
       showError('Failed to copy image: ' + err.message);
@@ -252,20 +296,28 @@ document.addEventListener('DOMContentLoaded', () => {
         throw new Error('Invalid SVG content');
       }
 
-      if (enableScaling) {
-        const scaleSlider = document.getElementById('scale-slider');
-        const scale = parseFloat(scaleSlider.value);
-        let width = svgElement.getAttribute('width') || svgElement.getAttribute('viewBox')?.split(' ')[2] || 100;
-        let height = svgElement.getAttribute('height') || svgElement.getAttribute('viewBox')?.split(' ')[3] || 100;
-        width = parseFloat(width) * scale;
-        height = parseFloat(height) * scale;
-        svgElement.setAttribute('width', `${width}`);
-        svgElement.setAttribute('height', `${height}`);
-        const viewBox = svgElement.getAttribute('viewBox');
-        if (viewBox) {
-          const [minX, minY, vbWidth, vbHeight] = viewBox.split(' ').map(Number);
-          svgElement.setAttribute('viewBox', `${minX} ${minY} ${vbWidth * scale} ${vbHeight * scale}`);
-        }
+      const ptSize = parseFloat(scaleSlider.value);
+      const scale = ptSize / BASE_PT_SIZE;
+      console.log(`Downloading SVG with ptSize: ${ptSize}, Scale: ${scale}`);
+      const group = svgDoc.createElementNS('http://www.w3.org/2000/svg', 'g');
+      group.setAttribute('transform', `scale(${scale})`);
+
+      while (svgElement.firstChild) {
+        group.appendChild(svgElement.firstChild);
+      }
+      svgElement.appendChild(group);
+
+      let width = svgElement.getAttribute('width') || svgElement.getAttribute('viewBox')?.split(' ')[2] || 100;
+      let height = svgElement.getAttribute('height') || svgElement.getAttribute('viewBox')?.split(' ')[3] || 100;
+      width = parseFloat(width) * scale;
+      height = parseFloat(height) * scale;
+      svgElement.setAttribute('width', `${width}`);
+      svgElement.setAttribute('height', `${height}`);
+
+      const viewBox = svgElement.getAttribute('viewBox');
+      if (viewBox) {
+        const [minX, minY, vbWidth, vbHeight] = viewBox.split(' ').map(Number);
+        svgElement.setAttribute('viewBox', `${minX} ${minY} ${vbWidth} ${vbHeight}`);
       }
 
       const serializer = new XMLSerializer();
