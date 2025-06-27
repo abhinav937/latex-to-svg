@@ -66,6 +66,42 @@ document.addEventListener('DOMContentLoaded', () => {
   let imageUrl = '';
   let latexHistory = JSON.parse(sessionStorage.getItem('latexHistory')) || [];
 
+  // Generate smart filename function (reusable)
+  function generateFileName(latex) {
+    // Remove math delimiters and special characters
+    let clean = latex.replace(/[$\{\}\\]/g, '').replace(/\s+/g, '_');
+    
+    // Remove common LaTeX commands and keep meaningful content
+    clean = clean.replace(/\\text\{([^}]*)\}/g, '$1');
+    clean = clean.replace(/\\mathbf\{([^}]*)\}/g, '$1');
+    clean = clean.replace(/\\frac\{([^}]*)\}\{([^}]*)\}/g, '$1_over_$2');
+    clean = clean.replace(/\\sum_\{([^}]*)\}\^\{([^}]*)\}/g, 'sum_$1_to_$2');
+    clean = clean.replace(/\\int_\{([^}]*)\}\^\{([^}]*)\}/g, 'int_$1_to_$2');
+    
+    // Remove other LaTeX commands
+    clean = clean.replace(/\\[a-zA-Z]+\{[^}]*\}/g, '');
+    clean = clean.replace(/\\[a-zA-Z]+/g, '');
+    
+    // Clean up multiple underscores and special chars
+    clean = clean.replace(/[^a-zA-Z0-9_]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+    
+    // Limit length to 20 characters
+    if (clean.length > 20) {
+      clean = clean.substring(0, 20);
+    }
+    
+    // Add improved date and time
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = (now.getMonth() + 1).toString().padStart(2, '0');
+    const day = now.getDate().toString().padStart(2, '0');
+    const hours = now.getHours().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    
+    // Format: filename_YYYY-MM-DD_HH-MM.svg
+    return `${clean}_${year}-${month}-${day}_${hours}-${minutes}.svg`;
+  }
+
   // Slider event listener for point size
   scaleInput.addEventListener('input', () => {
     const ptSize = parseFloat(scaleInput.value);
@@ -369,11 +405,14 @@ document.addEventListener('DOMContentLoaded', () => {
       const serializer = new XMLSerializer();
       svgText = serializer.serializeToString(svgDoc);
 
+      const fileName = generateFileName(latexInput.value.trim());
+      console.log('Generated filename:', fileName);
+
       const blob = new Blob([svgText], { type: 'image/svg+xml' });
       const blobUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = blobUrl;
-      link.download = 'latex-image.svg';
+      link.download = fileName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -401,7 +440,11 @@ document.addEventListener('DOMContentLoaded', () => {
         throw new Error('Failed to fetch SVG');
       }
       const blob = await response.blob();
-      const file = new File([blob], 'latex-image.svg', { type: 'image/svg+xml' });
+      
+      const fileName = generateFileName(latexInput.value.trim());
+      console.log('Generated filename for sharing:', fileName);
+      
+      const file = new File([blob], fileName, { type: 'image/svg+xml' });
       await navigator.share({
         files: [file],
         title: 'LaTeX Rendered Image',
