@@ -83,15 +83,174 @@
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
     <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <style>
+html, body {
+  height: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  font-family: 'Roboto', Arial, sans-serif;
+  background: #fafafa;
+}
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+header, footer {
+  width: 100%;
+  box-sizing: border-box;
+  background: #fff;
+  padding: 0;
+  margin: 0;
+  border-bottom: 1px solid #e0e0e0;
+}
+.logo {
+  font-size: 20px;
+  font-weight: 500;
+  color: #00695c;
+  padding: 16px 16px 0 16px;
+  display: block;
+}
+nav {
+  padding: 0 16px 8px 16px;
+}
+.container {
+  width: 100%;
+  box-sizing: border-box;
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0;
+  margin: 0;
+}
+.hero {
+  padding: 20px 12px 0 12px;
+}
+.hero h1 {
+  font-size: 22px;
+  margin: 0 0 8px 0;
+}
+.hero p {
+  font-size: 16px;
+  margin: 0 0 12px 0;
+}
+md-card.help-section {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 0 16px 0;
+  padding: 16px 12px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  font-size: 16px;
+}
+.help-section h2 {
+  font-size: 18px;
+  margin: 0 0 12px 0;
+}
+ol, ul {
+  padding-left: 20px;
+}
+li {
+  margin-bottom: 8px;
+}
+.highlight {
+  font-weight: 500;
+  color: #00695c;
+}
+.footer-content, .back-to-top {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+.back-to-top {
+  padding: 12px 0 0 0;
+  border-top: 1px solid #e0e0e0;
+  background: #f5f5f5;
+  text-align: center;
+}
+footer {
+  flex-shrink: 0;
+  border-bottom: none;
+  border-top: 1px solid #e0e0e0;
+}
+@media (max-width: 600px) {
+  .logo, nav, .hero, md-card.help-section {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+  .hero h1 { font-size: 19px; }
+  .help-section h2 { font-size: 16px; }
+  md-card.help-section { font-size: 15px; }
+  .back-to-top { font-size: 13px; }
+}
+.md-filled-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--md-sys-color-primary, #00695c);
+  color: #fff;
+  font-weight: 500;
+  font-size: 1rem;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 20px;
+  text-decoration: none;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  transition: background 0.15s, box-shadow 0.15s;
+  cursor: pointer;
+  min-height: 40px;
+}
+.md-filled-button:hover, .md-filled-button:focus {
+  background: #00897b;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  text-decoration: none;
+}
+@media (max-width: 700px) {
+  header {
+    flex-direction: column;
+    align-items: center;
+    padding: 0;
+    min-height: unset;
+  }
+  .logo {
+    padding: 16px 0 0 0;
+    text-align: center;
+    width: 100%;
+    height: auto;
+    justify-content: center;
+    display: flex;
+  }
+  nav {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    padding: 0 0 12px 0;
+    height: auto;
+  }
+  .md-filled-button {
+    width: 90vw;
+    max-width: 340px;
+    margin: 0 auto;
+    font-size: 1.05rem;
+    border-radius: 16px;
+    min-height: 44px;
+    justify-content: center;
+  }
+}
+    </style>
 </head>
 
 <body>
     <header>
         <a href="/" class="logo">LaTeX Image Generator</a>
         <nav>
-            <a href="/">
-                <md-filled-button>Home</md-filled-button>
-            </a>
+            <a href="/" class="md-filled-button">Home</a>
         </nav>
     </header>
 
@@ -116,24 +275,30 @@
                 Guide</h2>
             <ol>
                 <li><span class="highlight">Enter LaTeX Code</span>: Type or paste your LaTeX code in the text area. For
-                    example, use <code>E = mc^2</code> or <code>\sum_{n=1}^{\infty} \frac{1}{n^2}</code>. If you're new
-                    to LaTeX, click the example buttons (e.g., "E = mc²" or "Subscript") to try sample code.</li>
-                <li><s><span class="highlight">Adjust Scale</span>: Use the scale slider to set the image size (0.5x to
-                        5.0x, default is 1.0).</s> <em>(Currently under development)</em></li>
-                <li><span class="highlight">Render the Image</span>: Click "Render" to generate the SVG image, which
-                    will appear in the preview area.</li>
+                    example, use <code>E = mc^2</code> or <code>\sum_{n=1}^{\infty} \frac{1}{n^2}</code>. You can also click the example chips to try sample code.</li>
+                <li><span class="highlight">Adjust Scale</span>: Use the scale slider to set the image size in points (pt). The preview updates to match your chosen size.</li>
+                <li><span class="highlight">Render the Image</span>: Click the <strong>Render</strong> button to generate the SVG image. A spinner will appear while rendering is in progress.</li>
                 <li><span class="highlight">Manage the Output</span>:
                     <ul>
-                        <li><span class="highlight">Copy</span>: Click "Copy" to copy the SVG code to your clipboard.
-                        </li>
-                        <li><span class="highlight">Download</span>: Click "Download" to save the SVG file.</li>
-                        <li><span class="highlight">Share</span>: Click "Share" to share the image via social media or
-                            other platforms.</li>
+                        <li><strong>Copy</strong>: Copies the SVG image to your clipboard.</li>
+                        <li><strong>Download</strong>: Downloads the SVG file.</li>
+                        <li><strong>Share</strong>: Shares the SVG file (if your device supports sharing).</li>
+                        <li><strong>Copy SVG Code</strong>: Copies the raw SVG markup to your clipboard.</li>
                     </ul>
                 </li>
-                <li><span class="highlight">View History</span>: Check your recent LaTeX commands in the "Recent LaTeX
+                <li><span class="highlight">View History</span>: Your recent LaTeX commands are shown in the "Recent LaTeX
                     Commands" section. Click "Clear History" to reset it.</li>
             </ol>
+        </md-card>
+
+        <md-card class="help-section">
+            <h2><span class="material-icons" style="vertical-align: middle; margin-right: 8px;">error</span> Error Handling</h2>
+            <p>If there's a problem (such as a network error, invalid LaTeX, or empty input), a clear error message will appear above the preview area, indicating the type of error and a helpful description.</p>
+        </md-card>
+
+        <md-card class="help-section">
+            <h2><span class="material-icons" style="vertical-align: middle; margin-right: 8px;">smartphone</span> Mobile Experience</h2>
+            <p>The site is fully mobile-friendly. Controls stack vertically, buttons are larger for easy tapping, and the preview area is responsive.</p>
         </md-card>
 
         <md-card class="help-section">

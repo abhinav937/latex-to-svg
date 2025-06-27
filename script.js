@@ -78,19 +78,41 @@ document.addEventListener('DOMContentLoaded', () => {
     renderLaTeX();
   };
 
-  window.renderLaTeX = async function () {
-    let latex = latexInput.value.trim();
-    if (!latex) {
-      showError('Please enter a LaTeX command.');
-      return;
-    }
+  // Show spinner during rendering
+  const renderSpinner = document.getElementById('render-spinner');
+  const renderButton = document.getElementById('render-button');
+  function showSpinner() {
+    renderSpinner.style.display = 'inline-block';
+    renderButton.setAttribute('disabled', 'true');
+  }
+  function hideSpinner() {
+    renderSpinner.style.display = 'none';
+    renderButton.removeAttribute('disabled');
+  }
 
+  // Enhanced error display
+  function showError(type, message, details) {
+    errorMessage.innerHTML = `<strong>${type}:</strong> ${message}` + (details ? `<br><small>${details}</small>` : '');
+    errorMessage.style.display = 'block';
+    imageActions.style.display = 'none';
+  }
+  function hideError() {
+    errorMessage.style.display = 'none';
+  }
+
+  // Patch renderLaTeX for better error handling
+  const originalRenderLaTeX = window.renderLaTeX;
+  window.renderLaTeX = async function() {
+    showSpinner();
     try {
+      let latex = latexInput.value.trim();
+      if (!latex) {
+        showError('Input Error', 'Please enter a LaTeX command.');
+        return;
+      }
       let formattedLatex = latex;
       let isMathMode = false;
-
-      // Handle $...$ and $$...$$ for math mode
-      const mathModeMatch = latex.match(/^\$+\$?(.*?)\$+\$?$/s);
+      const mathModeMatch = latex.match(/^[\$]+\$?(.*?)\$+[\$]?$/s);
       if (mathModeMatch) {
         isMathMode = true;
         formattedLatex = mathModeMatch[1].trim();
@@ -98,22 +120,14 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         formattedLatex = `\\text{${formattedLatex}}`;
       }
-
-      console.log('Formatted LaTeX:', formattedLatex, 'Math Mode:', isMathMode);
-
       const encodedLatex = encodeURIComponent(`\\dpi{300} \\color{black} ${formattedLatex}`);
       imageUrl = `https://latex.codecogs.com/svg?${encodedLatex}`;
-      console.log('Generated URL:', imageUrl);
-
       latexImage.src = '';
       latexImage.style.display = 'none';
       imageActions.style.display = 'none';
-
       latexImage.src = imageUrl;
-
       await new Promise((resolve, reject) => {
         latexImage.onload = () => {
-          console.log('Image loaded successfully');
           latexImage.style.display = 'inline-block';
           imageActions.style.display = 'flex';
           const ptSize = parseFloat(scaleSlider.value);
@@ -128,19 +142,19 @@ document.addEventListener('DOMContentLoaded', () => {
           }
           resolve();
         };
-        latexImage.onerror = () => {
-          console.error('Failed to load LaTeX image from:', imageUrl);
-          showError(`Error rendering LaTeX. Check syntax (e.g., use $...$ or $$...$$ for equations, \\text{} for upright text). See Help for details.`);
+        latexImage.onerror = (e) => {
+          showError('Network Error', 'Unable to fetch rendered image. Please check your connection or try again later.', e?.message || '');
           latexImage.style.display = 'none';
           imageActions.style.display = 'none';
           reject(new Error('Image loading failed'));
         };
       });
     } catch (err) {
-      console.error('Render error:', err);
-      showError(`Invalid LaTeX command: ${err.message}. Try $...$ or $$...$$ for equations or \\text{} for upright text.`);
+      showError('Invalid LaTeX', 'The equation could not be rendered. Please check your syntax.', err.message);
       latexImage.style.display = 'none';
       imageActions.style.display = 'none';
+    } finally {
+      hideSpinner();
     }
   };
 
@@ -332,16 +346,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  function showError(message) {
-    errorMessage.textContent = message;
-    errorMessage.style.display = 'block';
-    imageActions.style.display = 'none';
-  }
-
-  function hideError() {
-    errorMessage.style.display = 'none';
-  }
-
   window.toggleDarkMode = function () {
     document.body.dataset.theme = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
   };
@@ -351,5 +355,47 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       renderLaTeX();
     }
+  });
+
+  // Copy SVG code button logic
+  window.copySVGCode = async function () {
+    if (!imageUrl) {
+      showError('Nothing to copy.');
+      return;
+    }
+    try {
+      const response = await fetch(imageUrl);
+      if (!response.ok) throw new Error('Failed to fetch SVG');
+      let svgText = await response.text();
+      await navigator.clipboard.writeText(svgText);
+      const btn = document.getElementById('copy-svgcode-button');
+      btn.classList.add('copied');
+      setTimeout(() => btn.classList.remove('copied'), 2000);
+    } catch (err) {
+      showError('Failed to copy SVG code: ' + err.message);
+    }
+  };
+
+  // Show/hide Copy SVG Code button when SVG is rendered
+  const copySVGCodeButton = document.getElementById('copy-svgcode-button');
+  const showCopySVGCodeButton = () => { copySVGCodeButton.style.display = 'inline-flex'; };
+  const hideCopySVGCodeButton = () => { copySVGCodeButton.style.display = 'none'; };
+
+  // Patch image load logic to show/hide Copy SVG Code button
+  const origOnload = latexImage.onload;
+  latexImage.onload = function() {
+    showCopySVGCodeButton();
+    if (origOnload) origOnload();
+  };
+  latexImage.onerror = function() {
+    hideCopySVGCodeButton();
+    if (origOnload) origOnload();
+  };
+
+  // Blur all [data-tooltip] elements after click to prevent tooltip reappearing
+  document.querySelectorAll('[data-tooltip]').forEach(el => {
+    el.addEventListener('click', function() {
+      if (this.blur) this.blur();
+    });
   });
 });
