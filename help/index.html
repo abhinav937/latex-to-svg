@@ -69,9 +69,9 @@
   </script>
 
     <!-- Material Web Components CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/@material/web@1.0.0-pre.13/dist/material-web.css">
+    <link rel="stylesheet" href="https://unpkg.com/@material/web@2.0.0/dist/material-web.css">
     <!-- Material Web Components JS -->
-    <script type="module" src="https://unpkg.com/@material/web@1.0.0-pre.13/dist/material-web.js"></script>
+    <script type="module" src="https://unpkg.com/@material/web@2.0.0/dist/material-web.js"></script>
     <!-- Roboto Font -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap">
     <!-- Material Icons -->
@@ -242,15 +242,33 @@ footer {
     min-height: 44px;
     justify-content: center;
   }
+  /* Ensure proper spacing on mobile */
+  .hero {
+    padding: 16px 8px 0 8px;
+  }
+  .hero h1 {
+    font-size: 20px;
+  }
+  .hero p {
+    font-size: 15px;
+  }
+  md-card.help-section {
+    margin: 0 0 12px 0;
+    padding: 12px 8px;
+    font-size: 15px;
+  }
+  .help-section h2 {
+    font-size: 17px;
+  }
 }
     </style>
 </head>
 
 <body>
     <header>
-        <a href="/" class="logo">LaTeX Image Generator</a>
+        <a href="../" class="logo">LaTeX Image Generator</a>
         <nav>
-            <a href="/" class="md-filled-button">Home</a>
+            <md-filled-button onclick="window.location.href='../'">Home</md-filled-button>
         </nav>
     </header>
 

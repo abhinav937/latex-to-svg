@@ -3,15 +3,40 @@ const BASE_PT_SIZE = 12; // Baseline point size where scale = 1
 document.addEventListener('DOMContentLoaded', () => {
   console.log('DOM fully loaded');
 
-  if (!customElements.get('md-outlined-text-field') || !customElements.get('md-slider')) {
-    console.error('Material Web Components not loaded. Ensure the library is included.');
-    const errorMessage = document.getElementById('error-message');
-    if (errorMessage) {
-      errorMessage.textContent = 'Error: Material Web Components not loaded.';
-      errorMessage.style.display = 'block';
+  // More robust Material Web Components loading check
+  function checkMaterialComponents() {
+    const requiredComponents = [
+      'md-outlined-text-field',
+      'md-filled-button', 
+      'md-outlined-button',
+      'md-icon-button',
+      'md-assist-chip',
+      'md-circular-progress',
+      'md-text-button'
+    ];
+    
+    const missingComponents = requiredComponents.filter(comp => !customElements.get(comp));
+    
+    if (missingComponents.length > 0) {
+      console.error('Missing Material Web Components:', missingComponents);
+      const errorMessage = document.getElementById('error-message');
+      if (errorMessage) {
+        errorMessage.innerHTML = `<strong>Loading Error:</strong> Some components failed to load. Please refresh the page or check your internet connection.`;
+        errorMessage.style.display = 'block';
+      }
+      return false;
     }
-    return;
+    
+    return true;
   }
+
+  // Check components after a short delay to allow for loading
+  setTimeout(() => {
+    if (!checkMaterialComponents()) {
+      console.warn('Material Web Components not fully loaded, retrying...');
+      setTimeout(checkMaterialComponents, 1000);
+    }
+  }, 500);
 
   const latexInput = document.getElementById('latex-input');
   const latexImage = document.getElementById('latex-image');
@@ -19,8 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const errorMessage = document.getElementById('error-message');
   const imageActions = document.getElementById('image-actions');
   const historyList = document.getElementById('history-list');
-  const scaleSlider = document.getElementById('scale-slider');
-  const scaleValue = document.getElementById('scale-value');
+  const scaleInput = document.getElementById('scale-input');
 
   console.log('latexInput:', latexInput);
   console.log('latexImage:', latexImage);
@@ -28,10 +52,9 @@ document.addEventListener('DOMContentLoaded', () => {
   console.log('errorMessage:', errorMessage);
   console.log('imageActions:', imageActions);
   console.log('historyList:', historyList);
-  console.log('scaleSlider:', scaleSlider);
-  console.log('scaleValue:', scaleValue);
+  console.log('scaleInput:', scaleInput);
 
-  if (!latexInput || !latexImage || !latexPreview || !errorMessage || !imageActions || !historyList || !scaleSlider || !scaleValue) {
+  if (!latexInput || !latexImage || !latexPreview || !errorMessage || !imageActions || !historyList || !scaleInput) {
     console.error('One or more DOM elements not found.');
     if (errorMessage) {
       errorMessage.textContent = 'Error: Required DOM elements not found.';
@@ -44,24 +67,62 @@ document.addEventListener('DOMContentLoaded', () => {
   let latexHistory = JSON.parse(sessionStorage.getItem('latexHistory')) || [];
 
   // Slider event listener for point size
-  scaleSlider.addEventListener('input', () => {
-    const ptSize = parseFloat(scaleSlider.value);
-    scaleValue.textContent = `${ptSize} pt`;
+  scaleInput.addEventListener('input', () => {
+    const ptSize = parseFloat(scaleInput.value);
     const scale = ptSize / BASE_PT_SIZE;
     console.log(`Selected ptSize: ${ptSize}, Scale: ${scale}`);
-    latexImage.style.transform = `scale(${scale})`;
+    
+    // Validate input
+    if (isNaN(ptSize) || ptSize < 8 || ptSize > 72) {
+      console.warn('Invalid point size:', ptSize);
+      return;
+    }
+    
+    // Apply scale to image if it exists
+    if (latexImage.style.display !== 'none') {
+      latexImage.style.transform = `scale(${scale})`;
+    }
+  });
+
+  // Add validation for scale input
+  scaleInput.addEventListener('blur', () => {
+    const ptSize = parseFloat(scaleInput.value);
+    if (isNaN(ptSize) || ptSize < 8) {
+      scaleInput.value = '8';
+    } else if (ptSize > 72) {
+      scaleInput.value = '72';
+    }
   });
 
   function updateHistory() {
     historyList.innerHTML = '';
+    if (latexHistory.length === 0) {
+      const emptyMessage = document.createElement('div');
+      emptyMessage.style = 'padding: 8px; color: #666; font-style: italic; text-align: center;';
+      emptyMessage.textContent = 'No recent commands';
+      historyList.appendChild(emptyMessage);
+      return;
+    }
+    
     latexHistory.forEach((latex, index) => {
       const historyItem = document.createElement('div');
-      historyItem.style = 'padding: 8px; cursor: pointer; border-bottom: 1px solid #eee;';
-      historyItem.textContent = latex;
+      historyItem.style = 'padding: 8px; cursor: pointer; border-bottom: 1px solid #eee; transition: background 0.15s;';
+      historyItem.textContent = latex.length > 50 ? latex.substring(0, 50) + '...' : latex;
+      historyItem.title = latex; // Show full text on hover
+      
       historyItem.addEventListener('click', () => {
         latexInput.value = latex;
         renderLaTeX();
       });
+      
+      historyItem.addEventListener('mouseenter', () => {
+        historyItem.style.background = 'rgba(0, 105, 92, 0.08)';
+      });
+      
+      historyItem.addEventListener('mouseleave', () => {
+        historyItem.style.background = 'transparent';
+      });
+      
       historyList.appendChild(historyItem);
     });
   }
@@ -81,13 +142,19 @@ document.addEventListener('DOMContentLoaded', () => {
   // Show spinner during rendering
   const renderSpinner = document.getElementById('render-spinner');
   const renderButton = document.getElementById('render-button');
+  let spinnerTimeout;
+  
   function showSpinner() {
-    renderSpinner.style.display = 'inline-block';
+    renderSpinner.style.display = 'block';
     renderButton.setAttribute('disabled', 'true');
   }
+  
   function hideSpinner() {
-    renderSpinner.style.display = 'none';
-    renderButton.removeAttribute('disabled');
+    clearTimeout(spinnerTimeout);
+    spinnerTimeout = setTimeout(() => {
+      renderSpinner.style.display = 'none';
+      renderButton.removeAttribute('disabled');
+    }, 500);
   }
 
   // Enhanced error display
@@ -100,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
     errorMessage.style.display = 'none';
   }
 
-  // Patch renderLaTeX for better error handling
+  // Patch renderLaTeX to use the new spinner logic
   const originalRenderLaTeX = window.renderLaTeX;
   window.renderLaTeX = async function() {
     showSpinner();
@@ -130,7 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
         latexImage.onload = () => {
           latexImage.style.display = 'inline-block';
           imageActions.style.display = 'flex';
-          const ptSize = parseFloat(scaleSlider.value);
+          const ptSize = parseFloat(scaleInput.value);
           const scale = ptSize / BASE_PT_SIZE;
           latexImage.style.transform = `scale(${scale})`;
           hideError();
@@ -209,7 +276,7 @@ document.addEventListener('DOMContentLoaded', () => {
         throw new Error('Invalid SVG content');
       }
 
-      const ptSize = parseFloat(scaleSlider.value);
+      const ptSize = parseFloat(scaleInput.value);
       const scale = ptSize / BASE_PT_SIZE;
       console.log(`Copying SVG with ptSize: ${ptSize}, Scale: ${scale}`);
       const group = svgDoc.createElementNS('http://www.w3.org/2000/svg', 'g');
@@ -275,7 +342,7 @@ document.addEventListener('DOMContentLoaded', () => {
         throw new Error('Invalid SVG content');
       }
 
-      const ptSize = parseFloat(scaleSlider.value);
+      const ptSize = parseFloat(scaleInput.value);
       const scale = ptSize / BASE_PT_SIZE;
       console.log(`Downloading SVG with ptSize: ${ptSize}, Scale: ${scale}`);
       const group = svgDoc.createElementNS('http://www.w3.org/2000/svg', 'g');

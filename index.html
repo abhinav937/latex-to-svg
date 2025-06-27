@@ -74,6 +74,33 @@
         document.head.appendChild(script);
       }
     </script>
+    <!-- Additional fallback for older browsers -->
+    <script>
+      // Check if Material Web Components are loaded after a delay
+      setTimeout(() => {
+        if (!customElements.get('md-outlined-text-field')) {
+          console.warn('Material Web Components not loaded, attempting alternative CDN');
+          const script = document.createElement('script');
+          script.type = 'module';
+          script.src = 'https://esm.sh/@material/web@2.0.0';
+          document.head.appendChild(script);
+        }
+      }, 2000);
+    </script>
+    <!-- Final fallback using bundle.js -->
+    <script>
+      // If Material Web Components still not loaded after 3 seconds, show fallback message
+      setTimeout(() => {
+        if (!customElements.get('md-outlined-text-field')) {
+          console.error('Material Web Components failed to load from all sources');
+          const errorMessage = document.getElementById('error-message');
+          if (errorMessage) {
+            errorMessage.innerHTML = `<strong>Loading Error:</strong> Material Web Components failed to load. Please check your internet connection and refresh the page.`;
+            errorMessage.style.display = 'block';
+          }
+        }
+      }, 3000);
+    </script>
     <!-- Roboto Font -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap">
     <!-- Material Icons -->
@@ -83,7 +110,6 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <!-- Styles -->
     <link rel="stylesheet" href="./style.css">
-    <link rel="stylesheet" href="./additional.css">
     <!-- Script -->
     <script defer src="./script.js"></script>
     <!-- Additional bundled scripts (if needed) -->
@@ -101,11 +127,6 @@
     <div class="content-wrapper">
       <!-- Main Content -->
       <div class="main-content">
-        <div class="hero">
-          <h1>Create LaTeX Equations Instantly</h1>
-          <p>Generate high-quality SVG images from LaTeX code, no installation required. A web-based alternative to TexText for Inkscape.</p>
-        </div>
-
         <div class="button-group">
           <md-assist-chip
             class="filter-chip-style"
@@ -147,27 +168,15 @@
         ></md-outlined-text-field>
 
         <div class="action-buttons">
-          <md-filled-button onclick="renderLaTeX()" id="render-button" data-tooltip="Render LaTeX as SVG">
-            Render
-          </md-filled-button>
-          <span id="render-spinner" style="display:none; margin-left:8px; vertical-align:middle;">
-            <svg width="20" height="20" viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" fill="none" stroke="#00695c" stroke-width="5" stroke-linecap="round" stroke-dasharray="31.4 31.4" transform="rotate(-90 25 25)"><animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite"/></circle></svg>
-          </span>
-        </div>
-
-        <div class="scale-control">
-          <label for="scale-slider">Point Size:</label>
-          <md-slider
-            id="scale-slider"
-            min="8"
-            max="72"
-            value="12"
-            step="1"
-            ticks
-            labeled
-            aria-label="Select SVG point size"
-          ></md-slider>
-          <span id="scale-value">12 pt</span>
+          <div style="position: relative; display: inline-block;">
+            <md-filled-button onclick="renderLaTeX()" id="render-button">Render</md-filled-button>
+            <md-circular-progress id="render-spinner" indeterminate style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) scale(0.75); display: none;"></md-circular-progress>
+          </div>
+          <div class="scale-control">
+            <label for="scale-input" class="scale-label">Point Size:</label>
+            <input type="number" id="scale-input" min="8" max="72" value="12" step="1" class="scale-input">
+            <span class="scale-unit">pt</span>
+          </div>
         </div>
 
         <div id="latex-preview">
@@ -202,13 +211,15 @@
 
       <!-- Sidebar for History -->
       <aside class="sidebar">
+        <div class="hero">
+          <h1>Create LaTeX Equations Instantly</h1>
+          <p>Generate high-quality SVG images from LaTeX code, no installation required. A web-based alternative to TexText for Inkscape.</p>
+        </div>
         <div id="history-section">
           <h2 style="font-size: 18px; font-weight: 500; color: var(--md-sys-color-on-surface);">Recent LaTeX Commands</h2>
           <div id="history-list" style="max-height: 300px; overflow-y: auto;"></div>
           <div class="action-buttons" style="margin-top: 8px;">
-            <md-outlined-button onclick="clearHistory()" id="clear-history" data-tooltip="Clear recent commands">
-              Clear History
-            </md-outlined-button>
+            <md-outlined-button onclick="clearHistory()" id="clear-history">Clear History</md-outlined-button>
           </div>
         </div>
       </aside>
