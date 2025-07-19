@@ -217,6 +217,22 @@ md-outlined-text-field#latex-input {
   justify-content: flex-start;
 }
 
+.action-buttons md-assist-chip {
+  --md-assist-chip-container-color: var(--md-sys-color-surface-container-high);
+  --md-assist-chip-label-text-color: var(--md-sys-color-on-surface);
+  --md-assist-chip-leading-icon-color: var(--md-sys-color-on-surface);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.action-buttons md-assist-chip:hover {
+  --md-assist-chip-container-color: var(--md-sys-color-surface-container-highest);
+  transform: translateY(-1px);
+}
+.action-buttons md-assist-chip:active {
+  transform: translateY(0);
+}
+
 .scale-control {
   display: flex;
   align-items: center;

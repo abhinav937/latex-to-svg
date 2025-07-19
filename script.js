@@ -102,6 +102,27 @@ document.addEventListener('DOMContentLoaded', () => {
     return `${clean}_${year}-${month}-${day}_${hours}-${minutes}.svg`;
   }
 
+  window.clearInput = function() {
+    const latexInput = document.getElementById('latex-input');
+    const latexImage = document.getElementById('latex-image');
+    const imageActions = document.getElementById('image-actions');
+    const errorMessage = document.getElementById('error-message');
+    
+    // Clear the input field
+    latexInput.value = '';
+    
+    // Hide the preview image and actions
+    latexImage.style.display = 'none';
+    imageActions.style.display = 'none';
+    
+    // Clear any error messages
+    errorMessage.innerHTML = '';
+    errorMessage.style.display = 'none';
+    
+    // Focus back to the input field
+    latexInput.focus();
+  };
+
   // Slider event listener for point size
   scaleInput.addEventListener('input', () => {
     const ptSize = parseFloat(scaleInput.value);
