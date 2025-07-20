@@ -261,7 +261,46 @@ footer {
     font-size: 17px;
   }
 }
+      /* GitHub-like markdown styles for help page */
+      .markdown-body {
+        box-sizing: border-box;
+        min-width: 200px;
+        max-width: 900px;
+        margin: 32px auto 32px auto;
+        padding: 32px 24px;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 1px 8px rgba(0,0,0,0.04);
+        font-family: 'Roboto', Arial, sans-serif;
+        font-size: 16px;
+        color: #24292f;
+      }
+      .markdown-body h1, .markdown-body h2, .markdown-body h3 {
+        border-bottom: 1px solid #eaecef;
+        padding-bottom: 0.3em;
+        margin-top: 1.5em;
+        margin-bottom: 1em;
+        font-weight: 600;
+      }
+      .markdown-body h1 { font-size: 2em; }
+      .markdown-body h2 { font-size: 1.5em; }
+      .markdown-body h3 { font-size: 1.2em; }
+      .markdown-body ul, .markdown-body ol { margin-left: 2em; }
+      .markdown-body code { background: #f6f8fa; padding: 2px 6px; border-radius: 4px; font-size: 0.97em; }
+      .markdown-body pre { background: #f6f8fa; padding: 12px; border-radius: 6px; overflow-x: auto; }
+      .markdown-body a { color: #00695c; text-decoration: underline; }
+      .markdown-body blockquote { color: #6a737d; border-left: 4px solid #dfe2e5; padding: 0 1em; margin: 0.8em 0; background: #f9f9f9; }
+      .markdown-body table { border-collapse: collapse; }
+      .markdown-body th, .markdown-body td { border: 1px solid #dfe2e5; padding: 6px 13px; }
+      .markdown-body th { background: #f6f8fa; }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const markdown = `# LaTeX Image Generator Help\n\nGenerate high-quality SVG images from LaTeX code, no installation required. A web-based alternative to TexText for Inkscape.\n\n---\n\n## Features\n\n- **Instant LaTeX to SVG**: Enter LaTeX code and render SVG images instantly.\n- **Scale Control**: Adjust the point size for your output image.\n- **Copy, Download, Share**: Copy SVG to clipboard, download, or share directly.\n- **Recent History**: Stores your last **10** LaTeX inputs for quick reuse.\n- **Autofocus**: Start typing from anywhere—just press any key and the LaTeX input will autofocus automatically.\n- **Mobile Friendly**: Fully responsive and easy to use on any device.\n\n---\n\n## How to Use\n\n1. **Enter LaTeX Code**: Type or paste your LaTeX code in the input box.\n   - Example: \n     - Inline: \`$E = mc^2$\`\n     - Equation: \`$$\\sum_{n=1}^{\\infty} \\frac{1}{n^2}$$\`\n   - Click the example chips for sample code.\n2. **Adjust Scale**: Use the point size input to set the image size (in pt).\n3. **Render**: Click **Render** or press Enter to generate the SVG.\n4. **Manage Output**:\n   - **Copy**: Copy the SVG image to your clipboard.\n   - **Download**: Download the SVG file.\n   - **Share**: Share the SVG (if supported by your device).\n   - **Copy SVG Code**: Copy the raw SVG markup.\n5. **View History**: Your last 10 LaTeX commands are shown in the sidebar. Click any to reuse. Use **Clear History** to reset.\n\n---\n\n## Keyboard Shortcuts & Tips\n\n- **Autofocus**: Press any key (unless in another input) to jump to the LaTeX input.\n- **Enter**: Renders the LaTeX (Shift+Enter for newlines).\n- **History**: Only the last 10 unique commands are saved.\n\n---\n\n## Error Handling\n\nIf there's a problem (network error, invalid LaTeX, or empty input), a clear error message will appear above the preview area.\n\n---\n\n## Need More Help?\n\n- See the [CodeCogs Equation Editor Documentation](https://editor.codecogs.com/docs) for LaTeX syntax.\n- For issues with this tool, contact [Abhinav Chinnusamy](https://x.com/abhinav_937).\n`;
+        document.getElementById('help-markdown').innerHTML = marked.parse(markdown);
+      });
+    </script>
 </head>
 
 <body>
@@ -273,61 +312,7 @@ footer {
     </header>
 
     <div class="container">
-        <div class="hero">
-            <h1>How to Use LaTeX Image Generator</h1>
-            <p>A simple guide to creating SVG images from LaTeX code, powered by the CodeCogs API.</p>
-        </div>
-
-        <md-card class="help-section">
-            <h2><span class="material-icons" style="vertical-align: middle; margin-right: 8px;">info</span> Getting
-                Started</h2>
-            <p>The LaTeX Image Generator is a web-based tool that converts LaTeX code into high-quality SVG images,
-                ideal for mathematical equations and scientific notations. No software installation is needed, making it
-                a convenient alternative to TexText for Inkscape.</p>
-            <p>This tool uses the <a href="https://editor.codecogs.com/docs" target="_blank">CodeCogs Equation Editor
-                    API</a> to render your LaTeX code into images.</p>
-        </md-card>
-
-        <md-card class="help-section">
-            <h2><span class="material-icons" style="vertical-align: middle; margin-right: 8px;">help</span> Step-by-Step
-                Guide</h2>
-            <ol>
-                <li><span class="highlight">Enter LaTeX Code</span>: Type or paste your LaTeX code in the text area. For
-                    example, use <code>E = mc^2</code> or <code>\sum_{n=1}^{\infty} \frac{1}{n^2}</code>. You can also click the example chips to try sample code.</li>
-                <li><span class="highlight">Adjust Scale</span>: Use the scale slider to set the image size in points (pt). The preview updates to match your chosen size.</li>
-                <li><span class="highlight">Render the Image</span>: Click the <strong>Render</strong> button to generate the SVG image. A spinner will appear while rendering is in progress.</li>
-                <li><span class="highlight">Manage the Output</span>:
-                    <ul>
-                        <li><strong>Copy</strong>: Copies the SVG image to your clipboard.</li>
-                        <li><strong>Download</strong>: Downloads the SVG file.</li>
-                        <li><strong>Share</strong>: Shares the SVG file (if your device supports sharing).</li>
-                        <li><strong>Copy SVG Code</strong>: Copies the raw SVG markup to your clipboard.</li>
-                    </ul>
-                </li>
-                <li><span class="highlight">View History</span>: Your recent LaTeX commands are shown in the "Recent LaTeX
-                    Commands" section. Click "Clear History" to reset it.</li>
-            </ol>
-        </md-card>
-
-        <md-card class="help-section">
-            <h2><span class="material-icons" style="vertical-align: middle; margin-right: 8px;">error</span> Error Handling</h2>
-            <p>If there's a problem (such as a network error, invalid LaTeX, or empty input), a clear error message will appear above the preview area, indicating the type of error and a helpful description.</p>
-        </md-card>
-
-        <md-card class="help-section">
-            <h2><span class="material-icons" style="vertical-align: middle; margin-right: 8px;">smartphone</span> Mobile Experience</h2>
-            <p>The site is fully mobile-friendly. Controls stack vertically, buttons are larger for easy tapping, and the preview area is responsive.</p>
-        </md-card>
-
-        <md-card class="help-section">
-            <h2><span class="material-icons" style="vertical-align: middle; margin-right: 8px;">support</span> Need More
-                Help?</h2>
-            <p>If you're new to LaTeX or need help with advanced syntax, explore the <a
-                    href="https://editor.codecogs.com/docs" target="_blank">CodeCogs Equation Editor Documentation</a>
-                for detailed guides on LaTeX commands.</p>
-            <p>For issues specific to the LaTeX Image Generator, contact <a href="https://x.com/abhinav_937">Abhinav
-                    Chinnusamy</a>.</p>
-        </md-card>
+      <div id="help-markdown" class="markdown-body"></div>
     </div>
 
     <footer>
