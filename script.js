@@ -260,7 +260,7 @@ document.addEventListener('DOMContentLoaded', () => {
           hideError();
           if (!latexHistory.includes(latex)) {
             latexHistory.unshift(latex);
-            if (latexHistory.length > 5) latexHistory.pop();
+            if (latexHistory.length > 10) latexHistory.pop();
             sessionStorage.setItem('latexHistory', JSON.stringify(latexHistory));
             updateHistory();
           }
