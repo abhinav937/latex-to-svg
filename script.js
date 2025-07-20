@@ -488,6 +488,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Autofocus latex input on any key press if not already focused
+  window.addEventListener('keydown', (e) => {
+    // Ignore if modifier keys are pressed or if focus is already in an input/textarea/contenteditable
+    if (
+      e.ctrlKey ||
+      e.altKey ||
+      e.metaKey ||
+      e.target === latexInput ||
+      e.target.tagName === 'INPUT' ||
+      e.target.tagName === 'TEXTAREA' ||
+      e.target.isContentEditable
+    ) {
+      return;
+    }
+    latexInput.focus();
+  });
+
   // Copy SVG code button logic
   window.copySVGCode = async function () {
     if (!imageUrl) {
