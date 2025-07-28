@@ -60,10 +60,8 @@
     }
     </script>
 
-    <!-- Material Web Components CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@material/web@2.0.0/dist/material-web.css" crossorigin="anonymous" onerror="console.error('Failed to load Material Web CSS')">
     <!-- Material Web Components JS -->
-    <script type="module" src="https://cdn.jsdelivr.net/npm/@material/web@2.0.0/dist/material-web.js" crossorigin="anonymous" onerror="console.error('Failed to load Material Web JS')"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@material/web@2.0.0/all.js" crossorigin="anonymous" onerror="console.error('Failed to load Material Web JS')"></script>
     <!-- Fallback to alternative CDN -->
     <script type="module">
       // Fallback with better error handling
@@ -71,7 +69,7 @@
         const loadFallback = () => {
           const script = document.createElement('script');
           script.type = 'module';
-          script.src = 'https://esm.sh/@material/web@2.0.0/dist/material-web.js';
+          script.src = 'https://esm.sh/@material/web@2.0.0/all.js';
           script.crossOrigin = 'anonymous';
           script.onerror = () => {
             console.error('All Material Web Components sources failed');
