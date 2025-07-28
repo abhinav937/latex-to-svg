@@ -60,35 +60,215 @@
     }
     </script>
 
-    <!-- Material Web Components JS -->
-    <script type="module" src="https://cdn.jsdelivr.net/npm/@material/web@2.0.0/all.js" crossorigin="anonymous" onerror="console.error('Failed to load Material Web JS')"></script>
-    <!-- Fallback to alternative CDN -->
-    <script type="module">
-      // Fallback with better error handling
-      if (!customElements.get('md-outlined-text-field')) {
-        const loadFallback = () => {
-          const script = document.createElement('script');
-          script.type = 'module';
-          script.src = 'https://esm.sh/@material/web@2.0.0/all.js';
-          script.crossOrigin = 'anonymous';
-          script.onerror = () => {
-            console.error('All Material Web Components sources failed');
-            const errorMessage = document.getElementById('error-message');
-            if (errorMessage) {
-              errorMessage.innerHTML = `<strong>Loading Error:</strong> Material Web Components failed to load. Please check your internet connection and refresh the page.`;
-              errorMessage.style.display = 'block';
+    <!-- TSLib polyfill to prevent module resolution errors -->
+    <script>
+      // Polyfill for tslib to prevent module resolution errors
+      if (typeof window !== 'undefined' && !window.__tslib) {
+        // Add module resolution polyfill
+        if (typeof window !== 'undefined') {
+          window.tslib = window.__tslib;
+        }
+        window.__tslib = {
+          __assign: Object.assign,
+          __rest: function (source, exclude) {
+            var target = {};
+            for (var prop in source) if (Object.prototype.hasOwnProperty.call(source, prop) && exclude.indexOf(prop) < 0) target[prop] = source[prop];
+            return target;
+          },
+          __decorate: function (decorators, target, key, desc) {
+            var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+            if (typeof Reflect !== "undefined" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+            else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+            return c > 3 && r && Object.defineProperty(target, key, r), r;
+          },
+          __metadata: function (metadataKey, metadataValue) {
+            if (typeof Reflect !== "undefined" && typeof Reflect.metadata === "function") return Reflect.metadata(metadataKey, metadataValue);
+          },
+          __awaiter: function (thisArg, _arguments, P, generator) {
+            function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+            return new (P || (P = Promise))(function (resolve, reject) {
+              function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+              function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+              function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+              step((generator = generator.apply(thisArg, _arguments || [])).next());
+            });
+          },
+          __generator: function (thisArg, body) {
+            var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+            return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+            function verb(n) { return function (v) { return step([n, v]); }; }
+            function step(op) {
+              if (f) throw new TypeError("Generator is already executing.");
+              while (_) try {
+                if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+                if (y = 0, t) op = [op[0] & 2, t.value];
+                switch (op[0]) {
+                  case 0: case 1: t = op; break;
+                  case 4: _.label++; return { value: op[1], done: false };
+                  case 5: _.label++; y = op[1]; op = [0]; continue;
+                  case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                  default:
+                    if (!((t = (t = _.trys).length > 0 && t[t.length - 1]) || (op[0] === 6 && _.label < t[0]))) { _.label = t[0]; break; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+                }
+                op = body.call(thisArg, _);
+              } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+              if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
             }
-          };
-          document.head.appendChild(script);
+          },
+          __exportStar: function (m, exports) {
+            for (var p in m) if (p !== "default" && !exports.hasOwnProperty(p)) exports[p] = m[p];
+          },
+          __createBinding: function (o, m, k, k2) {
+            if (k2 === undefined) k2 = k;
+            o[k2] = m[k];
+          },
+          __values: function (o) {
+            var s = typeof Symbol === "function" && Symbol.iterator && o[Symbol.iterator] || o["@@iterator"];
+            if (s) return s.call(o);
+            if (Array.isArray(o)) return function* () {
+              yield* o;
+            }();
+            throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+          },
+          __read: function (o, n) {
+            var m = typeof Symbol === "function" && o[Symbol.iterator] || o["@@iterator"];
+            if (!m) return o;
+            var i = m.call(o), r, ar = [], e;
+            try {
+              while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
+            }
+            catch (error) { e = { error: error }; }
+            finally {
+              try {
+                if (r && !r.done && (m = i["return"])) m.call(i);
+              }
+              finally { if (e) throw e.error; }
+            }
+            return ar;
+          },
+          __spread: function () {
+            for (var ar = [], i = 0; i < arguments.length; i++) ar = ar.concat(__read(arguments[i]));
+            return ar;
+          },
+          __spreadArrays: function () {
+            for (var ar = [], i = 0; i < arguments.length; i++) ar = ar.concat(__read(arguments[i]));
+            return ar;
+          },
+          __await: function (v) {
+            return this instanceof __await ? (this.v = v, this) : new __await(v);
+          },
+          __asyncGenerator: function (thisArg, _arguments, generator) {
+            if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+            var g = generator.apply(thisArg, _arguments || []), i, q = [];
+            return i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i;
+            function verb(n) { if (g[n]) i[n] = function (v) { return new Promise(function (a, b) { q.push([n, v, a, b]) > 1 || resume(n, v); }); }; }
+            function resume(n, v) { try { step(g[n](v)); } catch (e) { settle(q[0][3], e); } }
+            function step(r) { r.value instanceof __await ? Promise.resolve(r.value.v).then(fulfill, reject) : settle(q[0][2], r); }
+            function fulfill(value) { resume("next", value); }
+            function reject(value) { resume("throw", value); }
+            function settle(f, v) { if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]); }
+            step((i.next = function () { return step(g["next"]); })());
+          },
+          __asyncDelegator: function (o) {
+            var i, p;
+            return i = {}, verb("next"), verb("throw", function (e) { throw e; }), verb("return"), i[Symbol.iterator] = function () { return this; }, i;
+            function verb(n, f) { i[n] = o[n] ? function (v) { return (p = !p) ? { value: o[n](v), done: n === "return" } : f ? f(v) : v; } : f; }
+          },
+          __asyncValues: function (o) {
+            if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+            var m = o[Symbol.asyncIterator], i;
+            return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
+            function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
+            function settle(resolve, reject, d, v) { Promise.resolve(v).then(function (v) { resolve({ value: v, done: d }); }, reject); }
+          },
+          __makeTemplateObject: function (cooked, raw) {
+            if (Object.defineProperty) { Object.defineProperty(cooked, "raw", { value: raw }); } else { cooked.raw = raw; }
+            return cooked;
+          },
+          __importStar: function (mod) {
+            if (mod && mod.__esModule) return mod;
+            var result = {};
+            if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+            result["default"] = mod;
+            return result;
+          },
+          __importDefault: function (mod) {
+            return (mod && mod.__esModule) ? mod : { "default": mod };
+          },
+          __classPrivateFieldGet: function (receiver, privateMap) {
+            if (!privateMap.has(receiver)) {
+              throw new TypeError("attempted to get private field on non-instance");
+            }
+            return privateMap.get(receiver);
+          },
+          __classPrivateFieldSet: function (receiver, privateMap, value) {
+            if (!privateMap.has(receiver)) {
+              throw new TypeError("attempted to set private field on non-instance");
+            }
+            privateMap.set(receiver, value);
+            return value;
+          },
+          __classPrivateFieldIn: function (s, a) {
+            if (a.has(s)) throw TypeError("#<private> is not accessible");
+            return a;
+          }
         };
         
-        // Check after 1 second
-        setTimeout(() => {
-          if (!customElements.get('md-outlined-text-field')) {
-            loadFallback();
-          }
-        }, 1000);
+        // Add module resolution polyfill for tslib
+        if (typeof window !== 'undefined') {
+          window.tslib = window.__tslib;
+        }
       }
+    </script>
+    
+    <!-- Material Web Components JS - Using bundled version -->
+    <script type="module">
+      // Module resolution polyfill for tslib
+      if (typeof window !== 'undefined') {
+        // Override import map to handle tslib
+        if (!window.importMapPolyfill) {
+          window.importMapPolyfill = true;
+          const originalImport = window.import;
+          if (originalImport) {
+            window.import = function(specifier, options) {
+              if (specifier === 'tslib') {
+                return Promise.resolve(window.__tslib || window.tslib);
+              }
+              return originalImport.call(this, specifier, options);
+            };
+          }
+        }
+      }
+      
+      // Check if Material Web Components are already loaded from bundle
+      // Wait a bit longer for the bundle to load
+      setTimeout(() => {
+        if (!customElements.get('md-outlined-text-field')) {
+          // Load from CDN as fallback
+          const loadMaterialWeb = () => {
+            const script = document.createElement('script');
+            script.type = 'module';
+            script.src = 'https://cdn.jsdelivr.net/npm/@material/web@2.0.0/all.js';
+            script.crossOrigin = 'anonymous';
+            script.onerror = () => {
+              console.error('Material Web Components failed to load from CDN');
+              const errorMessage = document.getElementById('error-message');
+              if (errorMessage) {
+                errorMessage.innerHTML = `<strong>Loading Error:</strong> Material Web Components failed to load. Please check your internet connection and refresh the page.`;
+                errorMessage.style.display = 'block';
+              }
+            };
+            document.head.appendChild(script);
+          };
+          
+          loadMaterialWeb();
+        }
+      }, 1000);
     </script>
     <!-- Roboto Font -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap">
@@ -99,10 +279,15 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <!-- Styles -->
     <link rel="stylesheet" href="./style.css">
+    <!-- Preload critical resources for autocomplete -->
+    <link rel="preload" href="./latex-commands.json" as="fetch" crossorigin="anonymous">
+    <link rel="preload" href="./bundle.js" as="script" crossorigin="anonymous">
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" as="style">
+    <link rel="preload" href="https://fonts.googleapis.com/icon?family=Material+Icons" as="style">
     <!-- Script -->
     <script defer src="./script.js"></script>
-    <!-- Additional bundled scripts (if needed) -->
-    <script src="./bundle.js"></script>
+    <!-- Material Web Components Bundle -->
+    <script type="module" src="./bundle.js"></script>
 </head>
 <body>
   <header>
@@ -152,7 +337,7 @@
           type="textarea"
           rows="3"
           label="LaTeX Command"
-          placeholder="Enter LaTeX code (e.g., $E = mc^2$ or R_{DS})"
+          placeholder="Enter LaTeX code (e.g., $E = mc^2$ or R_{DS}) - Autocomplete loading..."
           aria-label="LaTeX input"
         ></md-outlined-text-field>
 

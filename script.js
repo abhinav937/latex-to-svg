@@ -25,6 +25,8 @@ class LaTeXAutocomplete {
     this.debounceTimer = null;
     this.commandCache = new Map(); // Cache for command filtering results
     this.lastSearchTerm = ''; // Track the last search term to prevent unnecessary re-renders
+    this.isInitialized = false; // Track initialization status
+    this.initPromise = null; // Promise for initialization
     this.symbolMap = {
       // Greek letters (lowercase)
       '\\alpha': 'α', '\\beta': 'β', '\\gamma': 'γ', '\\delta': 'δ', '\\epsilon': 'ε',
@@ -112,14 +114,121 @@ class LaTeXAutocomplete {
   }
 
   async init() {
-    try {
-      const response = await fetch('./latex-commands.json');
-      const data = await response.json();
-      this.commands = data.commands;
-    } catch (error) {
-      console.error('Failed to load LaTeX commands:', error);
-      this.commands = [];
+    if (this.isInitialized) {
+      return;
     }
+
+    this.initPromise = new Promise(async (resolve) => {
+      try {
+        const response = await fetch('./latex-commands.json');
+        const data = await response.json();
+        this.commands = data.commands;
+        this.isInitialized = true;
+        console.log(`LaTeX autocomplete initialized with ${this.commands.length} commands`);
+        
+        // Preload common images in the background
+        this.preloadCommonImages();
+        
+        resolve();
+      } catch (error) {
+        console.error('Failed to load LaTeX commands:', error);
+        // Fallback to basic commands if JSON fails to load
+        this.commands = [
+          { command: "\\frac", arguments: "{numerator}{denominator}", description: "Fraction", example: "\\frac{1}{2}", category: "math" },
+          { command: "\\sum", arguments: "_{lower}^{upper}", description: "Summation", example: "\\sum_{i=1}^{n}", category: "math" },
+          { command: "\\int", arguments: "_{lower}^{upper}", description: "Integral", example: "\\int_{0}^{\\infty}", category: "math" },
+          { command: "\\sqrt", arguments: "[degree]{radicand}", description: "Square root", example: "\\sqrt{x}", category: "math" },
+          { command: "\\alpha", arguments: "", description: "Greek letter alpha", example: "\\alpha", category: "greek" },
+          { command: "\\beta", arguments: "", description: "Greek letter beta", example: "\\beta", category: "greek" },
+          { command: "\\gamma", arguments: "", description: "Greek letter gamma", example: "\\gamma", category: "greek" },
+          { command: "\\delta", arguments: "", description: "Greek letter delta", example: "\\delta", category: "greek" }
+        ];
+        this.isInitialized = true; // Ensure it's marked as initialized even on error
+        console.log('Using fallback LaTeX commands');
+        
+        // Preload common images in the background
+        this.preloadCommonImages();
+        
+        resolve(); // Resolve anyway to allow other parts to proceed
+      }
+    });
+
+    await this.initPromise;
+  }
+
+  // Force initialization (useful for debugging)
+  async forceInit() {
+    this.isInitialized = false;
+    this.initPromise = null;
+    await this.init();
+  }
+
+  // Check if autocomplete is ready to use
+  isReady() {
+    return this.isInitialized && this.commands.length > 0;
+  }
+
+  // Get loading status for user feedback
+  getLoadingStatus() {
+    if (this.isInitialized) {
+      return {
+        ready: true,
+        commandsLoaded: this.commands.length,
+        message: `Ready with ${this.commands.length} commands`
+      };
+    } else {
+      return {
+        ready: false,
+        commandsLoaded: 0,
+        message: 'Loading commands...'
+      };
+    }
+  }
+
+  // Preload common LaTeX rendering images for better performance
+  async preloadCommonImages() {
+    const commonCommands = [
+      '\\frac{1}{2}',
+      '\\sum_{i=1}^{n}',
+      '\\int_{0}^{1}',
+      '\\sqrt{x}',
+      '\\alpha',
+      '\\beta',
+      '\\gamma',
+      '\\delta'
+    ];
+
+    const preloadPromises = commonCommands.map(async (command) => {
+      try {
+        const encodedLatex = encodeURIComponent(`\\dpi{150} \\color{black} ${command}`);
+        const imgUrl = `https://latex.codecogs.com/svg?${encodedLatex}`;
+        
+        // Create a hidden image element to preload
+        const img = new Image();
+        img.style.display = 'none';
+        document.body.appendChild(img);
+        
+        return new Promise((resolve) => {
+          img.onload = () => {
+            document.body.removeChild(img);
+            resolve();
+          };
+          img.onerror = () => {
+            document.body.removeChild(img);
+            resolve(); // Resolve even on error to not block
+          };
+          img.src = imgUrl;
+        });
+      } catch (error) {
+        console.warn('Failed to preload image for:', command);
+        return Promise.resolve();
+      }
+    });
+
+    // Preload in background without blocking
+    Promise.all(preloadPromises).then(() => {
+      console.log('Common LaTeX images preloaded');
+    });
   }
 
   // Simple Context Detection
@@ -509,7 +618,12 @@ class LaTeXAutocomplete {
     this.input.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
-  showAutocomplete(input, cursorPosition) {
+  async showAutocomplete(input, cursorPosition) {
+    // Wait for initialization to complete
+    if (!this.isInitialized && this.initPromise) {
+      await this.initPromise;
+    }
+    
     if (!this.container) this.createAutocompleteContainer();
 
     const inputRect = input.getBoundingClientRect();
@@ -573,7 +687,14 @@ class LaTeXAutocomplete {
 
     // Show loading state only if not already visible
     if (!this.isVisible) {
-      this.container.innerHTML = '<div style="padding: 16px; text-align: center; color: var(--md-sys-color-on-surface-variant);">Loading suggestions...</div>';
+      this.container.innerHTML = `
+        <div style="padding: 16px; text-align: center; color: var(--md-sys-color-on-surface-variant);">
+          <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+            <div style="width: 16px; height: 16px; border: 2px solid var(--md-sys-color-outline); border-top: 2px solid var(--md-sys-color-primary); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+            Loading suggestions...
+          </div>
+        </div>
+      `;
       this.container.style.display = 'block';
       
       // Trigger animation
@@ -646,16 +767,16 @@ class LaTeXAutocomplete {
         this.input = input;
         
         // Optimized event handling with debouncing
-        const debouncedShowAutocomplete = (e) => {
+        const debouncedShowAutocomplete = async (e) => {
           clearTimeout(this.debounceTimer);
-          this.debounceTimer = setTimeout(() => {
+          this.debounceTimer = setTimeout(async () => {
             const value = e.target.value || '';
             let cursorPosition = value.length;
             const actualInput = input.querySelector('input, textarea');
             if (actualInput && actualInput.selectionStart !== undefined) {
               cursorPosition = actualInput.selectionStart;
             }
-            this.showAutocomplete(input, cursorPosition);
+            await this.showAutocomplete(input, cursorPosition);
           }, 50); // Reduced debounce time for better responsiveness
         };
         
@@ -676,10 +797,10 @@ class LaTeXAutocomplete {
           
           // Check if backslash was typed
           if (e.key === '\\') {
-            setTimeout(() => {
+            setTimeout(async () => {
               const value = input.value || '';
               const cursorPosition = value.length;
-              this.showAutocomplete(input, cursorPosition);
+              await this.showAutocomplete(input, cursorPosition);
             }, 0);
           }
         });
@@ -696,11 +817,11 @@ class LaTeXAutocomplete {
     this.input = actualInput;
     
     // Optimized debounced input event
-    const debouncedInput = (e) => {
+    const debouncedInput = async (e) => {
       clearTimeout(this.debounceTimer);
-      this.debounceTimer = setTimeout(() => {
+      this.debounceTimer = setTimeout(async () => {
         const cursorPosition = e.target.selectionStart;
-        this.showAutocomplete(actualInput, cursorPosition);
+        await this.showAutocomplete(actualInput, cursorPosition);
       }, 50); // Reduced debounce time for better responsiveness
     };
     
@@ -713,9 +834,9 @@ class LaTeXAutocomplete {
       
       // Check if backslash was typed
       if (e.key === '\\') {
-        setTimeout(() => {
+        setTimeout(async () => {
           const cursorPosition = e.target.selectionStart;
-          this.showAutocomplete(actualInput, cursorPosition);
+          await this.showAutocomplete(actualInput, cursorPosition);
         }, 0);
       }
     });
@@ -735,21 +856,21 @@ class LaTeXAutocomplete {
     document.addEventListener('click', handleClickOutside);
 
     // Handle cursor position changes
-    actualInput.addEventListener('click', (e) => {
+    actualInput.addEventListener('click', async (e) => {
       const cursorPosition = e.target.selectionStart;
-      this.showAutocomplete(actualInput, cursorPosition);
+      await this.showAutocomplete(actualInput, cursorPosition);
     });
 
-    actualInput.addEventListener('keyup', (e) => {
+    actualInput.addEventListener('keyup', async (e) => {
       if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Home' || e.key === 'End') {
         const cursorPosition = e.target.selectionStart;
-        this.showAutocomplete(actualInput, cursorPosition);
+        await this.showAutocomplete(actualInput, cursorPosition);
       }
       
       // Also check for backslash on keyup for more reliable detection
       if (e.key === '\\') {
         const cursorPosition = e.target.selectionStart;
-        this.showAutocomplete(actualInput, cursorPosition);
+        await this.showAutocomplete(actualInput, cursorPosition);
       }
     });
   }
@@ -817,10 +938,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isMobileDevice()) {
       console.log('Skipping autocomplete attachment on mobile device');
     } else {
-      // Only attach if autocomplete was successfully initialized (not disabled on mobile)
-      if (latexAutocomplete && latexAutocomplete.commands) {
-        // Wait for Material Web Components to be fully loaded
-        const attachAutocomplete = () => {
+      // Wait for autocomplete to be ready
+      const attachAutocomplete = async () => {
+        // Wait for autocomplete initialization
+        if (latexAutocomplete && !latexAutocomplete.isReady()) {
+          await latexAutocomplete.init();
+        }
+        
+        if (latexAutocomplete && latexAutocomplete.isReady()) {
           // Try multiple ways to find the actual input
           let actualInput = null;
           
@@ -839,17 +964,24 @@ document.addEventListener('DOMContentLoaded', () => {
           
           if (actualInput) {
             latexAutocomplete.attachToInput(latexInput);
-            
+            console.log('Autocomplete attached to input element');
           } else {
             // If we can't find the actual input, work with the Material Web Component directly
             latexAutocomplete.attachToInput(latexInput);
-            
+            console.log('Autocomplete attached to Material Web Component');
           }
-        };
-        
-        // Start trying to attach after a short delay
-        setTimeout(attachAutocomplete, 100);
-      }
+          
+          // Update placeholder to indicate autocomplete is ready
+          latexInput.placeholder = "Enter LaTeX code (e.g., $E = mc^2$ or R_{DS}) - Type \\ for autocomplete";
+          console.log('✅ Autocomplete system fully initialized and ready');
+        } else {
+          console.warn('Autocomplete not ready, retrying...');
+          setTimeout(attachAutocomplete, 200);
+        }
+      };
+      
+      // Start trying to attach after a short delay
+      setTimeout(attachAutocomplete, 100);
     }
   } else {
     console.error('latexInput element not found for autocomplete');
