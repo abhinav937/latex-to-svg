@@ -64,42 +64,32 @@
     <link rel="stylesheet" href="https://unpkg.com/@material/web@2.0.0/dist/material-web.css" onerror="console.error('Failed to load Material Web CSS')">
     <!-- Material Web Components JS -->
     <script type="module" src="https://unpkg.com/@material/web@2.0.0/dist/material-web.js" onerror="console.error('Failed to load Material Web JS')"></script>
-    <!-- Fallback for Material Web Components JS -->
+    <!-- Optimized fallback loading -->
     <script type="module">
+      // Single fallback with better error handling
       if (!customElements.get('md-outlined-text-field')) {
-        const script = document.createElement('script');
-        script.type = 'module';
-        script.src = 'https://cdn.jsdelivr.net/npm/@material/web@2.0.0/dist/material-web.js';
-        script.onerror = () => console.error('Failed to load Material Web JS from fallback CDN');
-        document.head.appendChild(script);
-      }
-    </script>
-    <!-- Additional fallback for older browsers -->
-    <script>
-      // Check if Material Web Components are loaded after a delay
-      setTimeout(() => {
-        if (!customElements.get('md-outlined-text-field')) {
-          console.warn('Material Web Components not loaded, attempting alternative CDN');
+        const loadFallback = () => {
           const script = document.createElement('script');
           script.type = 'module';
-          script.src = 'https://esm.sh/@material/web@2.0.0';
+          script.src = 'https://cdn.jsdelivr.net/npm/@material/web@2.0.0/dist/material-web.js';
+          script.onerror = () => {
+            console.error('All Material Web Components sources failed');
+            const errorMessage = document.getElementById('error-message');
+            if (errorMessage) {
+              errorMessage.innerHTML = `<strong>Loading Error:</strong> Material Web Components failed to load. Please check your internet connection and refresh the page.`;
+              errorMessage.style.display = 'block';
+            }
+          };
           document.head.appendChild(script);
-        }
-      }, 2000);
-    </script>
-    <!-- Final fallback using bundle.js -->
-    <script>
-      // If Material Web Components still not loaded after 3 seconds, show fallback message
-      setTimeout(() => {
-        if (!customElements.get('md-outlined-text-field')) {
-          console.error('Material Web Components failed to load from all sources');
-          const errorMessage = document.getElementById('error-message');
-          if (errorMessage) {
-            errorMessage.innerHTML = `<strong>Loading Error:</strong> Material Web Components failed to load. Please check your internet connection and refresh the page.`;
-            errorMessage.style.display = 'block';
+        };
+        
+        // Check after 1 second instead of 2
+        setTimeout(() => {
+          if (!customElements.get('md-outlined-text-field')) {
+            loadFallback();
           }
-        }
-      }, 3000);
+        }, 1000);
+      }
     </script>
     <!-- Roboto Font -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap">
@@ -163,7 +153,7 @@
           type="textarea"
           rows="3"
           label="LaTeX Command"
-          placeholder="Enter LaTeX command here (e.g., $R_{DS}$ or $$R_{DS}$$ for equations, R\textsubscript{DS} for text)"
+          placeholder="Enter LaTeX code (e.g., $E = mc^2$ or R_{DS})"
           aria-label="LaTeX input"
         ></md-outlined-text-field>
 
@@ -209,6 +199,7 @@
           <ul>
             <li>Enter LaTeX commands (e.g., <code>$E = mc^2$</code> or <code>R\textsubscript{ds,on}</code>)</li>
             <li>Use <code>$...$</code> or <code>$$...$$</code> for math mode (italicized equations) or plain text for upright text</li>
+            <li><strong>💡 Autocomplete:</strong> Type <code>\</code> followed by any letter to see LaTeX command suggestions with arguments</li>
           </ul>
         </div>
       </div>
