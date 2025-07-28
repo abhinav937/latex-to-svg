@@ -61,17 +61,18 @@
     </script>
 
     <!-- Material Web Components CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/@material/web@2.0.0/dist/material-web.css" onerror="console.error('Failed to load Material Web CSS')">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@material/web@2.0.0/dist/material-web.css" crossorigin="anonymous" onerror="console.error('Failed to load Material Web CSS')">
     <!-- Material Web Components JS -->
-    <script type="module" src="https://unpkg.com/@material/web@2.0.0/dist/material-web.js" onerror="console.error('Failed to load Material Web JS')"></script>
-    <!-- Optimized fallback loading -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@material/web@2.0.0/dist/material-web.js" crossorigin="anonymous" onerror="console.error('Failed to load Material Web JS')"></script>
+    <!-- Fallback to alternative CDN -->
     <script type="module">
-      // Single fallback with better error handling
+      // Fallback with better error handling
       if (!customElements.get('md-outlined-text-field')) {
         const loadFallback = () => {
           const script = document.createElement('script');
           script.type = 'module';
-          script.src = 'https://cdn.jsdelivr.net/npm/@material/web@2.0.0/dist/material-web.js';
+          script.src = 'https://esm.sh/@material/web@2.0.0/dist/material-web.js';
+          script.crossOrigin = 'anonymous';
           script.onerror = () => {
             console.error('All Material Web Components sources failed');
             const errorMessage = document.getElementById('error-message');
@@ -83,7 +84,7 @@
           document.head.appendChild(script);
         };
         
-        // Check after 1 second instead of 2
+        // Check after 1 second
         setTimeout(() => {
           if (!customElements.get('md-outlined-text-field')) {
             loadFallback();
