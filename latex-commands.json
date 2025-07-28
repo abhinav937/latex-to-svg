@@ -289,84 +289,84 @@
     },
     {
       "command": "\\sin",
-      "arguments": "",
+      "arguments": "{argument}",
       "description": "Sine function",
       "example": "\\sin(x)",
       "category": "trig"
     },
     {
       "command": "\\cos",
-      "arguments": "",
+      "arguments": "{argument}",
       "description": "Cosine function",
       "example": "\\cos(x)",
       "category": "trig"
     },
     {
       "command": "\\tan",
-      "arguments": "",
+      "arguments": "{argument}",
       "description": "Tangent function",
       "example": "\\tan(x)",
       "category": "trig"
     },
     {
       "command": "\\csc",
-      "arguments": "",
+      "arguments": "{argument}",
       "description": "Cosecant function",
       "example": "\\csc(x)",
       "category": "trig"
     },
     {
       "command": "\\sec",
-      "arguments": "",
+      "arguments": "{argument}",
       "description": "Secant function",
       "example": "\\sec(x)",
       "category": "trig"
     },
     {
       "command": "\\cot",
-      "arguments": "",
+      "arguments": "{argument}",
       "description": "Cotangent function",
       "example": "\\cot(x)",
       "category": "trig"
     },
     {
       "command": "\\arcsin",
-      "arguments": "",
+      "arguments": "{argument}",
       "description": "Arcsine function",
       "example": "\\arcsin(x)",
       "category": "trig"
     },
     {
       "command": "\\arccos",
-      "arguments": "",
+      "arguments": "{argument}",
       "description": "Arccosine function",
       "example": "\\arccos(x)",
       "category": "trig"
     },
     {
       "command": "\\arctan",
-      "arguments": "",
+      "arguments": "{argument}",
       "description": "Arctangent function",
       "example": "\\arctan(x)",
       "category": "trig"
     },
     {
       "command": "\\log",
-      "arguments": "",
+      "arguments": "{argument}",
       "description": "Logarithm",
       "example": "\\log(x)",
       "category": "math"
     },
     {
       "command": "\\ln",
-      "arguments": "",
+      "arguments": "{argument}",
       "description": "Natural logarithm",
       "example": "\\ln(x)",
       "category": "math"
     },
     {
       "command": "\\exp",
-      "arguments": "",
+      "arguments": "{argument}",
       "description": "Exponential function",
       "example": "\\exp(x)",
       "category": "math"
@@ -806,35 +806,35 @@
     },
     {
       "command": "\\matrix",
-      "arguments": "",
+      "arguments": "{content}",
       "description": "Matrix",
       "example": "\\matrix{...}",
       "category": "math"
     },
     {
       "command": "\\pmatrix",
-      "arguments": "",
+      "arguments": "{content}",
       "description": "Parenthesized matrix",
       "example": "\\pmatrix{...}",
       "category": "math"
     },
     {
       "command": "\\bmatrix",
-      "arguments": "",
+      "arguments": "{content}",
       "description": "Bracketed matrix",
       "example": "\\bmatrix{...}",
       "category": "math"
     },
     {
       "command": "\\vmatrix",
-      "arguments": "",
+      "arguments": "{content}",
       "description": "Vertical bar matrix",
       "example": "\\vmatrix{...}",
       "category": "math"
     },
     {
       "command": "\\Vmatrix",
-      "arguments": "",
+      "arguments": "{content}",
       "description": "Double vertical bar matrix",
       "example": "\\Vmatrix{...}",
       "category": "math"
@@ -842,7 +842,7 @@
 
     {
       "command": "\\array",
-      "arguments": "",
+      "arguments": "{content}",
       "description": "Array",
       "example": "\\array{...}",
       "category": "math"
