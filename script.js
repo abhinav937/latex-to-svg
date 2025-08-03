@@ -612,6 +612,42 @@ class LaTeXAutocomplete {
       this.input.value = newValue;
     }
     
+    // Position cursor at the first parameter position
+    const newCursorPosition = startPos + commandToInsert.length;
+    let finalCursorPosition = newCursorPosition;
+    
+    // If the command has arguments, position cursor inside the first set of brackets
+    if (cmd.arguments && cmd.arguments.trim() !== '') {
+      // Find the position of the first opening brace after the command
+      const commandEndPos = startPos + cmd.command.length;
+      const firstBracePos = newValue.indexOf('{', commandEndPos);
+      if (firstBracePos !== -1) {
+        finalCursorPosition = firstBracePos + 1; // Position inside the first bracket
+      }
+    }
+    
+    // Set cursor position
+    if (this.input.tagName === 'MD-OUTLINED-TEXT-FIELD') {
+      // For Material Web Components, we need to find the actual input element
+      const actualInput = this.input.querySelector('input, textarea') || this.input.shadowRoot?.querySelector('input, textarea');
+      if (actualInput) {
+        actualInput.setSelectionRange(finalCursorPosition, finalCursorPosition);
+        actualInput.focus();
+      } else {
+        // Fallback: try to set selection on the Material Web Component itself
+        this.input.focus();
+        // Use setTimeout to ensure the component is ready
+        setTimeout(() => {
+          if (this.input.setSelectionRange) {
+            this.input.setSelectionRange(finalCursorPosition, finalCursorPosition);
+          }
+        }, 0);
+      }
+    } else {
+      this.input.setSelectionRange(finalCursorPosition, finalCursorPosition);
+      this.input.focus();
+    }
+    
     this.hideAutocomplete();
     
     // Trigger input event to update any listeners
@@ -735,7 +771,12 @@ class LaTeXAutocomplete {
     }
     
     this.isVisible = true;
-    this.currentIndex = -1;
+    this.currentIndex = 0; // Select the first item by default
+    
+    // Highlight the first item after rendering
+    setTimeout(() => {
+      this.highlightItem();
+    }, 60);
   }
 
   hideAutocomplete() {
@@ -766,6 +807,17 @@ class LaTeXAutocomplete {
       if (!actualInput) {
         this.input = input;
         
+        // Track selection state to detect text replacement
+        let hadSelection = false;
+        
+        // Listen for selection changes
+        input.addEventListener('select', () => {
+          const actualInput = input.querySelector('input, textarea');
+          if (actualInput) {
+            hadSelection = actualInput.selectionStart !== actualInput.selectionEnd;
+          }
+        });
+        
         // Optimized event handling with debouncing
         const debouncedShowAutocomplete = async (e) => {
           clearTimeout(this.debounceTimer);
@@ -776,6 +828,14 @@ class LaTeXAutocomplete {
             if (actualInput && actualInput.selectionStart !== undefined) {
               cursorPosition = actualInput.selectionStart;
             }
+            
+            // Don't show autocomplete if text was selected and replaced
+            // This prevents interference with normal text selection behavior
+            if (hadSelection && e.inputType === 'insertText') {
+              hadSelection = false; // Reset the flag
+              return; // Skip autocomplete for this input event
+            }
+            
             await this.showAutocomplete(input, cursorPosition);
           }, 50); // Reduced debounce time for better responsiveness
         };
@@ -816,11 +876,27 @@ class LaTeXAutocomplete {
     
     this.input = actualInput;
     
+    // Track selection state to detect text replacement
+    let hadSelection = false;
+    
+    // Listen for selection changes
+    actualInput.addEventListener('select', () => {
+      hadSelection = actualInput.selectionStart !== actualInput.selectionEnd;
+    });
+    
     // Optimized debounced input event
     const debouncedInput = async (e) => {
       clearTimeout(this.debounceTimer);
       this.debounceTimer = setTimeout(async () => {
         const cursorPosition = e.target.selectionStart;
+        
+        // Don't show autocomplete if text was selected and replaced
+        // This prevents interference with normal text selection behavior
+        if (hadSelection && e.inputType === 'insertText') {
+          hadSelection = false; // Reset the flag
+          return; // Skip autocomplete for this input event
+        }
+        
         await this.showAutocomplete(actualInput, cursorPosition);
       }, 50); // Reduced debounce time for better responsiveness
     };
