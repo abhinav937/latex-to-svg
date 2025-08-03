@@ -51,6 +51,217 @@
   --md-sys-color-surface-container-high: #323232;
 }
 
+/* Enhanced History System - Material Design 3 Styling */
+#history-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--md-sys-spacing-3);
+  background: var(--md-sys-color-surface);
+  border-radius: var(--md-sys-shape-card);
+  box-shadow: var(--md-sys-elevation-1);
+  padding: 24px;
+  margin-bottom: 24px;
+  transition: box-shadow 0.2s ease;
+}
+
+#history-section:hover {
+  box-shadow: var(--md-sys-elevation-2);
+}
+
+/* History Header */
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.history-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface);
+  margin: 0;
+  letter-spacing: -0.25px;
+}
+
+.history-actions {
+  display: flex;
+  gap: 8px;
+}
+
+
+
+
+
+/* History List */
+.history-list {
+  max-height: 400px;
+  overflow-y: auto;
+  border-radius: var(--md-sys-shape-corner);
+  background: var(--md-sys-color-surface);
+  border: 1px solid var(--md-sys-color-outline-variant);
+}
+
+/* Enhanced Scrollbar Styling */
+.history-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.history-list::-webkit-scrollbar-track {
+  background: var(--md-sys-color-surface-container);
+  border-radius: 4px;
+}
+
+.history-list::-webkit-scrollbar-thumb {
+  background: var(--md-sys-color-outline);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.history-list::-webkit-scrollbar-thumb:hover {
+  background: var(--md-sys-color-outline-variant);
+}
+
+/* History Items */
+.history-item {
+  padding: 16px;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.history-item:last-child {
+  border-bottom: none;
+}
+
+.history-item:hover {
+  background: var(--md-sys-color-surface-container);
+}
+
+.history-item:active {
+  background: var(--md-sys-color-surface-container-high);
+  transform: scale(0.98);
+}
+
+.history-item-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.history-item-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.history-item-text {
+  font-size: 0.875rem;
+  color: var(--md-sys-color-on-surface);
+  font-weight: 500;
+  line-height: 1.4;
+  margin-bottom: 8px;
+  word-break: break-word;
+  font-family: 'Roboto Mono', 'Courier New', monospace;
+}
+
+.history-item-meta {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.history-time {
+  font-size: 0.75rem;
+  color: var(--md-sys-color-on-surface-variant);
+  font-weight: 500;
+  padding: 2px 6px;
+  border-radius: var(--md-sys-shape-corner-extra-small);
+  background: var(--md-sys-color-surface-container);
+}
+
+
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.empty-text {
+  font-size: 1rem;
+  font-weight: 500;
+  margin: 0 0 8px 0;
+}
+
+.empty-subtext {
+  font-size: 0.875rem;
+  margin: 0;
+  opacity: 0.7;
+}
+
+/* History Actions Bottom */
+.history-actions-bottom {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+/* Mobile Responsive Design */
+@media (max-width: 768px) {
+  .history-item-content {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .history-item-actions {
+    align-self: flex-end;
+  }
+  
+  .history-item-meta {
+    gap: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  #history-section {
+    padding: 16px;
+  }
+  
+  .history-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+}
+
+/* Dark theme adjustments for history */
+[data-theme="dark"] #history-section {
+  background: var(--md-sys-color-surface);
+  border: 1px solid var(--md-sys-color-outline);
+}
+
+[data-theme="dark"] .history-list {
+  background: var(--md-sys-color-surface);
+  border-color: var(--md-sys-color-outline);
+}
+
+[data-theme="dark"] .history-item:hover {
+  background: var(--md-sys-color-surface-container);
+}
+
+[data-theme="dark"] .history-time {
+  background: var(--md-sys-color-surface-container);
+}
+
 /* Optimized base styles */
 html, body {
   width: 100vw;

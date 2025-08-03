@@ -952,6 +952,243 @@ class LaTeXAutocomplete {
   }
 }
 
+// Enhanced History System with Material Design 3
+class HistoryManager {
+  constructor() {
+    this.history = [];
+    this.maxItems = 50; // Increased from 10 to 50
+    this.usageStats = {};
+    this.loadHistory();
+    this.loadUsageStats();
+  }
+
+  // Load history from localStorage
+  loadHistory() {
+    try {
+      const saved = localStorage.getItem('latexHistory');
+      this.history = saved ? JSON.parse(saved) : [];
+      
+      // Migrate old sessionStorage data if exists
+      const sessionHistory = sessionStorage.getItem('latexHistory');
+      if (sessionHistory) {
+        const sessionData = JSON.parse(sessionHistory);
+        // Merge and deduplicate
+        const merged = [...new Set([...sessionData, ...this.history])];
+        this.history = merged.slice(0, this.maxItems);
+        sessionStorage.removeItem('latexHistory');
+        this.saveHistory();
+      }
+    } catch (error) {
+      console.error('Failed to load history:', error);
+      this.history = [];
+    }
+  }
+
+  // Save history to localStorage
+  saveHistory() {
+    try {
+      localStorage.setItem('latexHistory', JSON.stringify(this.history));
+    } catch (error) {
+      console.error('Failed to save history:', error);
+    }
+  }
+
+  // Load usage statistics
+  loadUsageStats() {
+    try {
+      const saved = localStorage.getItem('latexUsageStats');
+      this.usageStats = saved ? JSON.parse(saved) : {};
+    } catch (error) {
+      console.error('Failed to load usage stats:', error);
+      this.usageStats = {};
+    }
+  }
+
+  // Save usage statistics
+  saveUsageStats() {
+    try {
+      localStorage.setItem('latexUsageStats', JSON.stringify(this.usageStats));
+    } catch (error) {
+      console.error('Failed to save usage stats:', error);
+    }
+  }
+
+
+
+  // Add item to history with timestamp and usage tracking
+  addToHistory(latex) {
+    if (!latex || latex.trim() === '') return;
+
+    const now = new Date();
+    const timestamp = now.getTime();
+    
+    // Create history item with metadata
+    const historyItem = {
+      latex: latex.trim(),
+      timestamp: timestamp,
+      usageCount: 1
+    };
+
+    // Remove existing item if it exists
+    this.history = this.history.filter(item => item.latex !== latex);
+
+    // Add to beginning
+    this.history.unshift(historyItem);
+
+    // Limit to max items
+    if (this.history.length > this.maxItems) {
+      this.history = this.history.slice(0, this.maxItems);
+    }
+
+    // Update usage statistics
+    this.updateUsageStats(latex);
+
+    this.saveHistory();
+    this.saveUsageStats();
+    this.updateUI();
+  }
+
+  // Update usage statistics for a LaTeX command
+  updateUsageStats(latex) {
+    if (!this.usageStats[latex]) {
+      this.usageStats[latex] = {
+        count: 0,
+        firstUsed: Date.now(),
+        lastUsed: Date.now()
+      };
+    }
+    
+    this.usageStats[latex].count++;
+    this.usageStats[latex].lastUsed = Date.now();
+  }
+
+
+
+
+
+  // Get filtered history
+  getFilteredHistory() {
+    return [...this.history];
+  }
+
+
+
+  // Format relative time
+  formatRelativeTime(timestamp) {
+    const now = Date.now();
+    const diff = now - timestamp;
+    const seconds = Math.floor(diff / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+
+    if (seconds < 60) return 'Just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    if (days < 7) return `${days}d ago`;
+    
+    return new Date(timestamp).toLocaleDateString();
+  }
+
+
+
+  // Clear history
+  clearHistory() {
+    this.history = [];
+    this.saveHistory();
+    this.updateUI();
+  }
+
+  // Update the UI with Material Design 3 styling
+  updateUI() {
+    const historyContainer = document.getElementById('history-section');
+    if (!historyContainer) return;
+
+    const filteredHistory = this.getFilteredHistory();
+
+    // Create Material Design 3 styled history section
+    historyContainer.innerHTML = `
+      <div class="history-header">
+        <h2 class="history-title">Recent LaTeX Commands</h2>
+      </div>
+
+      <div class="history-list" id="history-list">
+        ${filteredHistory.length === 0 ? `
+          <div class="empty-state">
+            <md-icon class="empty-icon">history</md-icon>
+            <p class="empty-text">No commands found</p>
+            <p class="empty-subtext">Your LaTeX commands will appear here</p>
+          </div>
+        ` : filteredHistory.map(item => this.renderHistoryItem(item)).join('')}
+      </div>
+
+      <div class="history-actions-bottom">
+        <md-outlined-button id="clear-history">Clear History</md-outlined-button>
+      </div>
+    `;
+
+    // Add event listeners
+    this.addHistoryEventListeners();
+  }
+
+  // Render a single history item with Material Design 3 styling
+  renderHistoryItem(item) {
+    const usageCount = this.usageStats[item.latex]?.count || 1;
+    const relativeTime = this.formatRelativeTime(item.timestamp);
+    
+    return `
+      <div class="history-item" data-latex="${item.latex}">
+        <div class="history-item-content">
+          <div class="history-item-main">
+            <div class="history-item-text" title="${item.latex}">
+              ${item.latex.length > 40 ? item.latex.substring(0, 40) + '...' : item.latex}
+            </div>
+            <div class="history-item-meta">
+              <span class="history-time">${relativeTime}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // Add event listeners for history functionality
+  addHistoryEventListeners() {
+    // History item interactions
+    const historyItems = document.querySelectorAll('.history-item');
+    historyItems.forEach(item => {
+      const latex = item.dataset.latex;
+      
+      // Click anywhere on item to use
+      const useFunction = () => {
+        const latexInput = document.getElementById('latex-input');
+        if (latexInput) {
+          latexInput.value = latex;
+          latexInput.dispatchEvent(new Event('input', { bubbles: true }));
+          renderLaTeX();
+        }
+      };
+      
+      // Click anywhere on item
+      item.addEventListener('click', useFunction);
+    });
+
+    // Clear history
+    const clearBtn = document.getElementById('clear-history');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        if (confirm('Are you sure you want to clear all history?')) {
+          this.clearHistory();
+        }
+      });
+    }
+  }
+}
+
+// Initialize the enhanced history manager
+const historyManager = new HistoryManager();
+window.historyManager = historyManager; // Make globally accessible for testing
+
   // Initialize autocomplete
   const latexAutocomplete = new LaTeXAutocomplete();
 
@@ -1013,10 +1250,9 @@ class LaTeXAutocomplete {
   const latexPreview = document.getElementById('latex-preview');
   const errorMessage = document.getElementById('error-message');
   const imageActions = document.getElementById('image-actions');
-  const historyList = document.getElementById('history-list');
   const scaleInput = document.getElementById('scale-input');
 
-  if (!latexInput || !latexImage || !latexPreview || !errorMessage || !imageActions || !historyList || !scaleInput) {
+  if (!latexInput || !latexImage || !latexPreview || !errorMessage || !imageActions || !scaleInput) {
     console.error('One or more DOM elements not found.');
     if (errorMessage) {
       errorMessage.textContent = 'Error: Required DOM elements not found.';
@@ -1081,43 +1317,8 @@ class LaTeXAutocomplete {
   }
 
   let imageUrl = '';
-  let latexHistory = JSON.parse(sessionStorage.getItem('latexHistory')) || [];
 
-  // Generate smart filename function (reusable)
-  function generateFileName(latex) {
-    // Remove math delimiters and special characters
-    let clean = latex.replace(/[$\{\}\\]/g, '').replace(/\s+/g, '_');
-    
-    // Remove common LaTeX commands and keep meaningful content
-    clean = clean.replace(/\\text\{([^}]*)\}/g, '$1');
-    clean = clean.replace(/\\mathbf\{([^}]*)\}/g, '$1');
-    clean = clean.replace(/\\frac\{([^}]*)\}\{([^}]*)\}/g, '$1_over_$2');
-    clean = clean.replace(/\\sum_\{([^}]*)\}\^\{([^}]*)\}/g, 'sum_$1_to_$2');
-    clean = clean.replace(/\\int_\{([^}]*)\}\^\{([^}]*)\}/g, 'int_$1_to_$2');
-    
-    // Remove other LaTeX commands
-    clean = clean.replace(/\\[a-zA-Z]+\{[^}]*\}/g, '');
-    clean = clean.replace(/\\[a-zA-Z]+/g, '');
-    
-    // Clean up multiple underscores and special chars
-    clean = clean.replace(/[^a-zA-Z0-9_]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
-    
-    // Limit length to 20 characters
-    if (clean.length > 20) {
-      clean = clean.substring(0, 20);
-    }
-    
-    // Add improved date and time
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = (now.getMonth() + 1).toString().padStart(2, '0');
-    const day = now.getDate().toString().padStart(2, '0');
-    const hours = now.getHours().toString().padStart(2, '0');
-    const minutes = now.getMinutes().toString().padStart(2, '0');
-    
-    // Format: filename_YYYY-MM-DD_HH-MM.svg
-    return `${clean}_${year}-${month}-${day}_${hours}-${minutes}.svg`;
-  }
+
 
   window.clearInput = function() {
     const latexInput = document.getElementById('latex-input');
@@ -1167,44 +1368,15 @@ class LaTeXAutocomplete {
     }
   });
 
-  function updateHistory() {
-    historyList.innerHTML = '';
-    if (latexHistory.length === 0) {
-      const emptyMessage = document.createElement('div');
-      emptyMessage.style = 'padding: 8px; color: #666; font-style: italic; text-align: center;';
-      emptyMessage.textContent = 'No recent commands';
-      historyList.appendChild(emptyMessage);
-      return;
-    }
-    
-    latexHistory.forEach((latex, index) => {
-      const historyItem = document.createElement('div');
-      historyItem.style = 'padding: 8px; cursor: pointer; border-bottom: 1px solid #eee; transition: background 0.15s;';
-      historyItem.textContent = latex.length > 50 ? latex.substring(0, 50) + '...' : latex;
-      historyItem.title = latex; // Show full text on hover
-      
-      historyItem.addEventListener('click', () => {
-        latexInput.value = latex;
-        renderLaTeX();
-      });
-      
-      historyItem.addEventListener('mouseenter', () => {
-        historyItem.style.background = 'rgba(0, 105, 92, 0.08)';
-      });
-      
-      historyItem.addEventListener('mouseleave', () => {
-        historyItem.style.background = 'transparent';
-      });
-      
-      historyList.appendChild(historyItem);
-    });
+  // Initialize the history manager UI
+  if (historyManager) {
+    historyManager.updateUI();
   }
-  updateHistory();
 
   window.clearHistory = function () {
-    latexHistory = [];
-    sessionStorage.removeItem('latexHistory');
-    updateHistory();
+    if (historyManager) {
+      historyManager.clearHistory();
+    }
   };
 
   window.setExample = function (latex) {
@@ -1288,12 +1460,9 @@ class LaTeXAutocomplete {
           latexImage.style.transform = `scale(${scale})`;
           hideError();
           
-          // Optimize history update
-          if (!latexHistory.includes(latex)) {
-            latexHistory.unshift(latex);
-            if (latexHistory.length > 10) latexHistory.pop();
-            sessionStorage.setItem('latexHistory', JSON.stringify(latexHistory));
-            updateHistory();
+          // Add to enhanced history system
+          if (historyManager) {
+            historyManager.addToHistory(latex);
           }
           resolve();
         };
@@ -1408,99 +1577,9 @@ class LaTeXAutocomplete {
     }
   };
 
-  window.downloadImage = async function () {
-    if (!imageUrl) {
-      showError('Nothing to download.');
-      return;
-    }
 
-    try {
-      const response = await fetch(imageUrl);
-      if (!response.ok) {
-        throw new Error('Failed to fetch SVG');
-      }
-      let svgText = await response.text();
 
-      const parser = new DOMParser();
-      const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
-      const svgElement = svgDoc.querySelector('svg');
-      if (!svgElement) {
-        throw new Error('Invalid SVG content');
-      }
 
-      const ptSize = parseFloat(scaleInput.value);
-      const scale = ptSize / BASE_PT_SIZE;
-      const group = svgDoc.createElementNS('http://www.w3.org/2000/svg', 'g');
-      group.setAttribute('transform', `scale(${scale})`);
-
-      while (svgElement.firstChild) {
-        group.appendChild(svgElement.firstChild);
-      }
-      svgElement.appendChild(group);
-
-      let width = svgElement.getAttribute('width') || svgElement.getAttribute('viewBox')?.split(' ')[2] || 100;
-      let height = svgElement.getAttribute('height') || svgElement.getAttribute('viewBox')?.split(' ')[3] || 100;
-      width = parseFloat(width) * scale;
-      height = parseFloat(height) * scale;
-      svgElement.setAttribute('width', `${width}`);
-      svgElement.setAttribute('height', `${height}`);
-
-      const viewBox = svgElement.getAttribute('viewBox');
-      if (viewBox) {
-        const [minX, minY, vbWidth, vbHeight] = viewBox.split(' ').map(Number);
-        svgElement.setAttribute('viewBox', `${minX} ${minY} ${vbWidth} ${vbHeight}`);
-      }
-
-      const serializer = new XMLSerializer();
-      svgText = serializer.serializeToString(svgDoc);
-
-      const fileName = generateFileName(latexInput.value.trim());
-      const blob = new Blob([svgText], { type: 'image/svg+xml' });
-      const blobUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(blobUrl);
-    } catch (err) {
-      console.error('Download error:', err);
-      showError('Download failed: ' + err.message);
-    }
-  };
-
-  window.shareImage = async function () {
-    if (!imageUrl) {
-      showError('Nothing to share.');
-      return;
-    }
-
-    if (!navigator.share) {
-      showError('Sharing not supported in this browser.');
-      return;
-    }
-
-    try {
-      const response = await fetch(imageUrl);
-      if (!response.ok) {
-        throw new Error('Failed to fetch SVG');
-      }
-      const blob = await response.blob();
-      
-      const fileName = generateFileName(latexInput.value.trim());
-      
-      const file = new File([blob], fileName, { type: 'image/svg+xml' });
-      await navigator.share({
-        files: [file],
-        title: 'LaTeX Rendered Image',
-        text: 'Check out this LaTeX rendered image!'
-      });
-    } catch (err) {
-      console.error('Share error:', err);
-      showError('Failed to share image: ' + err.message);
-    }
-  };
 
 
 
@@ -1626,6 +1705,83 @@ class LaTeXAutocomplete {
       setTimeout(() => btn.classList.remove('copied'), 2000);
     } catch (err) {
       showError('Failed to copy SVG code: ' + err.message);
+    }
+  };
+
+  // Generate smart filename function (reusable)
+  function generateFileName(latex) {
+    // Remove math delimiters and special characters
+    let clean = latex.replace(/[$\{\}\\]/g, '').replace(/\s+/g, '_');
+    
+    // Remove common LaTeX commands and keep meaningful content
+    clean = clean.replace(/\\text\{([^}]*)\}/g, '$1');
+    clean = clean.replace(/\\mathbf\{([^}]*)\}/g, '$1');
+    clean = clean.replace(/\\frac\{([^}]*)\}\{([^}]*)\}/g, '$1_over_$2');
+    clean = clean.replace(/\\sum_\{([^}]*)\}\^\{([^}]*)\}/g, 'sum_$1_to_$2');
+    clean = clean.replace(/\\int_\{([^}]*)\}\^\{([^}]*)\}/g, 'int_$1_to_$2');
+    
+    // Remove other LaTeX commands
+    clean = clean.replace(/\\[a-zA-Z]+\{[^}]*\}/g, '');
+    clean = clean.replace(/\\[a-zA-Z]+/g, '');
+    
+    // Clean up multiple underscores and special chars
+    clean = clean.replace(/[^a-zA-Z0-9_]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+    
+    // Limit length to 20 characters
+    if (clean.length > 20) {
+      clean = clean.substring(0, 20);
+    }
+    
+    // Add improved date and time
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = (now.getMonth() + 1).toString().padStart(2, '0');
+    const day = now.getDate().toString().padStart(2, '0');
+    const hours = now.getHours().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    
+    // Format: filename_YYYY-MM-DD_HH-MM.svg
+    return `${clean}_${year}-${month}-${day}_${hours}-${minutes}.svg`;
+  }
+
+  // Download SVG function
+  window.downloadSVG = async function() {
+    const latexImage = document.getElementById('latex-image');
+    const imageUrl = latexImage.src;
+    const latexInput = document.getElementById('latex-input');
+    
+    if (!imageUrl || imageUrl === '') {
+      showError('No image to download');
+      return;
+    }
+    
+    try {
+      const response = await fetch(imageUrl);
+      if (!response.ok) throw new Error('Failed to fetch SVG');
+      const svgText = await response.text();
+      
+      // Create a blob and download link
+      const blob = new Blob([svgText], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      
+      // Create download link with smart filename
+      const downloadLink = document.createElement('a');
+      downloadLink.href = url;
+      const latex = latexInput.value.trim();
+      downloadLink.download = generateFileName(latex);
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+      
+      // Clean up the URL object
+      URL.revokeObjectURL(url);
+      
+      // Show success feedback
+      const btn = document.getElementById('download-button');
+      btn.classList.add('copied');
+      setTimeout(() => btn.classList.remove('copied'), 2000);
+    } catch (err) {
+      showError('Failed to download SVG: ' + err.message);
     }
   };
 

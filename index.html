@@ -375,11 +375,8 @@
             <md-icon-button onclick="copyImage()" id="copy-button" data-tooltip="Copy SVG to clipboard">
               <md-icon>content_copy</md-icon>
             </md-icon-button>
-            <md-icon-button onclick="downloadImage()" id="download-button" data-tooltip="Download SVG">
+            <md-icon-button onclick="downloadSVG()" id="download-button" data-tooltip="Download SVG file">
               <md-icon>download</md-icon>
-            </md-icon-button>
-            <md-icon-button onclick="shareImage()" id="share-button" data-tooltip="Share SVG">
-              <md-icon>ios_share</md-icon>
             </md-icon-button>
             <md-icon-button onclick="copySVGCode()" id="copy-svgcode-button" data-tooltip="Copy SVG code" style="display:none;">
               <md-icon>code</md-icon>
@@ -406,11 +403,7 @@
           <p>Generate high-quality SVG images from LaTeX code, no installation required. A web-based alternative to TexText for Inkscape.</p>
         </div>
         <div id="history-section">
-          <h2 style="font-size: 18px; font-weight: 500; color: var(--md-sys-color-on-surface);">Recent LaTeX Commands</h2>
-          <div id="history-list" style="max-height: 300px; overflow-y: auto;"></div>
-          <div class="action-buttons" style="margin-top: 8px;">
-            <md-outlined-button onclick="clearHistory()" id="clear-history">Clear History</md-outlined-button>
-          </div>
+          <!-- Enhanced history system will be populated by JavaScript -->
         </div>
       </aside>
     </div>
