@@ -332,14 +332,24 @@
           ></md-assist-chip>
         </div>
 
-        <md-outlined-text-field
-          id="latex-input"
-          type="textarea"
-          rows="3"
-          label="LaTeX Command"
-          placeholder="Enter LaTeX code (e.g., $E = mc^2$ or R_{DS}) - Autocomplete loading..."
-          aria-label="LaTeX input"
-        ></md-outlined-text-field>
+        <div class="latex-input-container">
+          <md-outlined-text-field
+            id="latex-input"
+            type="textarea"
+            rows="3"
+            label="LaTeX Command"
+            placeholder="Enter LaTeX code (e.g., $E = mc^2$ or R_{DS}) - Autocomplete loading..."
+            aria-label="LaTeX input"
+          ></md-outlined-text-field>
+          <md-icon-button 
+            id="ai-fix-button" 
+            onclick="fixLatexWithAI()" 
+            data-tooltip="Fix LaTeX syntax errors with AI"
+            style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); z-index: 10;"
+          >
+            <md-icon>auto_fix_high</md-icon>
+          </md-icon-button>
+        </div>
 
         <div class="action-buttons">
           <div style="position: relative; display: inline-block;">
@@ -384,6 +394,7 @@
             <li>Enter LaTeX commands (e.g., <code>$E = mc^2$</code> or <code>R\textsubscript{ds,on}</code>)</li>
             <li>Use <code>$...$</code> or <code>$$...$$</code> for math mode (italicized equations) or plain text for upright text</li>
             <li><strong>💡 Autocomplete:</strong> Type <code>\</code> followed by any letter to see LaTeX command suggestions with arguments</li>
+            <li><strong>🤖 AI Fix:</strong> Click the AI button (🔧) to automatically fix LaTeX syntax errors</li>
           </ul>
         </div>
       </div>

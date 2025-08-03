@@ -221,6 +221,12 @@ nav a:hover, nav md-filled-button:hover, nav md-outlined-button:hover {
   justify-content: center;
 }
 
+.latex-input-container {
+  position: relative;
+  width: 100%;
+  margin-bottom: 16px;
+}
+
 md-outlined-text-field#latex-input {
   width: 100%;
   --md-outlined-text-field-container-shape: var(--md-sys-shape-card);
@@ -230,6 +236,39 @@ md-outlined-text-field#latex-input {
   min-height: 80px;
   font-size: 0.95rem;
   margin-bottom: 0;
+}
+
+#ai-fix-button {
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+#ai-fix-button:hover {
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  transform: translateY(-50%) scale(1.1);
+}
+
+#ai-fix-button:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+#ai-fix-button.loading {
+  animation: spin 1s linear infinite;
+}
+
+/* Mobile responsiveness for AI button */
+@media (max-width: 600px) {
+  #ai-fix-button {
+    right: 4px;
+    transform: translateY(-50%) scale(0.9);
+  }
+  
+  #ai-fix-button:hover {
+    transform: translateY(-50%) scale(1.0);
+  }
 }
 
 .action-buttons {

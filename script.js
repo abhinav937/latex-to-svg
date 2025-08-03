@@ -1623,6 +1623,157 @@ document.addEventListener('DOMContentLoaded', () => {
     copySVGCodeButton.style.display = 'none';
   };
 
+  // AI Fix LaTeX functionality
+  async function fixLatexWithAI(latexCode) {
+    try {
+      const response = await fetch('https://ai-reply-bot.vercel.app/api/latex', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Session-ID': 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+        },
+        body: JSON.stringify({
+          latex: latexCode,
+          explain: false
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        // Handle specific error codes from your API
+        if (errorData.errorCode === 'RATE_LIMIT_EXCEEDED') {
+          throw new Error('Rate limit exceeded. Please wait before trying again.');
+        } else if (errorData.errorCode === 'LATEX_EMPTY_INPUT') {
+          throw new Error('Please provide valid LaTeX code to correct.');
+        } else if (errorData.errorCode === 'LATEX_TOO_LONG') {
+          throw new Error(`LaTeX code is too long. Maximum length is ${errorData.maxLength || 8000} characters.`);
+        } else if (errorData.errorCode === 'AUTHENTICATION_ERROR') {
+          throw new Error('Authentication failed. Please contact support.');
+        } else if (errorData.errorCode === 'AI_SERVICE_UNAVAILABLE') {
+          throw new Error('AI service is temporarily unavailable. Please try again later.');
+        } else {
+          throw new Error(errorData.message || errorData.error || 'Failed to correct LaTeX');
+        }
+      }
+
+      const data = await response.json();
+      
+      // Validate the response structure
+      if (!data.correctedLatex) {
+        throw new Error('Invalid response from AI service');
+      }
+      
+      return data.correctedLatex;
+    } catch (error) {
+      console.error('AI Fix Error:', error);
+      throw error;
+    }
+  }
+
+  window.fixLatexWithAI = async function() {
+    const aiButton = document.getElementById('ai-fix-button');
+    const latexInput = document.getElementById('latex-input');
+    const originalLatex = latexInput.value.trim();
+    
+    if (!originalLatex) {
+      showError('Input Error', 'Please enter LaTeX code to fix.');
+      return;
+    }
+    
+    // Prevent multiple simultaneous requests
+    if (aiButton.hasAttribute('disabled')) {
+      return;
+    }
+    
+    // Show loading state
+    aiButton.classList.add('loading');
+    const originalIcon = aiButton.querySelector('md-icon').innerHTML;
+    aiButton.querySelector('md-icon').innerHTML = 'auto_fix_high';
+    aiButton.setAttribute('disabled', 'true');
+    
+    // Add loading animation
+    aiButton.style.animation = 'spin 1s linear infinite';
+    
+    // Show loading message in the input field
+    const originalPlaceholder = latexInput.placeholder;
+    latexInput.placeholder = '🤖 AI is analyzing and fixing your LaTeX syntax...';
+    latexInput.setAttribute('disabled', 'true');
+    
+    try {
+      // Call the AI API using the new function
+      const correctedLatex = await fixLatexWithAI(originalLatex);
+      
+      if (correctedLatex) {
+        // Update the input with corrected LaTeX
+        latexInput.value = correctedLatex;
+        
+        // Trigger input event to update any listeners
+        latexInput.dispatchEvent(new Event('input', { bubbles: true }));
+        
+        // No success messages - just update the LaTeX directly
+        
+        // Auto-render the corrected LaTeX
+        setTimeout(() => {
+          renderLaTeX();
+        }, 500);
+      } else {
+        throw new Error('No corrected LaTeX received from AI');
+      }
+      
+    } catch (error) {
+      console.error('AI Fix Error:', error);
+      
+      // Provide more specific error messages based on API response
+      let errorMessage = 'Failed to fix LaTeX code. Please try again.';
+      if (error.message.includes('fetch') || error.message.includes('Network')) {
+        errorMessage = 'Network error. Please check your internet connection and try again.';
+      } else if (error.message.includes('Rate limit exceeded')) {
+        errorMessage = 'Rate limit exceeded. Please wait a moment and try again.';
+      } else if (error.message.includes('Authentication failed')) {
+        errorMessage = 'Authentication error. Please contact support.';
+      } else if (error.message.includes('Please provide valid LaTeX code')) {
+        errorMessage = 'Please enter valid LaTeX code to fix.';
+      } else if (error.message.includes('LaTeX code is too long')) {
+        errorMessage = 'LaTeX code is too long. Please shorten it and try again.';
+      } else if (error.message.includes('AI service is temporarily unavailable')) {
+        errorMessage = 'AI service is temporarily unavailable. Please try again later.';
+      } else if (error.message.includes('Invalid response from AI service')) {
+        errorMessage = 'AI service returned an invalid response. Please try again.';
+      }
+      
+      // Show error in the input field
+      latexInput.placeholder = `❌ ${errorMessage}`;
+      
+      // Restore original placeholder after 5 seconds for errors
+      setTimeout(() => {
+        latexInput.placeholder = originalPlaceholder;
+      }, 5000);
+    } finally {
+      // Restore button state
+      aiButton.classList.remove('loading');
+      aiButton.querySelector('md-icon').innerHTML = originalIcon;
+      aiButton.removeAttribute('disabled');
+      aiButton.style.animation = '';
+      
+      // Re-enable the input field
+      latexInput.removeAttribute('disabled');
+    }
+  };
+  
+  // Helper function to show success messages
+  function showSuccess(type, message) {
+    const errorMessage = document.getElementById('error-message');
+    errorMessage.innerHTML = `<strong style="color: #4caf50;">${type}:</strong> ${message}`;
+    errorMessage.style.display = 'block';
+    errorMessage.style.color = '#4caf50';
+    
+    // Auto-hide success message after 3 seconds
+    setTimeout(() => {
+      errorMessage.style.display = 'none';
+      errorMessage.style.color = '';
+    }, 3000);
+  }
+
   // Blur all [data-tooltip] elements after click to prevent tooltip reappearing
   document.querySelectorAll('[data-tooltip]').forEach(el => {
     el.addEventListener('click', function() {
