@@ -952,10 +952,27 @@ class LaTeXAutocomplete {
   }
 }
 
-// Initialize autocomplete
-const latexAutocomplete = new LaTeXAutocomplete();
+  // Initialize autocomplete
+  const latexAutocomplete = new LaTeXAutocomplete();
 
-document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', () => {
+    // Check AI service availability on page load (removed to prevent reload icon)
+    // updateAIButtonState();
+    
+    // Re-check AI service availability every 5 minutes (removed to prevent periodic reload icons)
+    // setInterval(updateAIButtonState, 5 * 60 * 1000);
+    
+    // Add click handler for retry when AI service is unavailable
+    const aiButton = document.getElementById('ai-fix-button');
+    if (aiButton) {
+      aiButton.addEventListener('click', async (e) => {
+        if (aiButton.hasAttribute('disabled') && !aiButton.classList.contains('loading')) {
+          e.preventDefault();
+          e.stopPropagation();
+          await updateAIButtonState();
+        }
+      });
+    }
   // More robust Material Web Components loading check
   function checkMaterialComponents() {
     const requiredComponents = [
@@ -1624,6 +1641,68 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // AI Fix LaTeX functionality
+  async function checkAIServiceAvailability() {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      
+      const response = await fetch('https://ai-reply-bot.vercel.app/api/latex', {
+        method: 'HEAD', // Use HEAD request to check availability without sending data
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Session-ID': 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+        },
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      return response.ok;
+    } catch (error) {
+      console.error('AI service availability check failed:', error);
+      return false;
+    }
+  }
+
+  async function updateAIButtonState() {
+    const aiButton = document.getElementById('ai-fix-button');
+    if (!aiButton) return;
+
+    // Show checking state (without sync icon to prevent reload appearance)
+    const originalIcon = aiButton.querySelector('md-icon').innerHTML;
+    // aiButton.querySelector('md-icon').innerHTML = 'sync'; // Removed to prevent reload icon
+    aiButton.classList.add('checking');
+    aiButton.setAttribute('data-tooltip', 'Checking AI service availability...');
+
+    try {
+      const isAvailable = await checkAIServiceAvailability();
+      
+      if (isAvailable) {
+        aiButton.removeAttribute('disabled');
+        aiButton.removeAttribute('data-tooltip');
+        aiButton.setAttribute('data-tooltip', 'Fix LaTeX syntax errors with AI');
+        aiButton.style.opacity = '1';
+        aiButton.style.cursor = 'pointer';
+        aiButton.querySelector('md-icon').innerHTML = 'auto_fix_high';
+      } else {
+        aiButton.setAttribute('disabled', 'true');
+        aiButton.setAttribute('data-tooltip', 'AI service is currently unavailable');
+        aiButton.style.opacity = '0.5';
+        aiButton.style.cursor = 'not-allowed';
+        aiButton.querySelector('md-icon').innerHTML = 'error_outline';
+      }
+    } catch (error) {
+      console.error('Failed to check AI service availability:', error);
+      // Default to disabled state if check fails
+      aiButton.setAttribute('disabled', 'true');
+      aiButton.setAttribute('data-tooltip', 'AI service is currently unavailable');
+      aiButton.style.opacity = '0.5';
+      aiButton.style.cursor = 'not-allowed';
+      aiButton.querySelector('md-icon').innerHTML = 'error_outline';
+    } finally {
+      aiButton.classList.remove('checking');
+    }
+  }
+
   async function fixLatexWithAI(latexCode) {
     try {
       const response = await fetch('https://ai-reply-bot.vercel.app/api/latex', {
@@ -1680,8 +1759,14 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     
-    // Prevent multiple simultaneous requests
+    // Check if AI service is available before proceeding
     if (aiButton.hasAttribute('disabled')) {
+      showError('Service Unavailable', 'AI service is currently unavailable. Please try again later.');
+      return;
+    }
+    
+    // Prevent multiple simultaneous requests
+    if (aiButton.classList.contains('loading')) {
       return;
     }
     
@@ -1691,8 +1776,8 @@ document.addEventListener('DOMContentLoaded', () => {
     aiButton.querySelector('md-icon').innerHTML = 'auto_fix_high';
     aiButton.setAttribute('disabled', 'true');
     
-    // Add loading animation
-    aiButton.style.animation = 'spin 1s linear infinite';
+    // Add AI analyzing animation to text field
+    latexInput.classList.add('ai-analyzing');
     
     // Show loading message in the input field
     const originalPlaceholder = latexInput.placeholder;
@@ -1752,8 +1837,12 @@ document.addEventListener('DOMContentLoaded', () => {
       // Restore button state
       aiButton.classList.remove('loading');
       aiButton.querySelector('md-icon').innerHTML = originalIcon;
-      aiButton.removeAttribute('disabled');
-      aiButton.style.animation = '';
+      
+      // Re-enable the button only if AI service is available
+      updateAIButtonState();
+      
+      // Remove AI analyzing animation from text field
+      latexInput.classList.remove('ai-analyzing');
       
       // Re-enable the input field
       latexInput.removeAttribute('disabled');

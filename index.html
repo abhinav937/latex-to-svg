@@ -351,6 +351,8 @@
           </md-icon-button>
         </div>
 
+        <div id="error-message"></div>
+
         <div class="action-buttons">
           <div style="position: relative; display: inline-block;">
             <md-filled-button onclick="renderLaTeX()" id="render-button">Render</md-filled-button>
@@ -385,16 +387,14 @@
           </div>
         </div>
 
-        <div id="error-message"></div>
-
         <!-- Move instructions to the bottom -->
         <div class="instructions">
           <p><strong>How to use:</strong></p>
           <ul>
             <li>Enter LaTeX commands (e.g., <code>$E = mc^2$</code> or <code>R\textsubscript{ds,on}</code>)</li>
             <li>Use <code>$...$</code> or <code>$$...$$</code> for math mode (italicized equations) or plain text for upright text</li>
-            <li><strong>💡 Autocomplete:</strong> Type <code>\</code> followed by any letter to see LaTeX command suggestions with arguments</li>
-            <li><strong>🤖 AI Fix:</strong> Click the AI button (🔧) to automatically fix LaTeX syntax errors</li>
+            <li><strong>Autocomplete:</strong> Type <code>\</code> followed by any letter to see LaTeX command suggestions with arguments</li>
+            <li><strong>AI Fix:</strong> Click the AI button to automatically fix LaTeX syntax errors</li>
           </ul>
         </div>
       </div>

@@ -224,7 +224,7 @@ nav a:hover, nav md-filled-button:hover, nav md-outlined-button:hover {
 .latex-input-container {
   position: relative;
   width: 100%;
-  margin-bottom: 16px;
+  margin-bottom: 4px;
 }
 
 md-outlined-text-field#latex-input {
@@ -236,6 +236,14 @@ md-outlined-text-field#latex-input {
   min-height: 80px;
   font-size: 0.95rem;
   margin-bottom: 0;
+  transition: all 0.3s ease;
+}
+
+md-outlined-text-field#latex-input.ai-analyzing {
+  animation: textBoxAnalyzing 2s ease-in-out infinite;
+  --md-outlined-text-field-outline-color: var(--md-sys-color-primary) !important;
+  --md-outlined-text-field-outline-width: 2px !important;
+  --md-outlined-text-field-outline-opacity: 1 !important;
 }
 
 #ai-fix-button {
@@ -245,18 +253,46 @@ md-outlined-text-field#latex-input {
   transition: all 0.2s ease;
 }
 
-#ai-fix-button:hover {
+#ai-fix-button:hover:not([disabled]) {
   background: var(--md-sys-color-primary);
   color: var(--md-sys-color-on-primary);
   transform: translateY(-50%) scale(1.1);
 }
 
-#ai-fix-button:active {
+#ai-fix-button:active:not([disabled]) {
   transform: translateY(-50%) scale(0.95);
 }
 
+#ai-fix-button[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--md-sys-color-surface-container);
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+#ai-fix-button[disabled]:hover {
+  transform: none;
+  background: var(--md-sys-color-surface-container);
+  color: var(--md-sys-color-on-surface-variant);
+}
+
 #ai-fix-button.loading {
-  animation: spin 1s linear infinite;
+  animation: aiPulse 2s ease-in-out infinite;
+  box-shadow: 0 0 0 0 rgba(0, 105, 92, 0.7);
+}
+
+#ai-fix-button.loading md-icon {
+  animation: aiIconGlow 2s ease-in-out infinite;
+}
+
+#ai-fix-button.checking md-icon {
+  animation: none !important;
+  transform: none !important;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* Mobile responsiveness for AI button */
@@ -413,21 +449,61 @@ md-icon-button#copy-button.copied .material-symbols-outlined {
   }
 }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+@keyframes aiPulse {
+  0% {
+    transform: translateY(-50%) scale(1);
+    box-shadow: 0 0 0 0 rgba(0, 105, 92, 0.7);
+  }
+  50% {
+    transform: translateY(-50%) scale(1.05);
+    box-shadow: 0 0 0 8px rgba(0, 105, 92, 0);
+  }
+  100% {
+    transform: translateY(-50%) scale(1);
+    box-shadow: 0 0 0 0 rgba(0, 105, 92, 0);
+  }
+}
+
+@keyframes aiIconGlow {
+  0% {
+    filter: brightness(1);
+    color: var(--md-sys-color-on-primary-container);
+  }
+  50% {
+    filter: brightness(1.3);
+    color: var(--md-sys-color-on-primary);
+  }
+  100% {
+    filter: brightness(1);
+    color: var(--md-sys-color-on-primary-container);
+  }
+}
+
+@keyframes textBoxAnalyzing {
+  0% {
+    --md-outlined-text-field-outline-color: var(--md-sys-color-primary);
+    --md-outlined-text-field-outline-opacity: 0.8;
+  }
+  50% {
+    --md-outlined-text-field-outline-color: var(--md-sys-color-secondary);
+    --md-outlined-text-field-outline-opacity: 1;
+  }
+  100% {
+    --md-outlined-text-field-outline-color: var(--md-sys-color-primary);
+    --md-outlined-text-field-outline-opacity: 0.8;
+  }
 }
 
 #error-message {
   color: #d32f2f;
-  margin-top: 12px;
+  margin-top: 4px;
   font-size: 14px;
   display: none;
   text-align: center;
   background: rgba(211, 47, 47, 0.08);
   border: 1px solid rgba(211, 47, 47, 0.2);
   border-radius: 8px;
-  padding: 12px 16px;
+  padding: 8px 16px;
   font-weight: 500;
 }
 
@@ -543,36 +619,7 @@ md-filled-button, md-outlined-button {
   }
 }
 
-@media (max-width: 700px) {
-  /* Render button full width, Clear button smaller and below, both centered */
-  .action-buttons {
-    flex-direction: column !important;
-    align-items: center !important;
-    gap: 8px !important;
-  }
-  .action-buttons > div:first-child {
-    width: 100% !important;
-    display: flex !important;
-    justify-content: center !important;
-    margin-bottom: 0 !important;
-  }
-  #render-button {
-    width: 100vw !important;
-    max-width: 340px !important;
-    min-width: 180px !important;
-    margin: 0 auto !important;
-    display: flex !important;
-    justify-content: center !important;
-  }
-  #clear-button {
-    width: 120px !important;
-    min-width: 80px !important;
-    max-width: 160px !important;
-    margin: 0 auto 0 auto !important;
-    display: flex !important;
-    justify-content: center !important;
-  }
-}
+
 
 @media (max-width: 600px) {
   .container, .content-wrapper, .main-content, .sidebar, #latex-preview {
@@ -622,7 +669,6 @@ md-filled-button, md-outlined-button {
     min-width: 0;
     max-width: 100vw;
   }
-  /* Ensure proper text wrapping on mobile */
   .button-group {
     gap: 8px;
     justify-content: center;
@@ -631,31 +677,15 @@ md-filled-button, md-outlined-button {
     max-width: calc(50% - 4px);
     font-size: 13px;
   }
-  /* Ensure error messages are properly displayed on mobile */
   #error-message {
     margin: 8px 4px;
     font-size: 13px;
     padding: 8px 12px;
   }
-  /* Ensure scale control is properly aligned on mobile */
   .scale-control {
     margin-left: 0 !important;
     justify-content: flex-start;
   }
-  /* Ensure button container has proper positioning on mobile */
-  .action-buttons > div:first-child {
-    position: relative;
-    display: inline-block;
-    width: 100%;
-  }
-  /* Ensure scale control is properly aligned on mobile */
-  .scale-control {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 8px;
-  }
-  /* Render button full width, Clear button smaller and below, both centered */
   .action-buttons {
     flex-direction: column !important;
     align-items: center !important;
@@ -756,19 +786,6 @@ md-filled-button:active::after, md-outlined-button:active::after, md-icon-button
     margin-left: 0 !important;
     justify-content: flex-start;
   }
-  /* Ensure button container has proper positioning on mobile */
-  .action-buttons > div:first-child {
-    position: relative;
-    display: inline-block;
-    width: 100%;
-  }
-  /* Ensure scale control is properly aligned on mobile */
-  .scale-control {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 8px;
-  }
 }
 
 .scale-label {
@@ -813,28 +830,6 @@ md-filled-button:active::after, md-outlined-button:active::after, md-icon-button
 }
 @media (max-width: 900px) {
   #latex-preview {
-    width: 100% !important;
-    max-width: none !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    border-radius: var(--md-sys-shape-button) !important;
-  }
-}
-@media (max-width: 700px) {
-  #latex-preview {
-    width: 100% !important;
-    max-width: none !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    border-radius: var(--md-sys-shape-button) !important;
-  }
-}
-@media (max-width: 600px) {
-  #latex-preview {
-    width: 100% !important;
-    max-width: none !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
     border-radius: var(--md-sys-shape-button) !important;
   }
 }
