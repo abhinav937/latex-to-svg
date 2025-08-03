@@ -439,6 +439,7 @@ footer {
           <h2>Features</h2>
           <ul>
             <li><strong>Instant LaTeX to SVG</strong>: Enter LaTeX code and render SVG images instantly</li>
+            <li><strong>AI LaTeX Fix</strong>: Click the AI button to automatically correct syntax errors</li>
             <li><strong>Smart Autocomplete</strong>: Type <code>\\</code> to see LaTeX command suggestions with live previews</li>
             <li><strong>Scale Control</strong>: Adjust the point size (8-72pt) for your output image</li>
             <li><strong>Copy, Download, Share</strong>: Copy SVG to clipboard, download, or share directly</li>
@@ -461,6 +462,7 @@ footer {
                 <li><strong>Text Mode</strong>: Regular text is automatically wrapped in <code>\\text{}</code></li>
               </ul>
             </li>
+            <li><strong>AI Fix (New!)</strong>: Click the AI button to automatically correct LaTeX syntax errors</li>
             <li><strong>Use Autocomplete</strong>: Type <code>\\</code> to see command suggestions
               <ul>
                 <li>Navigate with arrow keys or mouse</li>
@@ -480,6 +482,14 @@ footer {
             </li>
             <li><strong>View History</strong>: Your last 10 LaTeX commands are shown in the sidebar. Click any to reuse.</li>
           </ol>
+          
+          <h3>AI LaTeX Fix Feature</h3>
+          <ul>
+            <li><strong>Automatic Correction</strong>: Click the AI button (auto_fix_high icon) to fix syntax errors</li>
+            <li><strong>Smart Analysis</strong>: AI analyzes your LaTeX and provides corrected version</li>
+            <li><strong>Auto-Render</strong>: Corrected LaTeX is automatically rendered after fixing</li>
+            <li><strong>Error Handling</strong>: Clear error messages for rate limits, invalid input, etc.</li>
+          </ul>
           
           <h3>LaTeX Examples</h3>
           
@@ -575,6 +585,7 @@ $\\mathrm{roman text}$</code></pre>
             <li><strong>Network errors</strong>: "Unable to fetch rendered image"</li>
             <li><strong>Invalid LaTeX</strong>: "The equation could not be rendered"</li>
             <li><strong>Missing components</strong>: "Some components failed to load"</li>
+            <li><strong>AI service errors</strong>: Rate limits, authentication, and service availability</li>
           </ul>
           
           <hr>
@@ -595,6 +606,7 @@ $\\mathrm{roman text}$</code></pre>
             <li><strong>Scale wisely</strong>: Higher point sizes create larger files</li>
             <li><strong>Use autocomplete</strong>: Faster than typing full commands</li>
             <li><strong>Check history</strong>: Reuse recent commands instead of retyping</li>
+            <li><strong>Use AI fix</strong>: Let AI correct syntax errors automatically</li>
           </ul>
           
           <h3>File Management</h3>
@@ -634,7 +646,7 @@ $\\mathrm{roman text}$</code></pre>
             <li><strong>LaTeX Reference</strong>: See the <a href="https://editor.codecogs.com/docs">CodeCogs Equation Editor Documentation</a> for complete LaTeX syntax</li>
             <li><strong>Examples</strong>: Click the example chips on the main page for sample code</li>
             <li><strong>Contact</strong>: For issues with this tool, contact <a href="https://x.com/abhinav_937">Abhinav Chinnusamy</a></li>
-            <li><strong>GitHub</strong>: View the source code and contribute at <a href="https://github.com/abhinavchinnusamy/latex-to-svg">GitHub Repository</a></li>
+            <li><strong>GitHub</strong>: View the source code and contribute at <a href="https://github.com/abhinav937/latex-to-svg">GitHub Repository</a></li>
           </ul>
           
           <hr>
@@ -675,8 +687,17 @@ $\\mathrm{roman text}$</code></pre>
           <p><strong>Image not rendering?</strong></p>
           <ul>
             <li>Check your LaTeX syntax</li>
+            <li>Use the AI fix button to correct errors</li>
             <li>Ensure you have an internet connection</li>
             <li>Try a simpler example first</li>
+          </ul>
+          
+          <p><strong>AI fix not working?</strong></p>
+          <ul>
+            <li>Check if you have valid LaTeX code to fix</li>
+            <li>Ensure you have an internet connection</li>
+            <li>Try again later if rate limited</li>
+            <li>Check browser console for error details</li>
           </ul>
           
           <p><strong>Copy/Download not working?</strong></p>
@@ -699,6 +720,7 @@ $\\mathrm{roman text}$</code></pre>
             <li>Check the browser console for error messages</li>
             <li>Try refreshing the page</li>
             <li>Test with a simple example like <code>$x^2$</code></li>
+            <li>Use the AI fix feature for syntax errors</li>
             <li>Contact the developer with specific error details</li>
           </ol>
         `;

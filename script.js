@@ -1937,7 +1937,6 @@ window.historyManager = historyManager; // Make globally accessible for testing
     
     // Show loading message in the input field
     const originalPlaceholder = latexInput.placeholder;
-    latexInput.placeholder = '🤖 AI is analyzing and fixing your LaTeX syntax...';
     latexInput.setAttribute('disabled', 'true');
     
     try {
