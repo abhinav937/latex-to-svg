@@ -12,9 +12,9 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LaTeX Image Generator</title>
-    <meta name="description" content="A web-based LaTeX to SVG generator, an easy alternative to TexText for creating mathematical equations.">
-    <meta name="keywords" content="LaTeX, SVG, TexText, Inkscape, math equations, image generator">
+    <title>LaTeX to SVG Generator - Free Online LaTeX to SVG Converter</title>
+    <meta name="description" content="Free online LaTeX to SVG generator and converter. Convert LaTeX equations to high-quality SVG images instantly. Best LaTeX to SVG converter alternative to TexText for Inkscape.">
+    <meta name="keywords" content="LaTeX to SVG generator, LaTeX to SVG converter, LaTeX SVG converter, LaTeX equation generator, LaTeX to SVG online, free LaTeX converter, LaTeX to SVG tool, LaTeX to SVG generator online, LaTeX to SVG converter tool, LaTeX to SVG converter free, LaTeX to SVG generator tool, LaTeX to SVG converter online, LaTeX to SVG generator free, LaTeX to SVG converter generator, LaTeX to SVG generator converter, LaTeX, SVG, TexText, Inkscape, math equations, image generator">
     <meta name="author" content="Abhinav Chinnusamy">
     <meta name="robots" content="index, follow, max-image-preview:large">
 
@@ -26,18 +26,18 @@
     <link rel="manifest" href="./site.webmanifest">
 
     <!-- Open Graph Meta Tags -->
-    <meta property="og:title" content="LaTeX Image Generator">
-    <meta property="og:description" content="Generate high-quality SVG images from LaTeX code, no installation required. A web-based alternative to TexText for Inkscape.">
+    <meta property="og:title" content="LaTeX to SVG Generator - Free Online LaTeX to SVG Converter">
+    <meta property="og:description" content="Free online LaTeX to SVG generator and converter. Convert LaTeX equations to high-quality SVG images instantly. Best LaTeX to SVG converter alternative to TexText for Inkscape.">
     <meta property="og:image" content="https://latex.cabhinav.com/assets/icons/share_preview.png">
-    <meta property="og:image:alt" content="LaTeX Image Generator Preview">
+    <meta property="og:image:alt" content="LaTeX to SVG Generator Preview">
     <meta property="og:url" content="https://latex.cabhinav.com">
     <meta property="og:type" content="website">
-    <meta property="og:site_name" content="LaTeX Image Generator">
+    <meta property="og:site_name" content="LaTeX to SVG Generator">
 
     <!-- Twitter Card Meta Tags -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="LaTeX Image Generator">
-    <meta name="twitter:description" content="Generate high-quality SVG images from LaTeX code, no installation required. A web-based alternative to TexText for Inkscape.">
+    <meta name="twitter:title" content="LaTeX to SVG Generator - Free Online LaTeX to SVG Converter">
+    <meta name="twitter:description" content="Free online LaTeX to SVG generator and converter. Convert LaTeX equations to high-quality SVG images instantly. Best LaTeX to SVG converter alternative to TexText for Inkscape.">
     <meta name="twitter:image" content="https://latex.cabhinav.com/assets/icons/share_preview.png">
     <meta name="twitter:creator" content="@abhinav_937">
     <meta name="twitter:site" content="@abhinav_937">
@@ -47,9 +47,9 @@
     {
       "@context": "https://schema.org",
       "@type": "WebApplication",
-      "name": "LaTeX Image Generator",
+      "name": "LaTeX to SVG Generator",
       "url": "https://latex.cabhinav.com",
-      "description": "A web-based tool to generate SVG images from LaTeX code, serving as an alternative to TexText for Inkscape.",
+      "description": "Free online LaTeX to SVG generator and converter. Convert LaTeX equations to high-quality SVG images instantly. Best LaTeX to SVG converter alternative to TexText for Inkscape.",
       "creator": {
         "@type": "Person",
         "name": "Abhinav Chinnusamy",
@@ -291,7 +291,7 @@
 </head>
 <body>
   <header>
-    <div class="logo">LaTeX Image Generator</div>
+    <div class="logo">LaTeX to SVG Generator</div>
     <nav>
       <a href="./help/">Help</a>
     </nav>
@@ -337,9 +337,9 @@
             id="latex-input"
             type="textarea"
             rows="3"
-            label="LaTeX Command"
-            placeholder="Enter LaTeX code (e.g., $E = mc^2$ or R_{DS}) - Autocomplete loading..."
-            aria-label="LaTeX input"
+            label="LaTeX to SVG Converter Input"
+            placeholder="Enter LaTeX code to convert to SVG (e.g., $E = mc^2$ or R_{DS}) - Autocomplete loading..."
+            aria-label="LaTeX to SVG converter input"
           ></md-outlined-text-field>
           <md-icon-button 
             id="ai-fix-button" 
@@ -353,7 +353,7 @@
 
         <div class="action-buttons">
           <div style="position: relative; display: inline-block;">
-            <md-filled-button onclick="renderLaTeX()" id="render-button">Render</md-filled-button>
+            <md-filled-button onclick="renderLaTeX()" id="render-button">Convert to SVG</md-filled-button>
             <md-circular-progress id="render-spinner" indeterminate style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) scale(0.75); display: none;"></md-circular-progress>
           </div>
           <md-assist-chip onclick="clearInput()" id="clear-button">
@@ -368,7 +368,7 @@
         </div>
 
         <div id="latex-preview">
-          <img id="latex-image" src="" alt="LaTeX Rendered Image" style="display: none;">
+          <img id="latex-image" src="" alt="LaTeX to SVG Converter Output" style="display: none;">
           <div id="image-actions" style="display: none;">
             <md-icon-button onclick="copyImage()" id="copy-button" data-tooltip="Copy SVG to clipboard">
               <md-icon>content_copy</md-icon>
@@ -384,9 +384,9 @@
 
         <!-- Move instructions to the bottom -->
         <div class="instructions">
-          <p><strong>How to use:</strong></p>
+          <p><strong>How to use this LaTeX to SVG converter:</strong></p>
           <ul>
-            <li>Enter LaTeX commands (e.g., <code>$E = mc^2$</code> or <code>R\textsubscript{ds,on}</code>)</li>
+            <li>Enter LaTeX commands to convert to SVG (e.g., <code>$E = mc^2$</code> or <code>R\textsubscript{ds,on}</code>)</li>
             <li>Use <code>$...$</code> or <code>$$...$$</code> for math mode (italicized equations) or plain text for upright text</li>
             <li><strong>Autocomplete:</strong> Type <code>\</code> followed by any letter to see LaTeX command suggestions with arguments</li>
             <li><strong>AI Fix:</strong> Click the AI button to automatically fix LaTeX syntax errors</li>
@@ -396,16 +396,47 @@
 
       <!-- Sidebar for History -->
       <aside class="sidebar">
-        <div class="hero">
-          <h1>Create LaTeX Equations Instantly</h1>
-          <p>Generate high-quality SVG images from LaTeX code, no installation required. A web-based alternative to TexText for Inkscape.</p>
-        </div>
         <div id="history-section">
           <!-- Enhanced history system will be populated by JavaScript -->
         </div>
       </aside>
     </div>
   </div>
+
+  <!-- SEO Content Section -->
+  <section class="seo-content">
+    <div class="container">
+      <h2>Convert LaTeX Equations to SVG Images</h2>
+      <p>Transform your mathematical equations into crisp, scalable SVG graphics with our web-based tool. No downloads or installations needed - everything runs right in your browser.</p>
+      
+      <h3>What Makes This Tool Special</h3>
+      <ul>
+        <li><strong>Completely free</strong> - No registration or hidden costs</li>
+        <li><strong>Works instantly</strong> - No software to install or configure</li>
+        <li><strong>High-quality output</strong> - Perfect for web and print use</li>
+        <li><strong>Smart autocomplete</strong> - Get LaTeX command suggestions as you type</li>
+        <li><strong>AI assistance</strong> - Automatically fix syntax errors</li>
+      </ul>
+
+      <h3>Key Features</h3>
+      <p>This LaTeX to SVG converter includes:</p>
+      <ul>
+        <li>Real-time equation rendering</li>
+        <li>Scalable vector graphics output</li>
+        <li>Intelligent command suggestions</li>
+        <li>One-click SVG downloads</li>
+        <li>Copy SVG code to clipboard</li>
+        <li>Customizable font sizes</li>
+        <li>Dark and light theme support</li>
+      </ul>
+
+      <h3>Great Alternative to TexText</h3>
+      <p>If you're familiar with TexText for Inkscape, you'll find this tool provides similar functionality but works entirely in your browser. It's perfect for academic papers, presentations, technical documentation, and web graphics.</p>
+
+      <h3>Getting Started</h3>
+      <p>Just type your LaTeX code in the input field above and click "Convert to SVG". The tool will instantly generate a high-quality SVG image that you can download or copy for use in your projects. Try the example buttons to see it in action!</p>
+    </div>
+  </section>
 
   <footer>
     <div class="footer-content">

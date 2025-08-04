@@ -1581,3 +1581,122 @@ md-filled-button:active::after, md-outlined-button:active::after, md-icon-button
     max-width: 40px;
   }
 }
+
+/* SEO Content Section */
+.seo-content {
+  background: var(--md-sys-color-surface-container);
+  padding: 3rem 0;
+  margin-top: 2rem;
+  border-top: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.seo-content .container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.seo-content h2 {
+  color: var(--md-sys-color-on-surface);
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  line-height: 1.3;
+}
+
+.seo-content h3 {
+  color: var(--md-sys-color-on-surface);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 1.5rem 0 0.75rem 0;
+  line-height: 1.4;
+}
+
+.seo-content p {
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 1rem;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.seo-content ul {
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 1rem;
+  line-height: 1.6;
+  margin: 1rem 0;
+  padding-left: 1.5rem;
+}
+
+.seo-content li {
+  margin-bottom: 0.5rem;
+}
+
+.seo-content strong {
+  color: var(--md-sys-color-on-surface);
+  font-weight: 600;
+}
+
+/* Dark theme for SEO content */
+[data-theme="dark"] .seo-content {
+  background: var(--md-sys-color-surface-container-low);
+  border-top-color: var(--md-sys-color-outline);
+}
+
+[data-theme="dark"] .seo-content h2,
+[data-theme="dark"] .seo-content h3 {
+  color: var(--md-sys-color-on-surface);
+}
+
+[data-theme="dark"] .seo-content p,
+[data-theme="dark"] .seo-content ul {
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+[data-theme="dark"] .seo-content strong {
+  color: var(--md-sys-color-on-surface);
+}
+
+/* Mobile responsive SEO content */
+@media (max-width: 768px) {
+  .seo-content {
+    padding: 2rem 0;
+    margin-top: 1.5rem;
+  }
+  
+  .seo-content h2 {
+    font-size: 1.5rem;
+  }
+  
+  .seo-content h3 {
+    font-size: 1.125rem;
+  }
+  
+  .seo-content p,
+  .seo-content ul {
+    font-size: 0.9375rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .seo-content {
+    padding: 1.5rem 0;
+    margin-top: 1rem;
+  }
+  
+  .seo-content .container {
+    padding: 0 0.75rem;
+  }
+  
+  .seo-content h2 {
+    font-size: 1.375rem;
+  }
+  
+  .seo-content h3 {
+    font-size: 1rem;
+  }
+  
+  .seo-content p,
+  .seo-content ul {
+    font-size: 0.875rem;
+  }
+}
