@@ -34,6 +34,10 @@ window.addEventListener('appinstalled', (evt) => {
   hideInstallPrompt();
 });
 
+// Enhanced install prompt with auto-dismiss and keyboard accessibility
+let installPromptTimeout;
+let installPromptProgress;
+
 // Show install prompt
 function showInstallPrompt() {
   // Create install prompt if it doesn't exist
@@ -41,23 +45,108 @@ function showInstallPrompt() {
     const installPrompt = document.createElement('div');
     installPrompt.id = 'install-prompt';
     installPrompt.className = 'install-prompt';
+    installPrompt.setAttribute('role', 'dialog');
+    installPrompt.setAttribute('aria-labelledby', 'install-title');
+    installPrompt.setAttribute('aria-describedby', 'install-description');
     installPrompt.innerHTML = `
       <div class="install-content">
-        <span class="material-symbols-outlined">download</span>
-        <span>Install LaTeX Generator as an app for easy access!</span>
-        <button onclick="installPWA()" class="install-btn">Install</button>
-        <button onclick="hideInstallPrompt()" class="dismiss-btn">×</button>
+        <span class="material-symbols-outlined install-icon">download</span>
+        <div class="install-text">
+          <div id="install-title" class="install-title">Install LaTeX Generator</div>
+          <div id="install-description" class="install-description">Get quick access to the LaTeX converter with native app experience.</div>
+          <div class="install-actions">
+            <button onclick="installPWA()" class="install-btn" aria-label="Install LaTeX Generator app">
+              <span class="material-symbols-outlined" style="font-size: 16px; margin-right: 4px;">download</span>
+              Install App
+            </button>
+            <button onclick="hideInstallPrompt()" class="dismiss-btn" aria-label="Dismiss install prompt">×</button>
+          </div>
+        </div>
+        <md-circular-progress id="install-progress" value="0" style="margin-left: 8px;"></md-circular-progress>
       </div>
     `;
     document.body.appendChild(installPrompt);
+    
+    // Start auto-dismiss timer (10 seconds)
+    startAutoDismissTimer();
+    
+    // Add keyboard event listeners
+    document.addEventListener('keydown', handleInstallPromptKeydown);
+    
+    // Focus the install button for accessibility
+    setTimeout(() => {
+      const installBtn = installPrompt.querySelector('.install-btn');
+      if (installBtn) {
+        installBtn.focus();
+      }
+    }, 100);
   }
 }
 
-// Hide install prompt
+// Handle keyboard events for install prompt
+function handleInstallPromptKeydown(e) {
+  if (e.key === 'Escape') {
+    hideInstallPrompt();
+  } else if (e.key === 'Enter' && document.activeElement.classList.contains('install-btn')) {
+    installPWA();
+  }
+}
+
+// Start auto-dismiss timer
+function startAutoDismissTimer() {
+  const prompt = document.getElementById('install-prompt');
+  if (!prompt) return;
+  
+  const progressBar = prompt.querySelector('#install-progress');
+  console.log('Progress bar found:', progressBar);
+  console.log('Progress bar tag name:', progressBar?.tagName);
+  console.log('Progress bar class name:', progressBar?.className);
+  
+  let timeLeft = 10000; // 10 seconds
+  const interval = 100; // Update every 100ms
+  
+  installPromptTimeout = setInterval(() => {
+    timeLeft -= interval;
+    const progress = ((10000 - timeLeft) / 10000);
+    
+    if (progressBar) {
+      progressBar.value = progress; // Material Design progress uses 0-1 range
+      console.log('Updated progress to:', progress);
+    }
+    
+    if (timeLeft <= 0) {
+      hideInstallPrompt();
+    }
+  }, interval);
+}
+
+// Clear auto-dismiss timer
+function clearAutoDismissTimer() {
+  if (installPromptTimeout) {
+    clearInterval(installPromptTimeout);
+    installPromptTimeout = null;
+  }
+}
+
+// Hide install prompt with animation
 function hideInstallPrompt() {
   const prompt = document.getElementById('install-prompt');
   if (prompt) {
-    prompt.remove();
+    // Clear auto-dismiss timer
+    clearAutoDismissTimer();
+    
+    // Remove keyboard event listeners
+    document.removeEventListener('keydown', handleInstallPromptKeydown);
+    
+    // Add dismissing animation
+    prompt.classList.add('dismissing');
+    
+    // Remove element after animation completes
+    setTimeout(() => {
+      if (prompt.parentNode) {
+        prompt.remove();
+      }
+    }, 300);
   }
 }
 
@@ -69,6 +158,143 @@ async function installPWA() {
     console.log(`User response to the install prompt: ${outcome}`);
     deferredPrompt = null;
     hideInstallPrompt();
+    
+    // Track installation success
+    if (outcome === 'accepted') {
+      console.log('PWA installed successfully');
+      handlePWAInstallation();
+      // You could send analytics here
+    }
+  }
+}
+
+// Handle PWA shortcuts and deep links
+function handlePWAShortcuts() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const action = urlParams.get('action');
+  const latex = urlParams.get('latex');
+  
+  if (action) {
+    switch (action) {
+      case 'new':
+        // Clear the input and focus on it
+        const input = document.getElementById('latex-input');
+        if (input) {
+          input.value = '';
+          input.focus();
+        }
+        break;
+      case 'history':
+        // Show history section
+        const historySection = document.getElementById('history-section');
+        if (historySection) {
+          historySection.scrollIntoView({ behavior: 'smooth' });
+        }
+        break;
+    }
+  }
+  
+  if (latex) {
+    // Pre-fill the input with LaTeX from URL
+    const input = document.getElementById('latex-input');
+    if (input) {
+      input.value = decodeURIComponent(latex);
+      // Trigger render
+      setTimeout(() => {
+        const renderButton = document.getElementById('render-button');
+        if (renderButton) {
+          renderButton.click();
+        }
+      }, 100);
+    }
+  }
+}
+
+// Handle file drops for PWA file handlers
+function setupFileHandlers() {
+  document.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  });
+  
+  document.addEventListener('drop', (e) => {
+    e.preventDefault();
+    const files = Array.from(e.dataTransfer.files);
+    
+    files.forEach(file => {
+      if (file.type === 'text/plain' || file.name.endsWith('.tex') || file.name.endsWith('.latex')) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const input = document.getElementById('latex-input');
+          if (input) {
+            input.value = e.target.result;
+            // Trigger render
+            setTimeout(() => {
+              const renderButton = document.getElementById('render-button');
+              if (renderButton) {
+                renderButton.click();
+              }
+            }, 100);
+          }
+        };
+        reader.readAsText(file);
+      }
+    });
+  });
+}
+
+
+
+// Request notification permission for PWA
+async function requestNotificationPermission() {
+  if ('Notification' in window && 'serviceWorker' in navigator) {
+    const permission = await Notification.requestPermission();
+    if (permission === 'granted') {
+      console.log('Notification permission granted');
+      // You could register for push notifications here
+    }
+  }
+}
+
+// Handle PWA installation success
+function handlePWAInstallation() {
+  // Show success message
+  const successMessage = document.createElement('div');
+  successMessage.className = 'pwa-install-success';
+  successMessage.innerHTML = `
+    <div class="success-content">
+      <span class="material-symbols-outlined">check_circle</span>
+      <span>LaTeX Generator installed successfully!</span>
+    </div>
+  `;
+  document.body.appendChild(successMessage);
+  
+  // Remove after 3 seconds
+  setTimeout(() => {
+    if (successMessage.parentNode) {
+      successMessage.remove();
+    }
+  }, 3000);
+}
+
+// Check if app is running in standalone mode (installed)
+function isStandalone() {
+  return window.matchMedia('(display-mode: standalone)').matches ||
+         window.navigator.standalone === true;
+}
+
+// Add standalone-specific features
+function handleStandaloneMode() {
+  if (isStandalone()) {
+    // Add standalone-specific UI elements
+    document.body.classList.add('standalone-mode');
+    
+    // Add a subtle indicator that the app is installed
+    const standaloneIndicator = document.createElement('div');
+    standaloneIndicator.className = 'standalone-indicator';
+    standaloneIndicator.innerHTML = '<span class="material-symbols-outlined">download_done</span>';
+    standaloneIndicator.title = 'App is installed';
+    document.body.appendChild(standaloneIndicator);
   }
 }
 
@@ -2185,6 +2411,14 @@ window.historyManager = historyManager; // Make globally accessible for testing
 
   // Start connectivity monitoring
   startConnectivityMonitoring();
+  
+  // Initialize PWA features
+  handlePWAShortcuts();
+  setupFileHandlers();
+  handleStandaloneMode();
+  
+  // Request notification permission (optional)
+  // requestNotificationPermission();
   
   // Perform initial connectivity check
   setTimeout(async () => {

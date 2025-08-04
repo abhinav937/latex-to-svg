@@ -1,7 +1,7 @@
 {
   "name": "LaTeX Image Generator",
   "short_name": "LaTeX Generator",
-  "description": "Generate high-quality SVG images from LaTeX code, no installation required. A web-based alternative to TexText for Inkscape.",
+  "description": "Generate high-quality SVG images from LaTeX code. Perfect for creating mathematical equations, scientific diagrams, and technical illustrations. No installation required.",
   "start_url": "./",
   "scope": "./",
   "icons": [
@@ -28,11 +28,111 @@
       "purpose": "any maskable"
     }
   ],
-  "theme_color": "#1976d2",
+  "screenshots": [
+    {
+      "src": "./assets/icons/share_preview.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "LaTeX Generator - Create beautiful mathematical equations and diagrams"
+    },
+    {
+      "src": "./assets/icons/share_preview.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "LaTeX Generator - Mobile-friendly interface for creating SVG equations"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "New Equation",
+      "short_name": "New",
+      "description": "Start creating a new LaTeX equation",
+      "url": "./?action=new",
+      "icons": [
+        {
+          "src": "./assets/icons/favicon-32x32.png",
+          "sizes": "32x32"
+        }
+      ]
+    },
+    {
+      "name": "Recent Equations",
+      "short_name": "Recent",
+      "description": "View your recently created equations",
+      "url": "./?action=history",
+      "icons": [
+        {
+          "src": "./assets/icons/favicon-32x32.png",
+          "sizes": "32x32"
+        }
+      ]
+    },
+    {
+      "name": "Help & Examples",
+      "short_name": "Help",
+      "description": "View LaTeX examples and help documentation",
+      "url": "./help/",
+      "icons": [
+        {
+          "src": "./assets/icons/favicon-32x32.png",
+          "sizes": "32x32"
+        }
+      ]
+    }
+  ],
+  "theme_color": "#00695c",
   "background_color": "#ffffff",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "categories": ["productivity", "utilities"],
+  "categories": [
+    "productivity",
+    "utilities",
+    "education",
+    "science",
+    "mathematics"
+  ],
   "lang": "en",
-  "dir": "ltr"
+  "dir": "ltr",
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
+  "protocol_handlers": [
+    {
+      "protocol": "web+latex",
+      "url": "./?latex=%s"
+    }
+  ],
+  "file_handlers": [
+    {
+      "action": "./",
+      "accept": {
+        "text/plain": [".tex", ".latex"]
+      }
+    }
+  ],
+  "share_target": {
+    "action": "./",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "iarc_rating_id": "",
+  "scope_extensions": [],
+  "handle_links": "preferred",
+  "capture_links": "new-client",
+  "permissions": [
+    "clipboard-write",
+    "clipboard-read"
+  ]
 }

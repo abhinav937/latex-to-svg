@@ -36,17 +36,22 @@
   --md-sys-spacing-1: 4px;
   --md-sys-spacing-2: 8px;
   --md-sys-spacing-3: 12px;
+  
+  /* Circular progress custom styling */
+  --md-circular-progress-size: 32px;
+  --md-circular-progress-active-indicator-width: 20;
+  --md-sys-color-primary: #006A6A;
 }
 
-/* PWA Install Prompt Styles */
+/* Enhanced PWA Install Prompt Styles */
 .install-prompt {
   position: fixed;
   bottom: 20px;
   right: 20px;
-  background: var(--md-sys-color-surface);
-  border: 1px solid var(--md-sys-color-outline);
-  border-radius: var(--md-sys-shape-card);
-  box-shadow: var(--md-sys-elevation-2);
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   padding: 16px;
   max-width: 320px;
   z-index: 1000;
@@ -58,24 +63,61 @@
   align-items: center;
   gap: 12px;
   font-size: 0.875rem;
-  color: var(--md-sys-color-on-surface);
+  color: #333;
 }
 
-.install-content span:first-of-type {
-  color: var(--md-sys-color-primary);
+.install-icon {
+  color: #00695c;
   font-size: 1.25rem;
+  flex-shrink: 0;
 }
 
-.install-content span:nth-of-type(2) {
+.install-text {
   flex: 1;
+  min-width: 0;
+}
+
+.install-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 4px 0;
+  line-height: 1.3;
+}
+
+.install-description {
+  font-size: 0.75rem;
+  color: #666;
+  margin: 0 0 8px 0;
   line-height: 1.4;
 }
 
+/* Material Design circular progress styling for install prompt */
+.install-prompt md-circular-progress {
+  flex-shrink: 0;
+}
+
+/* Fallback circular progress styling */
+.fallback-progress {
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.install-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
 .install-btn {
-  background: var(--md-sys-color-primary);
-  color: var(--md-sys-color-on-primary);
+  background: #00695c;
+  color: white;
   border: none;
-  border-radius: var(--md-sys-shape-button);
+  border-radius: 8px;
   padding: 8px 16px;
   font-size: 0.875rem;
   font-weight: 500;
@@ -84,13 +126,18 @@
 }
 
 .install-btn:hover {
-  background: var(--md-sys-color-secondary);
+  background: #00897b;
+}
+
+.install-btn:focus {
+  outline: 2px solid #00695c;
+  outline-offset: 2px;
 }
 
 .dismiss-btn {
   background: transparent;
   border: none;
-  color: var(--md-sys-color-on-surface-variant);
+  color: #666;
   font-size: 1.25rem;
   cursor: pointer;
   padding: 4px;
@@ -99,8 +146,15 @@
 }
 
 .dismiss-btn:hover {
-  background: var(--md-sys-color-outline-variant);
+  background: #f0f0f0;
 }
+
+.dismiss-btn:focus {
+  outline: 2px solid #00695c;
+  outline-offset: 2px;
+}
+
+
 
 @keyframes slideInUp {
   from {
@@ -111,6 +165,21 @@
     transform: translateY(0);
     opacity: 1;
   }
+}
+
+@keyframes slideOutDown {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+.install-prompt.dismissing {
+  animation: slideOutDown 0.3s ease-in forwards;
 }
 
 @media (max-width: 600px) {
@@ -408,6 +477,74 @@
 
 [data-theme="dark"] .empty-state:hover .empty-icon {
   background: var(--md-sys-color-surface-container-high);
+}
+
+
+
+/* PWA Installation Success Message */
+.pwa-install-success {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #4caf50;
+  border: 1px solid #45a049;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 12px 16px;
+  z-index: 1001;
+  animation: slideInRight 0.3s ease-out;
+  color: white;
+  font-weight: 500;
+}
+
+.success-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+}
+
+.success-content .material-symbols-outlined {
+  font-size: 1.125rem;
+  color: white;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Standalone Mode Styles */
+.standalone-mode {
+  /* Add any standalone-specific styles */
+}
+
+.standalone-indicator {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  background: #00695c;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 16px;
+  z-index: 999;
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+}
+
+.standalone-indicator:hover {
+  opacity: 1;
 }
 
 /* Optimized base styles */
