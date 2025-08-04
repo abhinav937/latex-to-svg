@@ -48,46 +48,10 @@
   ],
   "shortcuts": [
     {
-      "name": "New Equation",
-      "short_name": "New",
-      "description": "Start creating a new LaTeX equation with instant preview",
-      "url": "./?action=new",
-      "icons": [
-        {
-          "src": "./assets/icons/favicon-32x32.png",
-          "sizes": "32x32"
-        }
-      ]
-    },
-    {
-      "name": "Recent Equations",
-      "short_name": "Recent",
-      "description": "View and edit your recently created equations",
-      "url": "./?action=history",
-      "icons": [
-        {
-          "src": "./assets/icons/favicon-32x32.png",
-          "sizes": "32x32"
-        }
-      ]
-    },
-    {
       "name": "Help & Examples",
       "short_name": "Help",
       "description": "Browse LaTeX examples and comprehensive help documentation",
       "url": "./help/",
-      "icons": [
-        {
-          "src": "./assets/icons/favicon-32x32.png",
-          "sizes": "32x32"
-        }
-      ]
-    },
-    {
-      "name": "Export Settings",
-      "short_name": "Export",
-      "description": "Configure export options and download settings",
-      "url": "./?action=export",
       "icons": [
         {
           "src": "./assets/icons/favicon-32x32.png",
