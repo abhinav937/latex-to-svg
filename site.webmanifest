@@ -1,7 +1,7 @@
 {
   "name": "LaTeX to SVG Generator",
   "short_name": "LaTeX SVG",
-  "description": "Generate high-quality SVG images from LaTeX code. Perfect for creating mathematical equations, scientific diagrams, and technical illustrations. No installation required, works offline.",
+  "description": "Generate high-quality SVG images from LaTeX code. Perfect for creating mathematical equations, scientific diagrams, and technical illustrations. No installation required.",
   "start_url": "./",
   "scope": "./",
   "icons": [
