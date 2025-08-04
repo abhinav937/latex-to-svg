@@ -149,24 +149,8 @@
   },
   "related_applications": [],
   "prefer_related_applications": false,
-  "iarc_rating_id": "",
-  "scope_extensions": [],
-  "handle_links": "preferred",
-  "capture_links": "new-client",
-  "permissions": [
-    "clipboard-write",
-    "clipboard-read"
-  ],
   "display_override": [
     "standalone",
-    "minimal-ui",
-    "window-controls-overlay"
-  ],
-  "prefer_related_applications": false,
-  "id": "latex-to-svg-generator",
-  "version": "1.0.0",
-  "author": "LaTeX to SVG Generator",
-  "homepage_url": "https://latex-to-svg.com",
-  "offline_enabled": true,
-  "prefer_related_applications": false
+    "minimal-ui"
+  ]
 }
