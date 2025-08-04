@@ -1226,11 +1226,7 @@ window.historyManager = historyManager; // Make globally accessible for testing
     
     if (missingComponents.length > 0) {
       console.error('Missing Material Web Components:', missingComponents);
-      const errorMessage = document.getElementById('error-message');
-      if (errorMessage) {
-        errorMessage.innerHTML = `<strong>Loading Error:</strong> Some components failed to load. Please refresh the page or check your internet connection.`;
-        errorMessage.style.display = 'block';
-      }
+      showError('Loading Error', 'Some components failed to load. Please refresh the page or check your internet connection.');
       return false;
     }
     
@@ -1248,16 +1244,12 @@ window.historyManager = historyManager; // Make globally accessible for testing
   const latexInput = document.getElementById('latex-input');
   const latexImage = document.getElementById('latex-image');
   const latexPreview = document.getElementById('latex-preview');
-  const errorMessage = document.getElementById('error-message');
   const imageActions = document.getElementById('image-actions');
   const scaleInput = document.getElementById('scale-input');
 
-  if (!latexInput || !latexImage || !latexPreview || !errorMessage || !imageActions || !scaleInput) {
+  if (!latexInput || !latexImage || !latexPreview || !imageActions || !scaleInput) {
     console.error('One or more DOM elements not found.');
-    if (errorMessage) {
-      errorMessage.textContent = 'Error: Required DOM elements not found.';
-      errorMessage.style.display = 'block';
-    }
+    showError('Initialization Error', 'Required DOM elements not found.');
     return;
   }
 
@@ -1302,7 +1294,7 @@ window.historyManager = historyManager; // Make globally accessible for testing
           
           // Update placeholder to indicate autocomplete is ready
           latexInput.placeholder = "Enter LaTeX code (e.g., $E = mc^2$ or R_{DS}) - Type \\ for autocomplete";
-          console.log('✅ Autocomplete system fully initialized and ready');
+          console.log('Autocomplete system fully initialized and ready');
         } else {
           console.warn('Autocomplete not ready, retrying...');
           setTimeout(attachAutocomplete, 200);
@@ -1334,8 +1326,7 @@ window.historyManager = historyManager; // Make globally accessible for testing
     imageActions.style.display = 'none';
     
     // Clear any error messages
-    errorMessage.innerHTML = '';
-    errorMessage.style.display = 'none';
+    hideError();
     
     // Focus back to the input field
     latexInput.focus();
@@ -1402,14 +1393,91 @@ window.historyManager = historyManager; // Make globally accessible for testing
     }, 500);
   }
 
-  // Enhanced error display
+  // Internet connectivity detection
+  let isOnline = navigator.onLine;
+  let connectivityCheckInterval = null;
+
+  // Function to check internet connectivity
+  async function checkInternetConnectivity() {
+    try {
+      // Try to fetch a small resource from a reliable CDN
+      const response = await fetch('https://www.google.com/favicon.ico', {
+        method: 'HEAD',
+        mode: 'no-cors',
+        cache: 'no-cache'
+      });
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  // Function to handle connectivity changes
+  async function handleConnectivityChange() {
+    const wasOnline = isOnline;
+    isOnline = navigator.onLine;
+    
+    // If we were offline and now we're online, clear any connectivity errors
+    if (!wasOnline && isOnline) {
+      hideError();
+      console.log('Internet connection restored');
+    }
+    
+    // If we were online and now we're offline, show connectivity error
+    if (wasOnline && !isOnline) {
+      showError('Network Error', 'No internet connection detected. Please check your connection and try again.');
+      console.log('Internet connection lost');
+    }
+  }
+
+  // Function to start connectivity monitoring
+  function startConnectivityMonitoring() {
+    // Listen for online/offline events
+    window.addEventListener('online', handleConnectivityChange);
+    window.addEventListener('offline', handleConnectivityChange);
+    
+    // Also perform periodic connectivity checks
+    connectivityCheckInterval = setInterval(async () => {
+      const isConnected = await checkInternetConnectivity();
+      if (!isConnected && isOnline) {
+        isOnline = false;
+        showError('Network Error', 'No internet connection detected. Please check your connection and try again.');
+        console.log('Internet connection lost (detected via periodic check)');
+      } else if (isConnected && !isOnline) {
+        isOnline = true;
+        hideError();
+        console.log('Internet connection restored (detected via periodic check)');
+      }
+    }, 30000); // Check every 30 seconds
+  }
+
+  // Function to stop connectivity monitoring
+  function stopConnectivityMonitoring() {
+    window.removeEventListener('online', handleConnectivityChange);
+    window.removeEventListener('offline', handleConnectivityChange);
+    if (connectivityCheckInterval) {
+      clearInterval(connectivityCheckInterval);
+      connectivityCheckInterval = null;
+    }
+  }
+
+  // Enhanced error display - now shows inside the text field
   function showError(type, message, details) {
-    errorMessage.innerHTML = `<strong>${type}:</strong> ${message}` + (details ? `<br><small>${details}</small>` : '');
-    errorMessage.style.display = 'block';
+    const latexInput = document.getElementById('latex-input');
+    
+    // Set the error state on the Material Design text field
+    latexInput.error = true;
+    latexInput.errorText = `${type}: ${message}` + (details ? ` ${details}` : '');
+    
     imageActions.style.display = 'none';
   }
+  
   function hideError() {
-    errorMessage.style.display = 'none';
+    const latexInput = document.getElementById('latex-input');
+    
+    // Clear the error state on the Material Design text field
+    latexInput.error = false;
+    latexInput.errorText = '';
   }
 
   // Patch renderLaTeX to use the new spinner logic
@@ -1419,6 +1487,20 @@ window.historyManager = historyManager; // Make globally accessible for testing
       let latex = latexInput.value.trim();
       if (!latex) {
         showError('Input Error', 'Please enter a LaTeX command.');
+        return;
+      }
+      
+      // Check internet connectivity before attempting to render
+      if (!isOnline) {
+        showError('Network Error', 'No internet connection detected. Please check your connection and try again.');
+        return;
+      }
+      
+      // Additional connectivity check for reliability
+      const isConnected = await checkInternetConnectivity();
+      if (!isConnected) {
+        isOnline = false;
+        showError('Network Error', 'No internet connection detected. Please check your connection and try again.');
         return;
       }
       
@@ -1798,6 +1880,12 @@ window.historyManager = historyManager; // Make globally accessible for testing
 
   // AI Fix LaTeX functionality
   async function checkAIServiceAvailability() {
+    // Check internet connectivity first
+    if (!isOnline) {
+      console.log('AI service check skipped - no internet connection');
+      return false;
+    }
+    
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
@@ -1860,6 +1948,12 @@ window.historyManager = historyManager; // Make globally accessible for testing
   }
 
   async function fixLatexWithAI(latexCode) {
+    // Check internet connectivity first
+    if (!isOnline) {
+      showError('Network Error', 'No internet connection detected. Please check your connection and try again.');
+      return;
+    }
+    
     try {
       const response = await fetch('https://ai-reply-bot.vercel.app/api/latex', {
         method: 'POST',
@@ -1982,7 +2076,7 @@ window.historyManager = historyManager; // Make globally accessible for testing
       }
       
       // Show error in the input field
-      latexInput.placeholder = `❌ ${errorMessage}`;
+      latexInput.placeholder = `Error: ${errorMessage}`;
       
       // Restore original placeholder after 5 seconds for errors
       setTimeout(() => {
@@ -2004,18 +2098,10 @@ window.historyManager = historyManager; // Make globally accessible for testing
     }
   };
   
-  // Helper function to show success messages
+  // Helper function to show success messages (disabled per user request)
   function showSuccess(type, message) {
-    const errorMessage = document.getElementById('error-message');
-    errorMessage.innerHTML = `<strong style="color: #4caf50;">${type}:</strong> ${message}`;
-    errorMessage.style.display = 'block';
-    errorMessage.style.color = '#4caf50';
-    
-    // Auto-hide success message after 3 seconds
-    setTimeout(() => {
-      errorMessage.style.display = 'none';
-      errorMessage.style.color = '';
-    }, 3000);
+    // Success messages are disabled - do nothing
+    return;
   }
 
   // Blur all [data-tooltip] elements after click to prevent tooltip reappearing
@@ -2024,4 +2110,19 @@ window.historyManager = historyManager; // Make globally accessible for testing
       if (this.blur) this.blur();
     });
   });
+
+  // Start connectivity monitoring
+  startConnectivityMonitoring();
+  
+  // Perform initial connectivity check
+  setTimeout(async () => {
+    const isConnected = await checkInternetConnectivity();
+    if (!isConnected) {
+      isOnline = false;
+      showError('Network Error', 'No internet connection detected. Please check your connection and try again.');
+      console.log('Initial connectivity check failed - no internet connection');
+    } else {
+      console.log('Initial connectivity check passed');
+    }
+  }, 1000); // Check after 1 second to allow page to load
 });

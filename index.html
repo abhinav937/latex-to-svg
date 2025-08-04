@@ -257,11 +257,11 @@
             script.crossOrigin = 'anonymous';
             script.onerror = () => {
               console.error('Material Web Components failed to load from CDN');
-              const errorMessage = document.getElementById('error-message');
-              if (errorMessage) {
-                errorMessage.innerHTML = `<strong>Loading Error:</strong> Material Web Components failed to load. Please check your internet connection and refresh the page.`;
-                errorMessage.style.display = 'block';
-              }
+                  // Show error in the text field if components fail to load
+    const latexInput = document.getElementById('latex-input');
+    if (latexInput) {
+      latexInput.placeholder = 'Loading Error: Material Web Components failed to load. Please check your internet connection and refresh the page.';
+    }
             };
             document.head.appendChild(script);
           };
@@ -350,8 +350,6 @@
             <md-icon>auto_fix_high</md-icon>
           </md-icon-button>
         </div>
-
-        <div id="error-message"></div>
 
         <div class="action-buttons">
           <div style="position: relative; display: inline-block;">

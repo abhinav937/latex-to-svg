@@ -504,6 +504,21 @@ md-outlined-text-field#latex-input {
   transition: all 0.3s ease;
 }
 
+/* Error state styling for the text field */
+md-outlined-text-field#latex-input[error] {
+  --md-outlined-text-field-outline-color: #d32f2f;
+  --md-outlined-text-field-outline-width: 2px;
+  --md-outlined-text-field-outline-opacity: 1;
+}
+
+md-outlined-text-field#latex-input[error] .md3-field__outline {
+  border-color: #d32f2f !important;
+}
+
+md-outlined-text-field#latex-input[error] .md3-field__label {
+  color: #d32f2f !important;
+}
+
 md-outlined-text-field#latex-input.ai-analyzing {
   animation: textBoxAnalyzing 2s ease-in-out infinite;
   --md-outlined-text-field-outline-color: var(--md-sys-color-primary) !important;
@@ -763,7 +778,7 @@ md-icon-button#copy-button.copied .material-symbols-outlined {
   color: #d32f2f;
   margin-top: 4px;
   font-size: 14px;
-  display: none;
+  display: none; /* Hidden by default since errors now show in text field */
   text-align: center;
   background: rgba(211, 47, 47, 0.08);
   border: 1px solid rgba(211, 47, 47, 0.2);
@@ -946,6 +961,7 @@ md-filled-button, md-outlined-button {
     margin: 8px 4px;
     font-size: 13px;
     padding: 8px 12px;
+    display: none; /* Hidden since errors now show in text field */
   }
   .scale-control {
     margin-left: 0 !important;
