@@ -1,19 +1,21 @@
 {
-  "name": "LaTeX Image Generator",
-  "short_name": "LaTeX Generator",
-  "description": "Generate high-quality SVG images from LaTeX code. Perfect for creating mathematical equations, scientific diagrams, and technical illustrations. No installation required.",
+  "name": "LaTeX to SVG Generator",
+  "short_name": "LaTeX SVG",
+  "description": "Generate high-quality SVG images from LaTeX code. Perfect for creating mathematical equations, scientific diagrams, and technical illustrations. No installation required, works offline.",
   "start_url": "./",
   "scope": "./",
   "icons": [
     {
       "src": "./assets/icons/favicon-16x16.png",
       "sizes": "16x16",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "./assets/icons/favicon-32x32.png",
       "sizes": "32x32",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "./assets/icons/android-chrome-192x192.png",
@@ -34,21 +36,21 @@
       "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "LaTeX Generator - Create beautiful mathematical equations and diagrams"
+      "label": "LaTeX to SVG Generator - Create beautiful mathematical equations and diagrams with real-time preview"
     },
     {
       "src": "./assets/icons/share_preview.png",
       "sizes": "750x1334",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "LaTeX Generator - Mobile-friendly interface for creating SVG equations"
+      "label": "LaTeX to SVG Generator - Mobile-friendly interface for creating SVG equations on the go"
     }
   ],
   "shortcuts": [
     {
       "name": "New Equation",
       "short_name": "New",
-      "description": "Start creating a new LaTeX equation",
+      "description": "Start creating a new LaTeX equation with instant preview",
       "url": "./?action=new",
       "icons": [
         {
@@ -60,7 +62,7 @@
     {
       "name": "Recent Equations",
       "short_name": "Recent",
-      "description": "View your recently created equations",
+      "description": "View and edit your recently created equations",
       "url": "./?action=history",
       "icons": [
         {
@@ -72,8 +74,20 @@
     {
       "name": "Help & Examples",
       "short_name": "Help",
-      "description": "View LaTeX examples and help documentation",
+      "description": "Browse LaTeX examples and comprehensive help documentation",
       "url": "./help/",
+      "icons": [
+        {
+          "src": "./assets/icons/favicon-32x32.png",
+          "sizes": "32x32"
+        }
+      ]
+    },
+    {
+      "name": "Export Settings",
+      "short_name": "Export",
+      "description": "Configure export options and download settings",
+      "url": "./?action=export",
       "icons": [
         {
           "src": "./assets/icons/favicon-32x32.png",
@@ -91,7 +105,8 @@
     "utilities",
     "education",
     "science",
-    "mathematics"
+    "mathematics",
+    "developer"
   ],
   "lang": "en",
   "dir": "ltr",
@@ -105,13 +120,19 @@
     {
       "protocol": "web+latex",
       "url": "./?latex=%s"
+    },
+    {
+      "protocol": "latex",
+      "url": "./?latex=%s"
     }
   ],
   "file_handlers": [
     {
       "action": "./",
       "accept": {
-        "text/plain": [".tex", ".latex"]
+        "text/plain": [".tex", ".latex"],
+        "text/x-tex": [".tex", ".latex"],
+        "application/x-tex": [".tex", ".latex"]
       }
     }
   ],
@@ -122,7 +143,8 @@
     "params": {
       "title": "title",
       "text": "text",
-      "url": "url"
+      "url": "url",
+      "files": "files"
     }
   },
   "related_applications": [],
@@ -134,5 +156,17 @@
   "permissions": [
     "clipboard-write",
     "clipboard-read"
-  ]
+  ],
+  "display_override": [
+    "standalone",
+    "minimal-ui",
+    "window-controls-overlay"
+  ],
+  "prefer_related_applications": false,
+  "id": "latex-to-svg-generator",
+  "version": "1.0.0",
+  "author": "LaTeX to SVG Generator",
+  "homepage_url": "https://latex-to-svg.com",
+  "offline_enabled": true,
+  "prefer_related_applications": false
 }

@@ -43,17 +43,17 @@
   --md-sys-color-primary: #006A6A;
 }
 
-/* Enhanced PWA Install Prompt Styles */
+/* Compact PWA Install Prompt */
 .install-prompt {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
+  bottom: 16px;
+  right: 16px;
   background: #ffffff;
   border: 1px solid #e0e0e0;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   padding: 16px;
-  max-width: 320px;
+  max-width: 280px;
   z-index: 1000;
   animation: slideInUp 0.3s ease-out;
 }
@@ -62,8 +62,6 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 0.875rem;
-  color: #333;
 }
 
 .install-icon {
@@ -81,36 +79,22 @@
   font-size: 0.875rem;
   font-weight: 600;
   color: #333;
-  margin: 0 0 4px 0;
-  line-height: 1.3;
+  margin: 0 0 2px 0;
+  line-height: 1.2;
 }
 
 .install-description {
   font-size: 0.75rem;
   color: #666;
-  margin: 0 0 8px 0;
-  line-height: 1.4;
-}
-
-/* Material Design circular progress styling for install prompt */
-.install-prompt md-circular-progress {
-  flex-shrink: 0;
-}
-
-/* Fallback circular progress styling */
-.fallback-progress {
-  flex-shrink: 0;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  margin: 0;
+  line-height: 1.3;
 }
 
 .install-actions {
   display: flex;
   gap: 8px;
   align-items: center;
+  margin-top: 8px;
 }
 
 .install-btn {
@@ -119,10 +103,14 @@
   border: none;
   border-radius: 8px;
   padding: 8px 16px;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
 }
 
 .install-btn:hover {
@@ -134,19 +122,30 @@
   outline-offset: 2px;
 }
 
+.install-btn .material-symbols-outlined {
+  font-size: 16px;
+  margin: 0;
+}
+
 .dismiss-btn {
   background: transparent;
   border: none;
-  color: #666;
-  font-size: 1.25rem;
+  color: #999;
+  font-size: 1.125rem;
   cursor: pointer;
-  padding: 4px;
+  padding: 6px;
   border-radius: 50%;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
+  min-width: 32px;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .dismiss-btn:hover {
   background: #f0f0f0;
+  color: #666;
 }
 
 .dismiss-btn:focus {
@@ -154,50 +153,99 @@
   outline-offset: 2px;
 }
 
+.install-prompt md-circular-progress {
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
 
 
 @keyframes slideInUp {
   from {
-    transform: translateY(100%);
+    transform: translateY(100%) scale(0.95);
     opacity: 0;
   }
   to {
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
     opacity: 1;
   }
 }
 
 @keyframes slideOutDown {
   from {
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
     opacity: 1;
   }
   to {
-    transform: translateY(100%);
+    transform: translateY(100%) scale(0.95);
     opacity: 0;
   }
 }
 
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.install-prompt {
+  animation: slideInUp 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
 .install-prompt.dismissing {
-  animation: slideOutDown 0.3s ease-in forwards;
+  animation: slideOutDown 0.3s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards;
+}
+
+.install-icon {
+  animation: pulse 2s ease-in-out infinite;
 }
 
 @media (max-width: 600px) {
   .install-prompt {
-    bottom: 10px;
-    right: 10px;
-    left: 10px;
+    bottom: 8px;
+    right: 8px;
+    left: 8px;
     max-width: none;
+    padding: 12px;
   }
   
   .install-content {
-    flex-wrap: wrap;
+    gap: 8px;
   }
   
-  .install-content span:nth-of-type(2) {
-    order: 3;
-    width: 100%;
-    margin-top: 8px;
+  .install-icon {
+    font-size: 1.125rem;
+  }
+  
+  .install-title {
+    font-size: 0.8125rem;
+  }
+  
+  .install-description {
+    font-size: 0.6875rem;
+  }
+  
+  .install-actions {
+    margin-top: 6px;
+  }
+  
+  .install-btn {
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    min-height: 32px;
+  }
+  
+  .install-btn .material-symbols-outlined {
+    font-size: 14px;
+  }
+  
+  .dismiss-btn {
+    min-width: 28px;
+    min-height: 28px;
+    font-size: 1rem;
   }
 }
 

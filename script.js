@@ -1,10 +1,21 @@
 const BASE_PT_SIZE = 12; // Baseline point size where scale = 1
 
+// Development mode flag - set to true to disable caching for local testing
+const DEV_MODE = false; // Set to false to enable caching
+
+// Additional cache bypass options for local development:
+// 1. Use a local server with cache-busting headers (recommended)
+//    python -m http.server 8000 --bind 127.0.0.1
+//    npx serve . --no-clipboard
+// 2. Add ?v=timestamp to URLs in development
+// 3. Use browser dev tools to disable cache (F12 -> Network tab -> Disable cache)
+// 4. Use incognito/private browsing mode
+
 // PWA (Progressive Web App) functionality
 let deferredPrompt;
 
 // Register service worker for PWA functionality
-if ('serviceWorker' in navigator) {
+if (!DEV_MODE && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
       .then((registration) => {
@@ -14,6 +25,27 @@ if ('serviceWorker' in navigator) {
         console.log('SW registration failed: ', registrationError);
       });
   });
+}
+
+// For development mode - disable service worker and clear existing caches
+if (DEV_MODE && 'serviceWorker' in navigator) {
+  // Unregister any existing service workers
+  navigator.serviceWorker.getRegistrations().then(function(registrations) {
+    for(let registration of registrations) {
+      registration.unregister();
+    }
+  });
+  
+  // Clear all caches
+  if ('caches' in window) {
+    caches.keys().then(function(names) {
+      for (let name of names) {
+        caches.delete(name);
+      }
+    });
+  }
+  
+  console.log('Service worker disabled for local testing (DEV_MODE = true)');
 }
 
 // Listen for the beforeinstallprompt event
@@ -56,13 +88,13 @@ function showInstallPrompt() {
           <div id="install-description" class="install-description">Get quick access to the LaTeX converter with native app experience.</div>
           <div class="install-actions">
             <button onclick="installPWA()" class="install-btn" aria-label="Install LaTeX Generator app">
-              <span class="material-symbols-outlined" style="font-size: 16px; margin-right: 4px;">download</span>
+              <span class="material-symbols-outlined">download</span>
               Install App
             </button>
             <button onclick="hideInstallPrompt()" class="dismiss-btn" aria-label="Dismiss install prompt">×</button>
           </div>
         </div>
-        <md-circular-progress id="install-progress" value="0" style="margin-left: 8px;"></md-circular-progress>
+        <md-circular-progress id="install-progress" value="0"></md-circular-progress>
       </div>
     `;
     document.body.appendChild(installPrompt);
