@@ -1,19 +1,38 @@
 {
   "name": "LaTeX Image Generator",
   "short_name": "LaTeX Generator",
+  "description": "Generate high-quality SVG images from LaTeX code, no installation required. A web-based alternative to TexText for Inkscape.",
+  "start_url": "./",
+  "scope": "./",
   "icons": [
     {
-      "src": "./assets/icons/favicon-192x192.png",
-      "sizes": "192x192",
+      "src": "./assets/icons/favicon-16x16.png",
+      "sizes": "16x16",
       "type": "image/png"
     },
     {
-      "src": "./assets/icons/favicon-512x512.png",
-      "sizes": "512x512",
+      "src": "./assets/icons/favicon-32x32.png",
+      "sizes": "32x32",
       "type": "image/png"
+    },
+    {
+      "src": "./assets/icons/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./assets/icons/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ],
-  "theme_color": "#ffffff",
+  "theme_color": "#1976d2",
   "background_color": "#ffffff",
-  "display": "standalone"
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "categories": ["productivity", "utilities"],
+  "lang": "en",
+  "dir": "ltr"
 }

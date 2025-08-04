@@ -38,6 +38,100 @@
   --md-sys-spacing-3: 12px;
 }
 
+/* PWA Install Prompt Styles */
+.install-prompt {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: var(--md-sys-color-surface);
+  border: 1px solid var(--md-sys-color-outline);
+  border-radius: var(--md-sys-shape-card);
+  box-shadow: var(--md-sys-elevation-2);
+  padding: 16px;
+  max-width: 320px;
+  z-index: 1000;
+  animation: slideInUp 0.3s ease-out;
+}
+
+.install-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.875rem;
+  color: var(--md-sys-color-on-surface);
+}
+
+.install-content span:first-of-type {
+  color: var(--md-sys-color-primary);
+  font-size: 1.25rem;
+}
+
+.install-content span:nth-of-type(2) {
+  flex: 1;
+  line-height: 1.4;
+}
+
+.install-btn {
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  border: none;
+  border-radius: var(--md-sys-shape-button);
+  padding: 8px 16px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.install-btn:hover {
+  background: var(--md-sys-color-secondary);
+}
+
+.dismiss-btn {
+  background: transparent;
+  border: none;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+}
+
+.dismiss-btn:hover {
+  background: var(--md-sys-color-outline-variant);
+}
+
+@keyframes slideInUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 600px) {
+  .install-prompt {
+    bottom: 10px;
+    right: 10px;
+    left: 10px;
+    max-width: none;
+  }
+  
+  .install-content {
+    flex-wrap: wrap;
+  }
+  
+  .install-content span:nth-of-type(2) {
+    order: 3;
+    width: 100%;
+    margin-top: 8px;
+  }
+}
+
 [data-theme="dark"] {
   --md-sys-color-surface: #1c2524;
   --md-sys-color-on-surface: #e0e0e0;

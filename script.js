@@ -1,5 +1,77 @@
 const BASE_PT_SIZE = 12; // Baseline point size where scale = 1
 
+// PWA (Progressive Web App) functionality
+let deferredPrompt;
+
+// Register service worker for PWA functionality
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then((registration) => {
+        console.log('SW registered: ', registration);
+      })
+      .catch((registrationError) => {
+        console.log('SW registration failed: ', registrationError);
+      });
+  });
+}
+
+// Listen for the beforeinstallprompt event
+window.addEventListener('beforeinstallprompt', (e) => {
+  // Prevent Chrome 67 and earlier from automatically showing the prompt
+  e.preventDefault();
+  // Stash the event so it can be triggered later
+  deferredPrompt = e;
+  
+  // Show install button or notification
+  showInstallPrompt();
+});
+
+// Listen for successful installation
+window.addEventListener('appinstalled', (evt) => {
+  console.log('App was installed');
+  // Hide the install prompt if it exists
+  hideInstallPrompt();
+});
+
+// Show install prompt
+function showInstallPrompt() {
+  // Create install prompt if it doesn't exist
+  if (!document.getElementById('install-prompt')) {
+    const installPrompt = document.createElement('div');
+    installPrompt.id = 'install-prompt';
+    installPrompt.className = 'install-prompt';
+    installPrompt.innerHTML = `
+      <div class="install-content">
+        <span class="material-symbols-outlined">download</span>
+        <span>Install LaTeX Generator as an app for easy access!</span>
+        <button onclick="installPWA()" class="install-btn">Install</button>
+        <button onclick="hideInstallPrompt()" class="dismiss-btn">×</button>
+      </div>
+    `;
+    document.body.appendChild(installPrompt);
+  }
+}
+
+// Hide install prompt
+function hideInstallPrompt() {
+  const prompt = document.getElementById('install-prompt');
+  if (prompt) {
+    prompt.remove();
+  }
+}
+
+// Install PWA function
+async function installPWA() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log(`User response to the install prompt: ${outcome}`);
+    deferredPrompt = null;
+    hideInstallPrompt();
+  }
+}
+
 // Mobile detection utility
 function isMobileDevice() {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
