@@ -2211,7 +2211,14 @@ window.historyManager = historyManager; // Make globally accessible for testing
   window.shareEquation = async function() {
     const latexInput = document.getElementById('latex-input');
     const shareButton = document.getElementById('share-button');
+    const shareIcon = shareButton.querySelector('md-icon');
     const latexImage = document.getElementById('latex-image');
+
+    if (!shareIcon) {
+      console.error('Share icon not found inside share button.');
+      showError('Share icon not found.');
+      return;
+    }
 
     if (!latexImage.src || latexImage.src === '') {
       showError('No equation to share. Please render an equation first.');
@@ -2251,9 +2258,14 @@ window.historyManager = historyManager; // Make globally accessible for testing
         }
       }
 
-      // Show success feedback
+      // Show success feedback with checkmark
       shareButton.classList.add('copied');
-      setTimeout(() => shareButton.classList.remove('copied'), 2000);
+      shareIcon.innerHTML = 'check';
+
+      setTimeout(() => {
+        shareButton.classList.remove('copied');
+        shareIcon.innerHTML = 'share';
+      }, 3500);
 
     } catch (err) {
       showError('Failed to copy share link: ' + err.message);

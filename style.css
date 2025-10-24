@@ -562,8 +562,8 @@
   position: fixed;
   top: 20px;
   right: 20px;
-  background: #2196f3;
-  border: 1px solid #1976d2;
+  background: var(--md-sys-color-primary);
+  border: 1px solid var(--md-sys-color-primary);
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   padding: 12px 16px;
@@ -573,20 +573,20 @@
   align-items: center;
   gap: 8px;
   font-size: 0.875rem;
-  color: white;
+  color: var(--md-sys-color-on-primary);
   max-width: 320px;
 }
 
 .shared-equation-notice .material-symbols-outlined {
   font-size: 1.125rem;
-  color: white;
+  color: var(--md-sys-color-on-primary);
   flex-shrink: 0;
 }
 
 .dismiss-shared-notice {
   background: none;
   border: none;
-  color: white;
+  color: var(--md-sys-color-on-primary);
   font-size: 1.25rem;
   line-height: 1;
   cursor: pointer;
@@ -612,9 +612,6 @@
 }
 
 /* Standalone Mode Styles */
-.standalone-mode {
-  /* Add any standalone-specific styles */
-}
 
 .standalone-indicator {
   position: fixed;
@@ -1032,7 +1029,9 @@ md-icon-button:hover {
   border-radius: 50%;
 }
 
-md-icon-button#copy-button.copied .material-symbols-outlined {
+md-icon-button#copy-button.copied .material-symbols-outlined,
+md-icon-button#download-button.copied .material-symbols-outlined,
+md-icon-button#share-button.copied .material-symbols-outlined {
   animation: iconChange 0.3s ease-in-out forwards;
 }
 
