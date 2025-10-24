@@ -19,10 +19,8 @@ if (!DEV_MODE && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
       .then((registration) => {
-        console.log('SW registered: ', registration);
       })
       .catch((registrationError) => {
-        console.log('SW registration failed: ', registrationError);
       });
   });
 }
@@ -45,7 +43,6 @@ if (DEV_MODE && 'serviceWorker' in navigator) {
     });
   }
   
-  console.log('Service worker disabled for local testing (DEV_MODE = true)');
 }
 
 // Listen for the beforeinstallprompt event
@@ -61,7 +58,6 @@ window.addEventListener('beforeinstallprompt', (e) => {
 
 // Listen for successful installation
 window.addEventListener('appinstalled', (evt) => {
-  console.log('App was installed');
   // Hide the install prompt if it exists
   hideInstallPrompt();
 });
@@ -130,9 +126,6 @@ function startAutoDismissTimer() {
   if (!prompt) return;
   
   const progressBar = prompt.querySelector('#install-progress');
-  console.log('Progress bar found:', progressBar);
-  console.log('Progress bar tag name:', progressBar?.tagName);
-  console.log('Progress bar class name:', progressBar?.className);
   
   let timeLeft = 10000; // 10 seconds
   const interval = 100; // Update every 100ms
@@ -143,7 +136,6 @@ function startAutoDismissTimer() {
     
     if (progressBar) {
       progressBar.value = progress; // Material Design progress uses 0-1 range
-      console.log('Updated progress to:', progress);
     }
     
     if (timeLeft <= 0) {
@@ -187,13 +179,11 @@ async function installPWA() {
   if (deferredPrompt) {
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
-    console.log(`User response to the install prompt: ${outcome}`);
     deferredPrompt = null;
     hideInstallPrompt();
     
     // Track installation success
     if (outcome === 'accepted') {
-      console.log('PWA installed successfully');
       handlePWAInstallation();
       // You could send analytics here
     }
@@ -205,6 +195,7 @@ function handlePWAShortcuts() {
   const urlParams = new URLSearchParams(window.location.search);
   const action = urlParams.get('action');
   const latex = urlParams.get('latex');
+  const text = urlParams.get('text');
   
   if (action) {
     switch (action) {
@@ -231,6 +222,21 @@ function handlePWAShortcuts() {
     const input = document.getElementById('latex-input');
     if (input) {
       input.value = decodeURIComponent(latex);
+      // Trigger render
+      setTimeout(() => {
+        const renderButton = document.getElementById('render-button');
+        if (renderButton) {
+          renderButton.click();
+        }
+      }, 100);
+    }
+  }
+
+  if (text) {
+    // Pre-fill the input with shared text (treat as LaTeX)
+    const input = document.getElementById('latex-input');
+    if (input) {
+      input.value = decodeURIComponent(text);
       // Trigger render
       setTimeout(() => {
         const renderButton = document.getElementById('render-button');
@@ -282,7 +288,6 @@ async function requestNotificationPermission() {
   if ('Notification' in window && 'serviceWorker' in navigator) {
     const permission = await Notification.requestPermission();
     if (permission === 'granted') {
-      console.log('Notification permission granted');
       // You could register for push notifications here
     }
   }
@@ -341,7 +346,6 @@ class LaTeXAutocomplete {
   constructor() {
     // Disable autocomplete on mobile devices
     if (isMobileDevice()) {
-      console.log('Autocomplete disabled on mobile device');
       return;
     }
     
@@ -454,7 +458,6 @@ class LaTeXAutocomplete {
         const data = await response.json();
         this.commands = data.commands;
         this.isInitialized = true;
-        console.log(`LaTeX autocomplete initialized with ${this.commands.length} commands`);
         
         // Preload common images in the background
         this.preloadCommonImages();
@@ -474,7 +477,6 @@ class LaTeXAutocomplete {
           { command: "\\delta", arguments: "", description: "Greek letter delta", example: "\\delta", category: "greek" }
         ];
         this.isInitialized = true; // Ensure it's marked as initialized even on error
-        console.log('Using fallback LaTeX commands');
         
         // Preload common images in the background
         this.preloadCommonImages();
@@ -557,7 +559,6 @@ class LaTeXAutocomplete {
 
     // Preload in background without blocking
     Promise.all(preloadPromises).then(() => {
-      console.log('Common LaTeX images preloaded');
     });
   }
 
@@ -690,7 +691,6 @@ class LaTeXAutocomplete {
 
   // Material Design Command Previews
   renderSuggestions() {
-    console.log('Rendering suggestions:', this.filteredCommands.length); // Debug
     this.container.innerHTML = '';
 
     this.filteredCommands.forEach((cmd, index) => {
@@ -1587,7 +1587,6 @@ window.historyManager = historyManager; // Make globally accessible for testing
   if (latexInput) {
     // Skip autocomplete on mobile devices
     if (isMobileDevice()) {
-      console.log('Skipping autocomplete attachment on mobile device');
     } else {
       // Wait for autocomplete to be ready
       const attachAutocomplete = async () => {
@@ -1615,16 +1614,13 @@ window.historyManager = historyManager; // Make globally accessible for testing
           
           if (actualInput) {
             latexAutocomplete.attachToInput(latexInput);
-            console.log('Autocomplete attached to input element');
           } else {
             // If we can't find the actual input, work with the Material Web Component directly
             latexAutocomplete.attachToInput(latexInput);
-            console.log('Autocomplete attached to Material Web Component');
           }
           
           // Update placeholder to indicate autocomplete is ready
           latexInput.placeholder = "Enter LaTeX code (e.g., $E = mc^2$ or R_{DS}) - Type \\ for autocomplete";
-          console.log('Autocomplete system fully initialized and ready');
         } else {
           console.warn('Autocomplete not ready, retrying...');
           setTimeout(attachAutocomplete, 200);
@@ -1750,13 +1746,11 @@ window.historyManager = historyManager; // Make globally accessible for testing
     // If we were offline and now we're online, clear any connectivity errors
     if (!wasOnline && isOnline) {
       hideError();
-      console.log('Internet connection restored');
     }
     
     // If we were online and now we're offline, show connectivity error
     if (wasOnline && !isOnline) {
       showError('Network Error', 'No internet connection detected. Please check your connection and try again.');
-      console.log('Internet connection lost');
     }
   }
 
@@ -1772,11 +1766,9 @@ window.historyManager = historyManager; // Make globally accessible for testing
       if (!isConnected && isOnline) {
         isOnline = false;
         showError('Network Error', 'No internet connection detected. Please check your connection and try again.');
-        console.log('Internet connection lost (detected via periodic check)');
       } else if (isConnected && !isOnline) {
         isOnline = true;
         hideError();
-        console.log('Internet connection restored (detected via periodic check)');
       }
     }, 30000); // Check every 30 seconds
   }
@@ -2212,7 +2204,6 @@ window.historyManager = historyManager; // Make globally accessible for testing
   async function checkAIServiceAvailability() {
     // Check internet connectivity first
     if (!isOnline) {
-      console.log('AI service check skipped - no internet connection');
       return false;
     }
     
@@ -2292,7 +2283,7 @@ window.historyManager = historyManager; // Make globally accessible for testing
           'X-Session-ID': 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
         },
         body: JSON.stringify({
-          latex: latexCode,
+          text: latexCode,
           explain: false
         })
       });
@@ -2318,11 +2309,11 @@ window.historyManager = historyManager; // Make globally accessible for testing
       const data = await response.json();
       
       // Validate the response structure
-      if (!data.correctedLatex) {
+      if (!data.processedText) {
         throw new Error('Invalid response from AI service');
       }
-      
-      return data.correctedLatex;
+
+      return data.processedText;
     } catch (error) {
       console.error('AI Fix Error:', error);
       throw error;
@@ -2458,9 +2449,7 @@ window.historyManager = historyManager; // Make globally accessible for testing
     if (!isConnected) {
       isOnline = false;
       showError('Network Error', 'No internet connection detected. Please check your connection and try again.');
-      console.log('Initial connectivity check failed - no internet connection');
     } else {
-      console.log('Initial connectivity check passed');
     }
   }, 1000); // Check after 1 second to allow page to load
 });
