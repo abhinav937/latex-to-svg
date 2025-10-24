@@ -4,16 +4,19 @@ const changelogData = [
   {
     date: "Oct 24, 2025",
     sections: {
+      "New Features": [
+        "History now preserves and restores text size when clicking on saved equations",
+        "Added text size display in history items (shows point size like '12pt', '24pt')",
+        "Same LaTeX equation can now be saved multiple times with different text sizes",
+        "Added comprehensive changelog page",
+        "Improved page navigation with changelog link",
+        "Enhanced SEO meta tags for better discoverability"
+      ],
       "Privacy & Performance Improvements": [
         "Removed website content caching from service worker",
         "Eliminated usage statistics tracking",
         "Simplified persistent storage to only history feature",
         "Enhanced privacy by removing unnecessary data collection"
-      ],
-      "New Features": [
-        "Added comprehensive changelog page",
-        "Improved page navigation with changelog link",
-        "Enhanced SEO meta tags for better discoverability"
       ],
       "Bug Fixes": [
         "Fixed minor styling inconsistencies across pages",

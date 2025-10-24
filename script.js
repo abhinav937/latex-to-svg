@@ -1324,6 +1324,23 @@ class HistoryManager {
         sessionStorage.removeItem('latexHistory');
         this.saveHistory();
       }
+
+      // Migrate existing history items to include textSize if missing
+      let needsMigration = false;
+      this.history = this.history.map(item => {
+        if (!item.hasOwnProperty('textSize')) {
+          needsMigration = true;
+          return {
+            ...item,
+            textSize: 12 // Default to 12pt for existing items
+          };
+        }
+        return item;
+      });
+
+      if (needsMigration) {
+        this.saveHistory();
+      }
     } catch (error) {
       console.error('Failed to load history:', error);
       this.history = [];
@@ -1339,21 +1356,26 @@ class HistoryManager {
     }
   }
 
-  // Add item to history with timestamp
+  // Add item to history with timestamp and text size
   addToHistory(latex) {
     if (!latex || latex.trim() === '') return;
 
     const now = new Date();
     const timestamp = now.getTime();
 
+    // Get current text size/scale
+    const scaleInput = document.getElementById('scale-input');
+    const currentScale = scaleInput ? parseFloat(scaleInput.value) : 12; // Default to 12pt if not found
+
     // Create history item with metadata
     const historyItem = {
       latex: latex.trim(),
-      timestamp: timestamp
+      timestamp: timestamp,
+      textSize: currentScale
     };
 
-    // Remove existing item if it exists
-    this.history = this.history.filter(item => item.latex !== latex);
+    // Remove existing item if it exists with the same LaTeX and text size
+    this.history = this.history.filter(item => !(item.latex === latex.trim() && item.textSize === currentScale));
 
     // Add to beginning
     this.history.unshift(historyItem);
@@ -1441,7 +1463,7 @@ class HistoryManager {
     const relativeTime = this.formatRelativeTime(item.timestamp);
 
     return `
-      <div class="history-item" data-latex="${item.latex}">
+      <div class="history-item" data-latex="${item.latex}" data-text-size="${item.textSize || 12}">
         <div class="history-item-content">
           <div class="history-item-main">
             <div class="history-item-text" title="${item.latex}">
@@ -1449,6 +1471,7 @@ class HistoryManager {
             </div>
             <div class="history-item-meta">
               <span class="history-time">${relativeTime}</span>
+              <span class="history-text-size">${item.textSize || 12}pt</span>
             </div>
           </div>
         </div>
@@ -1462,17 +1485,28 @@ class HistoryManager {
     const historyItems = document.querySelectorAll('.history-item');
     historyItems.forEach(item => {
       const latex = item.dataset.latex;
-      
+
       // Click anywhere on item to use
       const useFunction = () => {
         const latexInput = document.getElementById('latex-input');
+        const scaleInput = document.getElementById('scale-input');
+        const textSize = parseFloat(item.dataset.textSize) || 12;
+
         if (latexInput) {
           latexInput.value = latex;
           latexInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+          // Restore text size
+          if (scaleInput) {
+            scaleInput.value = textSize;
+            // Trigger input event for scale input to update any listeners
+            scaleInput.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+
           renderLaTeX();
         }
       };
-      
+
       // Click anywhere on item
       item.addEventListener('click', useFunction);
     });
