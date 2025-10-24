@@ -23,6 +23,7 @@ function initializeHelpContent() {
           <li><strong>Smart Autocomplete</strong>: Type <code>\\</code> to see LaTeX command suggestions</li>
           <li><strong>Scale Control</strong>: Adjust the point size (8-72pt) for your output image</li>
           <li><strong>Copy & Download</strong>: Copy SVG to clipboard or download as file</li>
+          <li><strong>Share Equations</strong>: Generate shareable links so others can edit your equations</li>
           <li><strong>Recent History</strong>: Stores your last 10 LaTeX inputs for quick reuse</li>
           <li><strong>Mobile Friendly</strong>: Fully responsive and easy to use on any device</li>
         </ul>
@@ -55,6 +56,13 @@ function initializeHelpContent() {
               <li><strong>Copy</strong>: Copy the SVG image to your clipboard</li>
               <li><strong>Download</strong>: Download the SVG file with smart filename</li>
               <li><strong>Copy SVG Code</strong>: Copy the raw SVG markup</li>
+            </ul>
+          </li>
+          <li><strong>Share Equations</strong>: Click the share button to copy a link that others can use to edit your equation
+            <ul>
+              <li>Anyone with the link can view and modify the equation</li>
+              <li>Perfect for collaborating on mathematical expressions</li>
+              <li>Link automatically renders the equation when opened</li>
             </ul>
           </li>
           <li><strong>View History</strong>: Your last 10 LaTeX commands are shown in the sidebar. Click any to reuse.</li>

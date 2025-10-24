@@ -218,10 +218,28 @@ function handlePWAShortcuts() {
   }
   
   if (latex) {
-    // Pre-fill the input with LaTeX from URL
+    // Pre-fill the input with LaTeX from URL (collaborative editing)
     const input = document.getElementById('latex-input');
     if (input) {
       input.value = decodeURIComponent(latex);
+
+      // Add visual indicator that this is a shared equation
+      const sharedIndicator = document.createElement('div');
+      sharedIndicator.className = 'shared-equation-notice';
+      sharedIndicator.innerHTML = `
+        <span class="material-symbols-outlined">share</span>
+        <span>Shared equation loaded - you can now edit it!</span>
+        <button onclick="this.parentElement.remove()" class="dismiss-shared-notice" aria-label="Dismiss notice">×</button>
+      `;
+      document.body.appendChild(sharedIndicator);
+
+      // Auto-hide after 5 seconds
+      setTimeout(() => {
+        if (sharedIndicator.parentNode) {
+          sharedIndicator.remove();
+        }
+      }, 5000);
+
       // Trigger render
       setTimeout(() => {
         const renderButton = document.getElementById('render-button');
@@ -2189,6 +2207,59 @@ window.historyManager = historyManager; // Make globally accessible for testing
     }
   };
 
+  // Share equation function - creates a shareable link
+  window.shareEquation = async function() {
+    const latexInput = document.getElementById('latex-input');
+    const shareButton = document.getElementById('share-button');
+    const latexImage = document.getElementById('latex-image');
+
+    if (!latexImage.src || latexImage.src === '') {
+      showError('No equation to share. Please render an equation first.');
+      return;
+    }
+
+    const latex = latexInput.value.trim();
+    if (!latex) {
+      showError('No LaTeX code to share');
+      return;
+    }
+
+    try {
+      // Create shareable URL with the LaTeX equation
+      const baseUrl = window.location.origin + window.location.pathname;
+      const shareUrl = `${baseUrl}?latex=${encodeURIComponent(latex)}`;
+
+      // Copy to clipboard
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(shareUrl);
+      } else {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = shareUrl;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-9999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+
+        try {
+          document.execCommand('copy');
+        } catch (err) {
+          throw new Error('Failed to copy link to clipboard');
+        } finally {
+          document.body.removeChild(textArea);
+        }
+      }
+
+      // Show success feedback
+      shareButton.classList.add('copied');
+      setTimeout(() => shareButton.classList.remove('copied'), 2000);
+
+    } catch (err) {
+      showError('Failed to copy share link: ' + err.message);
+    }
+  };
+
   // Show/hide Copy SVG Code button when SVG is rendered
   const copySVGCodeButton = document.getElementById('copy-svgcode-button');
   
@@ -2439,7 +2510,16 @@ window.historyManager = historyManager; // Make globally accessible for testing
   handlePWAShortcuts();
   setupFileHandlers();
   handleStandaloneMode();
-  
+
+  // Add share button event listener
+  const shareButton = document.getElementById('share-button');
+  if (shareButton) {
+    shareButton.addEventListener('click', shareEquation);
+    console.log('Share button event listener added');
+  } else {
+    console.log('Share button not found');
+  }
+
   // Request notification permission (optional)
   // requestNotificationPermission();
   
