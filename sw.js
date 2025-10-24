@@ -4,23 +4,15 @@ const DYNAMIC_CACHE = 'latex-generator-dynamic-v1.1.0';
 const RUNTIME_CACHE = 'latex-generator-runtime-v1.1.0';
 
 // Static assets that should be cached immediately
+// Only cache PWA manifest and essential icons, not website content
 const STATIC_ASSETS = [
-  './',
-  './index.html',
-  './style.css',
-  './script.js',
-  './bundle.js',
-  './latex-commands.json',
+  './site.webmanifest',
   './assets/icons/favicon-16x16.png',
   './assets/icons/favicon-32x32.png',
   './assets/icons/android-chrome-192x192.png',
   './assets/icons/android-chrome-512x512.png',
   './assets/icons/apple-touch-icon.png',
-  './assets/icons/favicon.ico',
-  './help/index.html',
-  './site.webmanifest',
-  './robots.txt',
-  './sitemap.xml'
+  './assets/icons/favicon.ico'
 ];
 
 // External resources that should be cached
@@ -148,10 +140,8 @@ async function networkFirstStrategy(request, cacheName) {
       return cachedResponse;
     }
     
-    // Return offline page for navigation requests
-    if (request.destination === 'document') {
-      return caches.match('./index.html');
-    }
+    // Don't serve cached content for main website navigation
+    // Only allow caching for external resources, not website content
     
     // Don't cache unsupported schemes
     if (error.message.includes('chrome-extension') || error.message.includes('unsupported')) {
@@ -164,10 +154,10 @@ async function networkFirstStrategy(request, cacheName) {
 
 // Helper functions to categorize requests
 function isStaticAsset(request) {
-  const staticExtensions = ['.html', '.css', '.js', '.json', '.png', '.ico', '.webmanifest'];
-  return staticExtensions.some(ext => request.url.includes(ext)) ||
-         request.url.includes('/assets/') ||
-         request.url.endsWith('/');
+  // Only cache PWA-related files and icons, not website content
+  return request.url.includes('site.webmanifest') ||
+         request.url.includes('/assets/icons/') ||
+         (request.url.includes('.ico') && request.url.includes('/assets/icons/'));
 }
 
 function isExternalResource(request) {

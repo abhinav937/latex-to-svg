@@ -1305,9 +1305,7 @@ class HistoryManager {
   constructor() {
     this.history = [];
     this.maxItems = 50; // Increased from 10 to 50
-    this.usageStats = {};
     this.loadHistory();
-    this.loadUsageStats();
   }
 
   // Load history from localStorage
@@ -1315,7 +1313,7 @@ class HistoryManager {
     try {
       const saved = localStorage.getItem('latexHistory');
       this.history = saved ? JSON.parse(saved) : [];
-      
+
       // Migrate old sessionStorage data if exists
       const sessionHistory = sessionStorage.getItem('latexHistory');
       if (sessionHistory) {
@@ -1341,40 +1339,17 @@ class HistoryManager {
     }
   }
 
-  // Load usage statistics
-  loadUsageStats() {
-    try {
-      const saved = localStorage.getItem('latexUsageStats');
-      this.usageStats = saved ? JSON.parse(saved) : {};
-    } catch (error) {
-      console.error('Failed to load usage stats:', error);
-      this.usageStats = {};
-    }
-  }
-
-  // Save usage statistics
-  saveUsageStats() {
-    try {
-      localStorage.setItem('latexUsageStats', JSON.stringify(this.usageStats));
-    } catch (error) {
-      console.error('Failed to save usage stats:', error);
-    }
-  }
-
-
-
-  // Add item to history with timestamp and usage tracking
+  // Add item to history with timestamp
   addToHistory(latex) {
     if (!latex || latex.trim() === '') return;
 
     const now = new Date();
     const timestamp = now.getTime();
-    
+
     // Create history item with metadata
     const historyItem = {
       latex: latex.trim(),
-      timestamp: timestamp,
-      usageCount: 1
+      timestamp: timestamp
     };
 
     // Remove existing item if it exists
@@ -1388,26 +1363,8 @@ class HistoryManager {
       this.history = this.history.slice(0, this.maxItems);
     }
 
-    // Update usage statistics
-    this.updateUsageStats(latex);
-
     this.saveHistory();
-    this.saveUsageStats();
     this.updateUI();
-  }
-
-  // Update usage statistics for a LaTeX command
-  updateUsageStats(latex) {
-    if (!this.usageStats[latex]) {
-      this.usageStats[latex] = {
-        count: 0,
-        firstUsed: Date.now(),
-        lastUsed: Date.now()
-      };
-    }
-    
-    this.usageStats[latex].count++;
-    this.usageStats[latex].lastUsed = Date.now();
   }
 
 
@@ -1481,9 +1438,8 @@ class HistoryManager {
 
   // Render a single history item with Material Design 3 styling
   renderHistoryItem(item) {
-    const usageCount = this.usageStats[item.latex]?.count || 1;
     const relativeTime = this.formatRelativeTime(item.timestamp);
-    
+
     return `
       <div class="history-item" data-latex="${item.latex}">
         <div class="history-item-content">

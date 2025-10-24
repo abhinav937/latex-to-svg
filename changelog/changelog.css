@@ -1,0 +1,130 @@
+/* Changelog Page Specific Styling */
+
+.changelog-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.changelog-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.changelog-header h1 {
+  font-size: 2.5rem;
+  font-weight: 300;
+  color: var(--md-sys-color-on-surface);
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+
+.changelog-header p {
+  font-size: 1.125rem;
+  color: var(--md-sys-color-on-surface-variant);
+  line-height: 1.5;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.changelog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.changelog-entry {
+  background: var(--md-sys-color-surface-container);
+  border-radius: var(--md-sys-shape-card);
+  padding: 2rem;
+  box-shadow: var(--md-sys-elevation-1);
+  border: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.changelog-date {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: var(--md-sys-color-primary);
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.changelog-section {
+  margin-bottom: 1.5rem;
+}
+
+.changelog-section:last-child {
+  margin-bottom: 0;
+}
+
+.changelog-section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface);
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.changelog-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.changelog-list li {
+  position: relative;
+  padding-left: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: var(--md-sys-color-on-surface-variant);
+  line-height: 1.5;
+}
+
+.changelog-list li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: var(--md-sys-color-primary);
+  font-weight: bold;
+  font-size: 1.25rem;
+  line-height: 1;
+  top: 0.125rem;
+}
+
+.changelog-list li:last-child {
+  margin-bottom: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .changelog-container {
+    padding: 1rem;
+  }
+
+  .changelog-header h1 {
+    font-size: 2rem;
+  }
+
+  .changelog-header p {
+    font-size: 1rem;
+  }
+
+  .changelog-entry {
+    padding: 1.5rem;
+  }
+
+  .changelog-date {
+    font-size: 1.125rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .changelog-header h1 {
+    font-size: 1.75rem;
+  }
+
+  .changelog-entry {
+    padding: 1rem;
+  }
+}
