@@ -2,6 +2,27 @@
 
 const changelogData = [
   {
+    date: "Nov 2025",
+    sections: {
+      "New Features": [
+        "Redesigned autocomplete shortcuts with modern Material Design 3 styling",
+        "Horizontal layout for autocomplete items showing preview, code, badge, and description in a single row",
+        "Enhanced autocomplete positioning - now appears strictly below the text box with proper spacing",
+        "Improved autocomplete styling with rounded corners and refined borders"
+      ],
+      "UI Improvements": [
+        "Modernized autocomplete dropdown with 16px rounded corners",
+        "Cleaner badge design - removed category badges (GREEK, LOGIC, etc.), keeping only math mode indicators",
+        "Refined border styling with subtle shadows for better visual hierarchy",
+        "Custom scrollbar styling with rounded corners for autocomplete dropdown"
+      ],
+      "Bug Fixes": [
+        "Fixed autocomplete overlapping text box - now positions correctly below input field",
+        "Removed unnecessary console log messages for cleaner developer experience"
+      ]
+    }
+  },
+  {
     date: "Oct 24, 2025",
     sections: {
       "New Features": [
@@ -90,7 +111,6 @@ function loadChangelog() {
   const container = document.getElementById('changelog-entries');
 
   if (!container) {
-    console.error('Changelog container not found');
     return;
   }
 

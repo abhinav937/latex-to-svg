@@ -8,10 +8,38 @@
       "category": "math"
     },
     {
+      "command": "\\dfrac",
+      "arguments": "{numerator}{denominator}",
+      "description": "Display style fraction",
+      "example": "\\dfrac{1}{2}",
+      "category": "math"
+    },
+    {
+      "command": "\\tfrac",
+      "arguments": "{numerator}{denominator}",
+      "description": "Text style fraction",
+      "example": "\\tfrac{1}{2}",
+      "category": "math"
+    },
+    {
+      "command": "\\binom",
+      "arguments": "{n}{k}",
+      "description": "Binomial coefficient",
+      "example": "\\binom{n}{k}",
+      "category": "math"
+    },
+    {
       "command": "\\sum",
       "arguments": "_{lower}^{upper}",
       "description": "Summation",
       "example": "\\sum_{i=1}^{n}",
+      "category": "math"
+    },
+    {
+      "command": "\\prod",
+      "arguments": "_{lower}^{upper}",
+      "description": "Product",
+      "example": "\\prod_{i=1}^{n}",
       "category": "math"
     },
     {
@@ -32,21 +60,21 @@
       "command": "\\sqrt",
       "arguments": "[degree]{radicand}",
       "description": "Square root",
-      "example": "\\sqrt{x}",
+      "example": "\\sqrt{x^2 + y^2}",
       "category": "math"
     },
     {
       "command": "\\mathbf",
       "arguments": "{text}",
       "description": "Bold math",
-      "example": "\\mathbf{x}",
+      "example": "\\mathbf{v}",
       "category": "math"
     },
     {
       "command": "\\mathit",
       "arguments": "{text}",
       "description": "Italic math",
-      "example": "\\mathit{x}",
+      "example": "\\mathit{var}",
       "category": "math"
     },
     {
@@ -372,10 +400,80 @@
       "category": "math"
     },
     {
+      "command": "\\min",
+      "arguments": "",
+      "description": "Minimum",
+      "example": "\\min",
+      "category": "math"
+    },
+    {
+      "command": "\\max",
+      "arguments": "",
+      "description": "Maximum",
+      "example": "\\max",
+      "category": "math"
+    },
+    {
+      "command": "\\sup",
+      "arguments": "",
+      "description": "Supremum",
+      "example": "\\sup",
+      "category": "math"
+    },
+    {
+      "command": "\\inf",
+      "arguments": "",
+      "description": "Infimum",
+      "example": "\\inf",
+      "category": "math"
+    },
+    {
       "command": "\\infty",
       "arguments": "",
       "description": "Infinity symbol",
       "example": "\\infty",
+      "category": "math"
+    },
+    {
+      "command": "\\ell",
+      "arguments": "",
+      "description": "Lowercase L",
+      "example": "\\ell",
+      "category": "math"
+    },
+    {
+      "command": "\\hbar",
+      "arguments": "",
+      "description": "Planck constant",
+      "example": "\\hbar",
+      "category": "math"
+    },
+    {
+      "command": "\\imath",
+      "arguments": "",
+      "description": "Dotless i",
+      "example": "\\imath",
+      "category": "math"
+    },
+    {
+      "command": "\\jmath",
+      "arguments": "",
+      "description": "Dotless j",
+      "example": "\\jmath",
+      "category": "math"
+    },
+    {
+      "command": "\\prime",
+      "arguments": "",
+      "description": "Prime symbol",
+      "example": "f'(x)",
+      "category": "math"
+    },
+    {
+      "command": "\\degree",
+      "arguments": "",
+      "description": "Degree symbol",
+      "example": "90\\degree",
       "category": "math"
     },
     {
@@ -406,6 +504,41 @@
       "example": "\\exists",
       "category": "logic"
     },
+    {
+      "command": "\\neg",
+      "arguments": "",
+      "description": "Logical not",
+      "example": "\\neg",
+      "category": "logic"
+    },
+    {
+      "command": "\\land",
+      "arguments": "",
+      "description": "Logical and",
+      "example": "\\land",
+      "category": "logic"
+    },
+    {
+      "command": "\\lor",
+      "arguments": "",
+      "description": "Logical or",
+      "example": "\\lor",
+      "category": "logic"
+    },
+    {
+      "command": "\\implies",
+      "arguments": "",
+      "description": "Implies",
+      "example": "\\implies",
+      "category": "logic"
+    },
+    {
+      "command": "\\iff",
+      "arguments": "",
+      "description": "If and only if",
+      "example": "\\iff",
+      "category": "logic"
+    },
 
     {
       "command": "\\in",
@@ -429,10 +562,31 @@
       "category": "logic"
     },
     {
+      "command": "\\subseteq",
+      "arguments": "",
+      "description": "Subset or equal",
+      "example": "\\subseteq",
+      "category": "logic"
+    },
+    {
       "command": "\\supset",
       "arguments": "",
       "description": "Superset",
       "example": "\\supset",
+      "category": "logic"
+    },
+    {
+      "command": "\\supseteq",
+      "arguments": "",
+      "description": "Superset or equal",
+      "example": "\\supseteq",
+      "category": "logic"
+    },
+    {
+      "command": "\\setminus",
+      "arguments": "",
+      "description": "Set difference",
+      "example": "A \\setminus B",
       "category": "logic"
     },
     {
@@ -647,6 +801,69 @@
       "category": "relations"
     },
     {
+      "command": "\\perp",
+      "arguments": "",
+      "description": "Perpendicular",
+      "example": "\\perp",
+      "category": "relations"
+    },
+    {
+      "command": "\\parallel",
+      "arguments": "",
+      "description": "Parallel",
+      "example": "\\parallel",
+      "category": "relations"
+    },
+    {
+      "command": "\\angle",
+      "arguments": "",
+      "description": "Angle",
+      "example": "\\angle",
+      "category": "relations"
+    },
+    {
+      "command": "\\triangle",
+      "arguments": "",
+      "description": "Triangle",
+      "example": "\\triangle",
+      "category": "relations"
+    },
+    {
+      "command": "\\square",
+      "arguments": "",
+      "description": "Square",
+      "example": "\\square",
+      "category": "relations"
+    },
+    {
+      "command": "\\diamond",
+      "arguments": "",
+      "description": "Diamond",
+      "example": "\\diamond",
+      "category": "relations"
+    },
+    {
+      "command": "\\therefore",
+      "arguments": "",
+      "description": "Therefore",
+      "example": "\\therefore",
+      "category": "relations"
+    },
+    {
+      "command": "\\because",
+      "arguments": "",
+      "description": "Because",
+      "example": "\\because",
+      "category": "relations"
+    },
+    {
+      "command": "\\qed",
+      "arguments": "",
+      "description": "QED symbol",
+      "example": "\\qed",
+      "category": "relations"
+    },
+    {
       "command": "\\neq",
       "arguments": "",
       "description": "Not equal",
@@ -731,6 +948,20 @@
       "category": "operators"
     },
     {
+      "command": "\\ast",
+      "arguments": "",
+      "description": "Asterisk",
+      "example": "\\ast",
+      "category": "operators"
+    },
+    {
+      "command": "\\star",
+      "arguments": "",
+      "description": "Star",
+      "example": "\\star",
+      "category": "operators"
+    },
+    {
       "command": "\\oplus",
       "arguments": "",
       "description": "Direct sum",
@@ -758,6 +989,20 @@
       "arguments": "",
       "description": "Big intersection",
       "example": "\\bigcap",
+      "category": "operators"
+    },
+    {
+      "command": "\\bigvee",
+      "arguments": "",
+      "description": "Big logical or",
+      "example": "\\bigvee",
+      "category": "operators"
+    },
+    {
+      "command": "\\bigwedge",
+      "arguments": "",
+      "description": "Big logical and",
+      "example": "\\bigwedge",
       "category": "operators"
     },
 
@@ -808,35 +1053,35 @@
       "command": "\\matrix",
       "arguments": "{content}",
       "description": "Matrix",
-      "example": "\\matrix{...}",
+      "example": "\\begin{matrix} a & b \\\\ c & d \\end{matrix}",
       "category": "math"
     },
     {
       "command": "\\pmatrix",
       "arguments": "{content}",
       "description": "Parenthesized matrix",
-      "example": "\\pmatrix{...}",
+      "example": "\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix}",
       "category": "math"
     },
     {
       "command": "\\bmatrix",
       "arguments": "{content}",
       "description": "Bracketed matrix",
-      "example": "\\bmatrix{...}",
+      "example": "\\begin{bmatrix} a & b \\\\ c & d \\end{bmatrix}",
       "category": "math"
     },
     {
       "command": "\\vmatrix",
       "arguments": "{content}",
       "description": "Vertical bar matrix",
-      "example": "\\vmatrix{...}",
+      "example": "\\begin{vmatrix} a & b \\\\ c & d \\end{vmatrix}",
       "category": "math"
     },
     {
       "command": "\\Vmatrix",
       "arguments": "{content}",
       "description": "Double vertical bar matrix",
-      "example": "\\Vmatrix{...}",
+      "example": "\\begin{Vmatrix} a & b \\\\ c & d \\end{Vmatrix}",
       "category": "math"
     },
 
@@ -844,21 +1089,21 @@
       "command": "\\array",
       "arguments": "{content}",
       "description": "Array",
-      "example": "\\array{...}",
+      "example": "\\begin{array}{cc} a & b \\\\ c & d \\end{array}",
       "category": "math"
     },
     {
       "command": "\\footnote",
       "arguments": "{text}",
       "description": "Footnote",
-      "example": "\\footnote{...}",
+      "example": "\\footnote{Note text}",
       "category": "text"
     },
     {
       "command": "\\marginpar",
       "arguments": "{text}",
       "description": "Margin paragraph",
-      "example": "\\marginpar{...}",
+      "example": "\\marginpar{Margin note}",
       "category": "text"
     },
     {
@@ -932,6 +1177,27 @@
       "category": "text"
     },
     {
+      "command": "\\textsubscript",
+      "arguments": "{text}",
+      "description": "Subscript text",
+      "example": "R\\textsubscript{DS}",
+      "category": "text"
+    },
+    {
+      "command": "\\textsuperscript",
+      "arguments": "{text}",
+      "description": "Superscript text",
+      "example": "1\\textsuperscript{st}",
+      "category": "text"
+    },
+    {
+      "command": "\\text",
+      "arguments": "{text}",
+      "description": "Text in math mode",
+      "example": "\\text{Hello}",
+      "category": "text"
+    },
+    {
       "command": "\\emph",
       "arguments": "{text}",
       "description": "Emphasized text",
@@ -951,6 +1217,55 @@
       "description": "Overlined text",
       "example": "\\overline{overlined}",
       "category": "text"
+    },
+    {
+      "command": "\\mathbb{R}",
+      "arguments": "",
+      "description": "Real numbers",
+      "example": "\\mathbb{R}",
+      "category": "math"
+    },
+    {
+      "command": "\\mathbb{Z}",
+      "arguments": "",
+      "description": "Integers",
+      "example": "\\mathbb{Z}",
+      "category": "math"
+    },
+    {
+      "command": "\\mathbb{N}",
+      "arguments": "",
+      "description": "Natural numbers",
+      "example": "\\mathbb{N}",
+      "category": "math"
+    },
+    {
+      "command": "\\mathbb{Q}",
+      "arguments": "",
+      "description": "Rational numbers",
+      "example": "\\mathbb{Q}",
+      "category": "math"
+    },
+    {
+      "command": "\\mathbb{C}",
+      "arguments": "",
+      "description": "Complex numbers",
+      "example": "\\mathbb{C}",
+      "category": "math"
+    },
+    {
+      "command": "\\quad",
+      "arguments": "",
+      "description": "Horizontal space (1em)",
+      "example": "\\quad",
+      "category": "math"
+    },
+    {
+      "command": "\\qquad",
+      "arguments": "",
+      "description": "Horizontal space (2em)",
+      "example": "\\qquad",
+      "category": "math"
     }
   ]
 } 

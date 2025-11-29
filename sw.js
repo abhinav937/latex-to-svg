@@ -28,21 +28,17 @@ const EXTERNAL_RESOURCES = [
 
 // Install event - cache static assets
 self.addEventListener('install', event => {
-  console.log('Service Worker installing...');
   event.waitUntil(
     Promise.all([
       // Cache static assets
       caches.open(STATIC_CACHE).then(cache => {
-        console.log('Caching static assets');
         return cache.addAll(STATIC_ASSETS);
       }),
       // Cache external resources
       caches.open(DYNAMIC_CACHE).then(cache => {
-        console.log('Caching external resources');
         return cache.addAll(EXTERNAL_RESOURCES);
       })
     ]).then(() => {
-      console.log('Service Worker installed successfully');
       // Skip waiting to activate immediately
       return self.skipWaiting();
     })
@@ -51,7 +47,6 @@ self.addEventListener('install', event => {
 
 // Activate event - clean up old caches and claim clients
 self.addEventListener('activate', event => {
-  console.log('Service Worker activating...');
   event.waitUntil(
     Promise.all([
       // Clean up old caches
@@ -59,7 +54,6 @@ self.addEventListener('activate', event => {
         return Promise.all(
           cacheNames.map(cacheName => {
             if (![STATIC_CACHE, DYNAMIC_CACHE, RUNTIME_CACHE].includes(cacheName)) {
-              console.log('Deleting old cache:', cacheName);
               return caches.delete(cacheName);
             }
           })
@@ -67,9 +61,7 @@ self.addEventListener('activate', event => {
       }),
       // Claim all clients immediately
       self.clients.claim()
-    ]).then(() => {
-      console.log('Service Worker activated successfully');
-    })
+    ])
   );
 });
 
@@ -115,7 +107,6 @@ async function cacheFirstStrategy(request, cacheName) {
     }
     return networkResponse;
   } catch (error) {
-    console.log('Cache-first strategy failed:', error);
     // Don't cache unsupported schemes
     if (error.message.includes('chrome-extension') || error.message.includes('unsupported')) {
       return fetch(request);
@@ -134,7 +125,6 @@ async function networkFirstStrategy(request, cacheName) {
     }
     return networkResponse;
   } catch (error) {
-    console.log('Network failed, trying cache:', error);
     const cachedResponse = await caches.match(request);
     if (cachedResponse) {
       return cachedResponse;
@@ -180,7 +170,6 @@ self.addEventListener('sync', event => {
 });
 
 async function doBackgroundSync() {
-  console.log('Performing background sync...');
   // Implement background sync logic here
   // For example, sync cached LaTeX commands or user preferences
 }

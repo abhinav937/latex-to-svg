@@ -11,6 +11,9 @@
   --md-sys-shape-button: 12px;
   --md-sys-shape-card: 20px;
   --md-sys-shape-corner-extra-small: 4px;
+  --md-sys-shape-corner-small: 8px;
+  --md-sys-shape-corner-medium: 12px;
+  --md-sys-shape-corner-large: 16px;
   --md-sys-color-outline: rgba(0, 0, 0, 0.12);
   --md-sys-color-outline-variant: rgba(0, 0, 0, 0.08);
   --md-sys-color-on-surface-variant: rgba(0, 0, 0, 0.6);
@@ -1445,57 +1448,92 @@ md-filled-button:active::after, md-outlined-button:active::after, md-icon-button
   }
 }
 
-/* Material UI Themed LaTeX Autocomplete Styles */
+/* Material Design 3 Autocomplete Styles */
 #latex-autocomplete {
   position: absolute;
-  border: 1px solid var(--md-sys-color-outline);
-  border-radius: var(--md-sys-shape-corner-medium);
-  box-shadow: var(--md-sys-elevation-level3);
+  border: 1.5px solid var(--md-sys-color-outline);
+  border-radius: 16px;
+  box-shadow: var(--md-sys-elevation-2), 0 0 0 1px rgba(0, 0, 0, 0.04);
   background: var(--md-sys-color-surface);
-  max-height: 320px;
+  max-height: 400px;
+  overflow: hidden;
   overflow-y: auto;
   z-index: 10000;
   font-family: var(--md-sys-typescale-body-medium-font-family-name);
   font-size: var(--md-sys-typescale-body-medium-size);
-  min-width: 320px;
-  max-width: 480px;
+  min-width: 480px;
+  max-width: 600px;
   color: var(--md-sys-color-on-surface);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  margin-top: 0;
+  /* Subtle entrance animation */
+  animation: dropdownSlideIn 0.2s cubic-bezier(0.2, 0, 0, 1);
 }
 
+/* Rounded corners for scrollbar area */
+#latex-autocomplete::-webkit-scrollbar {
+  width: 8px;
+}
+
+#latex-autocomplete::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 0 16px 16px 0;
+}
+
+#latex-autocomplete::-webkit-scrollbar-thumb {
+  background: var(--md-sys-color-outline);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+#latex-autocomplete::-webkit-scrollbar-thumb:hover {
+  background: var(--md-sys-color-outline-variant);
+  background-clip: padding-box;
+}
+
+/* Material Design 3 horizontal layout */
 .autocomplete-item {
-  padding: var(--md-sys-spacing-3) var(--md-sys-spacing-4);
+  padding: 12px 16px;
   cursor: pointer;
   border-bottom: 1px solid var(--md-sys-color-outline-variant);
-  border-left: 4px solid transparent;
   display: flex;
   align-items: center;
-  gap: var(--md-sys-spacing-3);
-  transition: all var(--md-sys-motion-easing-emphasized) var(--md-sys-motion-duration-medium2);
+  transition: background-color 0.15s cubic-bezier(0.2, 0, 0, 1);
   position: relative;
-  min-height: 48px;
+  min-height: 56px;
+}
+
+.autocomplete-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.autocomplete-item:first-child {
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
 }
 
 .autocomplete-item:last-child {
   border-bottom: none;
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
 }
 
+/* Material Design 3 hover state */
 .autocomplete-item:hover {
   background-color: var(--md-sys-color-surface-container-high);
-  border-left-color: var(--md-sys-color-primary-container);
 }
 
+/* Material Design 3 selected state */
 .autocomplete-item.selected {
   background-color: var(--md-sys-color-primary-container);
   color: var(--md-sys-color-on-primary-container);
-  border-left-color: var(--md-sys-color-primary);
-  box-shadow: inset 0 0 0 1px var(--md-sys-color-primary-container);
 }
 
 .autocomplete-item.selected .command {
   color: var(--md-sys-color-on-primary-container);
-  font-weight: 600;
 }
 
 .autocomplete-item.selected .description {
@@ -1503,42 +1541,76 @@ md-filled-button:active::after, md-outlined-button:active::after, md-icon-button
   opacity: 0.9;
 }
 
-.autocomplete-item.selected .example {
+.autocomplete-item.selected .preview-fallback {
   color: var(--md-sys-color-on-primary-container);
   opacity: 0.8;
 }
 
+/* Material Design 3 component styles */
+.autocomplete-item .latex-preview {
+  width: 48px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--md-sys-color-surface-container);
+  border-radius: var(--md-sys-shape-corner-small);
+  flex-shrink: 0;
+}
+
+.autocomplete-item .latex-preview img {
+  height: 20px;
+  width: auto;
+  max-width: 40px;
+  object-fit: contain;
+}
+
 .autocomplete-item .command {
-  font-family: 'Roboto Mono', 'Courier New', monospace;
+  font-family: 'Roboto Mono', monospace;
   font-weight: 500;
   color: var(--md-sys-color-primary);
-  font-size: var(--md-sys-typescale-body-medium-size);
-  line-height: var(--md-sys-typescale-body-medium-line-height);
+  font-size: 0.875rem;
+  line-height: 1.5;
   min-width: 120px;
+  flex-shrink: 0;
+}
+
+.autocomplete-item.selected .command {
+  color: var(--md-sys-color-on-primary-container);
+}
+
+.autocomplete-item .badge-container {
+  display: flex;
+  gap: 8px;
+  align-items: center;
   flex-shrink: 0;
 }
 
 .autocomplete-item .description {
   color: var(--md-sys-color-on-surface-variant);
-  font-size: var(--md-sys-typescale-body-small-size);
+  font-size: 0.875rem;
+  line-height: 1.5;
   flex: 1;
-  line-height: var(--md-sys-typescale-body-small-line-height);
-  margin-left: var(--md-sys-spacing-2);
+  font-weight: 400;
 }
 
-.autocomplete-item .example {
-  font-size: var(--md-sys-typescale-label-small-size);
+.autocomplete-item.selected .description {
+  color: var(--md-sys-color-on-primary-container);
+  opacity: 0.9;
+}
+
+.autocomplete-item .preview-fallback {
+  font-size: 0.75rem;
   color: var(--md-sys-color-on-surface-variant);
   font-style: italic;
-  font-family: 'Roboto Mono', 'Courier New', monospace;
-  line-height: var(--md-sys-typescale-label-small-line-height);
-  opacity: 0.7;
+  font-weight: 500;
 }
 
+/* Material Design 3 badge styles */
 .autocomplete-item .category-badge {
   background: var(--md-sys-color-secondary-container);
   color: var(--md-sys-color-on-secondary-container);
-  padding: var(--md-sys-spacing-1) var(--md-sys-spacing-2);
+  padding: 2px 8px;
   border-radius: var(--md-sys-shape-corner-extra-small);
   font-size: var(--md-sys-typescale-label-small-size);
   font-weight: 500;
@@ -1547,35 +1619,75 @@ md-filled-button:active::after, md-outlined-button:active::after, md-icon-button
   letter-spacing: 0.5px;
 }
 
-.autocomplete-item .latex-preview {
-  margin-left: var(--md-sys-spacing-2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 36px;
-  height: 24px;
-  background: var(--md-sys-color-surface-container);
+.autocomplete-item .math-mode-badge {
+  padding: 2px 6px;
   border-radius: var(--md-sys-shape-corner-extra-small);
-  padding: var(--md-sys-spacing-1) var(--md-sys-spacing-2);
-  border: 1px solid var(--md-sys-color-outline-variant);
-  flex-shrink: 0;
+  font-size: var(--md-sys-typescale-label-small-size);
+  font-weight: 500;
+  line-height: var(--md-sys-typescale-label-small-line-height);
+  min-width: 20px;
+  text-align: center;
 }
 
-.autocomplete-item .latex-preview img {
-  height: 16px;
-  width: auto;
-  max-width: 48px;
-  vertical-align: middle;
-  object-fit: contain;
-  filter: var(--md-sys-color-on-surface-variant);
+.autocomplete-item .math-mode-badge[data-mode="required"] {
+  background: rgba(25, 118, 210, 0.12);
+  color: #1976d2;
+}
+
+.autocomplete-item .math-mode-badge[data-mode="optional"] {
+  background: rgba(245, 124, 0, 0.12);
+  color: #f57c00;
+}
+
+.autocomplete-item .math-mode-badge[data-mode="not_needed"] {
+  background: rgba(56, 142, 60, 0.12);
+  color: #388e3c;
+}
+
+.autocomplete-item.selected .math-mode-badge[data-mode="required"] {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--md-sys-color-on-primary-container);
+}
+
+.autocomplete-item.selected .math-mode-badge[data-mode="optional"] {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--md-sys-color-on-primary-container);
+}
+
+.autocomplete-item.selected .math-mode-badge[data-mode="not_needed"] {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--md-sys-color-on-primary-container);
+}
+
+[data-theme="dark"] .autocomplete-item .math-mode-badge[data-mode="required"] {
+  background: rgba(144, 202, 249, 0.16);
+  color: #90caf9;
+}
+
+[data-theme="dark"] .autocomplete-item .math-mode-badge[data-mode="optional"] {
+  background: rgba(255, 204, 128, 0.16);
+  color: #ffcc80;
+}
+
+[data-theme="dark"] .autocomplete-item .math-mode-badge[data-mode="not_needed"] {
+  background: rgba(165, 214, 167, 0.16);
+  color: #a5d6a7;
 }
 
 /* Dark theme adjustments */
 [data-theme="dark"] #latex-autocomplete {
   background: var(--md-sys-color-surface);
   border-color: var(--md-sys-color-outline);
-  color: var(--md-sys-color-on-surface);
-  box-shadow: var(--md-sys-elevation-level3), 0 0 0 1px var(--md-sys-color-outline);
+  border-width: 1.5px;
+  box-shadow: var(--md-sys-elevation-2), 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] #latex-autocomplete::-webkit-scrollbar-thumb {
+  background: var(--md-sys-color-outline);
+}
+
+[data-theme="dark"] #latex-autocomplete::-webkit-scrollbar-thumb:hover {
+  background: var(--md-sys-color-outline-variant);
 }
 
 [data-theme="dark"] .autocomplete-item:hover {
@@ -1585,60 +1697,66 @@ md-filled-button:active::after, md-outlined-button:active::after, md-icon-button
 [data-theme="dark"] .autocomplete-item.selected {
   background-color: var(--md-sys-color-primary-container);
   color: var(--md-sys-color-on-primary-container);
-  box-shadow: inset 0 0 0 1px var(--md-sys-color-primary-container);
-}
-
-[data-theme="dark"] .autocomplete-item .latex-preview {
-  background: var(--md-sys-color-surface-container-low);
-  border-color: var(--md-sys-color-outline);
 }
 
 /* Mobile responsive autocomplete */
 @media (max-width: 600px) {
   #latex-autocomplete {
-    min-width: 300px;
-    max-width: calc(100vw - 32px);
+    min-width: 320px;
+    max-width: calc(100vw - 24px);
     font-size: var(--md-sys-typescale-body-small-size);
-    border-radius: var(--md-sys-shape-corner-small);
+    border-radius: var(--md-sys-shape-corner-medium);
   }
-  
+
   .autocomplete-item {
-    padding: var(--md-sys-spacing-3) var(--md-sys-spacing-3);
-    gap: var(--md-sys-spacing-2);
-    min-height: 44px;
+    padding: 10px 12px;
+    min-height: 48px;
   }
-  
+
+  .autocomplete-content {
+    gap: 10px;
+  }
+
   .autocomplete-item .command {
-    min-width: 90px;
-    font-size: var(--md-sys-typescale-body-small-size);
+    min-width: 100px;
+    font-size: 0.8125rem;
   }
-  
-  .autocomplete-item .arguments {
-    font-size: var(--md-sys-typescale-label-small-size);
-  }
-  
+
   .autocomplete-item .description {
-    font-size: var(--md-sys-typescale-body-small-size);
-    max-width: 120px;
+    font-size: 0.8125rem;
   }
-  
+
   .autocomplete-item .latex-preview {
-    min-width: 32px;
-    height: 20px;
+    width: 40px;
+    height: 28px;
   }
-  
+
   .autocomplete-item .latex-preview img {
-    height: 14px;
-    max-width: 40px;
+    height: 18px;
+    max-width: 32px;
+  }
+
+  .autocomplete-item .badge-container {
+    gap: 6px;
+  }
+
+  .autocomplete-item .math-mode-badge,
+  .autocomplete-item .category-badge {
+    font-size: 0.625rem;
+    padding: 2px 6px;
   }
 }
 
-/* SEO Content Section */
+/* SEO Content Section - Hidden visually but accessible to search engines */
 .seo-content {
-  background: var(--md-sys-color-surface-container);
-  padding: 3rem 0;
-  margin-top: 2rem;
-  border-top: 1px solid var(--md-sys-color-outline-variant);
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(100%);
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
 }
 
 .seo-content .container {
@@ -1728,24 +1846,36 @@ md-filled-button:active::after, md-outlined-button:active::after, md-icon-button
   }
 }
 
+/* Material Design 3 dropdown entrance animation */
+@keyframes dropdownSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (max-width: 600px) {
   .seo-content {
     padding: 1.5rem 0;
     margin-top: 1rem;
   }
-  
+
   .seo-content .container {
     padding: 0 0.75rem;
   }
-  
+
   .seo-content h2 {
     font-size: 1.375rem;
   }
-  
+
   .seo-content h3 {
     font-size: 1rem;
   }
-  
+
   .seo-content p,
   .seo-content ul {
     font-size: 0.875rem;

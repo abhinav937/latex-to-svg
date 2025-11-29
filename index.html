@@ -18,6 +18,19 @@
     <meta name="author" content="Abhinav Chinnusamy">
     <meta name="robots" content="index, follow, max-image-preview:large">
 
+    <!-- Content Security Policy to prevent malicious script injection while allowing legitimate services -->
+    <!-- Note: frame-ancestors and report-uri are ignored in meta tags but included for completeness -->
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://cdn.jsdelivr.net https://fonts.googleapis.com;
+      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com;
+      font-src 'self' https://fonts.gstatic.com;
+      img-src 'self' data: https://latex.codecogs.com https://cabhinav.com;
+      connect-src 'self' https://latex.codecogs.com https://ai-reply-bot.vercel.app https://www.google.com https://www.google-analytics.com https://fonts.googleapis.com https://fonts.gstatic.com;
+      base-uri 'self';
+      form-action 'self';
+    ">
+
     <!-- Favicon and Icons -->
     <link rel="shortcut icon" href="./assets/icons/favicon.ico" type="image/x-icon">
     <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/apple-touch-icon.png">
@@ -226,7 +239,7 @@
       }
     </script>
     
-    <!-- Material Web Components JS - Using bundled version -->
+    <!-- Material Web Components JS - Using bundled version with enhanced error handling -->
     <script type="module">
       // Module resolution polyfill for tslib
       if (typeof window !== 'undefined') {
@@ -244,31 +257,104 @@
           }
         }
       }
-      
-      // Check if Material Web Components are already loaded from bundle
-      // Wait a bit longer for the bundle to load
-      setTimeout(() => {
-        if (!customElements.get('md-outlined-text-field')) {
-          // Load from CDN as fallback
-          const loadMaterialWeb = () => {
-            const script = document.createElement('script');
-            script.type = 'module';
-            script.src = 'https://cdn.jsdelivr.net/npm/@material/web@2.0.0/all.js';
-            script.crossOrigin = 'anonymous';
-            script.onerror = () => {
-              console.error('Material Web Components failed to load from CDN');
-                  // Show error in the text field if components fail to load
-    const latexInput = document.getElementById('latex-input');
-    if (latexInput) {
-      latexInput.placeholder = 'Loading Error: Material Web Components failed to load. Please check your internet connection and refresh the page.';
-    }
-            };
-            document.head.appendChild(script);
-          };
-          
-          loadMaterialWeb();
+
+      // Enhanced Material Web Components loading with multiple fallbacks
+      let materialWebLoadAttempts = 0;
+      const maxLoadAttempts = 3;
+
+      function showMaterialWebError() {
+        const latexInput = document.getElementById('latex-input');
+        if (latexInput) {
+          latexInput.placeholder = 'Loading Error: Material Web Components failed to load. Using basic HTML inputs as fallback.';
+          // Convert to basic textarea if Material components fail
+          const basicTextarea = document.createElement('textarea');
+          basicTextarea.id = 'latex-input';
+          basicTextarea.rows = 3;
+          basicTextarea.placeholder = 'Enter LaTeX code (e.g., $E = mc^2$) - Basic mode';
+          basicTextarea.style.cssText = `
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: 'Roboto', sans-serif;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 80px;
+          `;
+          latexInput.parentNode.replaceChild(basicTextarea, latexInput);
         }
-      }, 1000);
+
+        // Show warning but don't break functionality
+      }
+
+      function loadMaterialWebFromCDN() {
+        materialWebLoadAttempts++;
+
+        const script = document.createElement('script');
+        script.type = 'module';
+        script.src = 'https://cdn.jsdelivr.net/npm/@material/web@2.0.0/all.js';
+        script.crossOrigin = 'anonymous';
+        script.integrity = ''; // Remove integrity check for better compatibility
+
+        script.onload = () => {
+          // Verify components are available
+          setTimeout(() => {
+            if (!customElements.get('md-outlined-text-field')) {
+              if (materialWebLoadAttempts < maxLoadAttempts) {
+                loadMaterialWebFromCDN();
+              } else {
+                showMaterialWebError();
+              }
+            }
+          }, 500);
+        };
+
+        script.onerror = () => {
+          if (materialWebLoadAttempts < maxLoadAttempts) {
+            // Try alternative CDN
+            setTimeout(() => {
+              script.src = 'https://unpkg.com/@material/web@2.0.0/all.js';
+              document.head.appendChild(script);
+            }, 1000);
+          } else {
+            showMaterialWebError();
+          }
+        };
+
+        document.head.appendChild(script);
+      }
+
+      // Check if Material Web Components are already loaded from bundle
+      function checkMaterialWebComponents() {
+        const requiredComponents = [
+          'md-outlined-text-field',
+          'md-filled-button',
+          'md-outlined-button',
+          'md-icon-button',
+          'md-assist-chip',
+          'md-circular-progress',
+          'md-text-button'
+        ];
+
+        const missingComponents = requiredComponents.filter(comp => !customElements.get(comp));
+
+        if (missingComponents.length > 0) {
+          loadMaterialWebFromCDN();
+          return false;
+        }
+
+        return true;
+      }
+
+      // Check components after a short delay to allow for loading
+      setTimeout(checkMaterialWebComponents, 500);
+
+      // Additional check after longer delay in case bundle is slow
+      setTimeout(() => {
+        if (!checkMaterialWebComponents()) {
+          setTimeout(checkMaterialWebComponents, 1000);
+        }
+      }, 1500);
     </script>
     <!-- Roboto Font -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap">
