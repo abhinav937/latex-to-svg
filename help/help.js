@@ -11,7 +11,7 @@ function initializeHelpContent() {
   if (helpElement) {
     helpElement.innerHTML = `
       <div class="help-header">
-        <h1>LaTeX Image Generator Help</h1>
+        <h1>LaTeX to SVG Generator Help</h1>
         <p>Generate high-quality SVG images from LaTeX code, no installation required. A web-based alternative to TexText for Inkscape.</p>
       </div>
 
@@ -21,7 +21,8 @@ function initializeHelpContent() {
           <li><strong>Instant LaTeX to SVG</strong>: Enter LaTeX code and render SVG images instantly</li>
           <li><strong>AI LaTeX Fix</strong>: Click the AI button to automatically correct syntax errors</li>
           <li><strong>Smart Autocomplete</strong>: Type <code>\\</code> to see LaTeX command suggestions</li>
-          <li><strong>Scale Control</strong>: Adjust the point size (8-72pt) for your output image</li>
+          <li><strong>Scale Control</strong>: Adjust the point size (8-72pt) using the number input for your output image</li>
+          <li><strong>Progressive Web App</strong>: Install the app for offline access and native app experience</li>
           <li><strong>Copy & Download</strong>: Copy SVG to clipboard or download as file</li>
           <li><strong>Share Equations</strong>: Generate shareable links so others can edit your equations</li>
           <li><strong>Recent History</strong>: Stores your last 10 LaTeX inputs for quick reuse</li>
@@ -49,8 +50,8 @@ function initializeHelpContent() {
               <li>Press Escape to close</li>
             </ul>
           </li>
-          <li><strong>Adjust Scale</strong>: Use the point size slider (8-72pt) to set image size</li>
-          <li><strong>Render</strong>: Click <strong>Render</strong> or press Enter to generate the SVG</li>
+          <li><strong>Adjust Scale</strong>: Use the point size input field (8-72pt) to set image size</li>
+          <li><strong>Convert to SVG</strong>: Click <strong>Convert to SVG</strong> or press Enter to generate the SVG</li>
           <li><strong>Manage Output</strong>:
             <ul>
               <li><strong>Copy</strong>: Copy the SVG image to your clipboard</li>
@@ -99,7 +100,9 @@ $$\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix}$$</code></pre>
         <pre><code>$\\text{Hello World}$
 $\\mathbf{bold text}$
 $\\mathit{italic text}$
-$\\mathrm{roman text}$</code></pre>
+$\\mathrm{roman text}$
+R_{DS}
+R\\textsubscript{ds,on}</code></pre>
       </div>
 
       <div class="help-section">
@@ -137,7 +140,7 @@ $\\mathrm{roman text}$</code></pre>
             </tr>
           </thead>
           <tbody>
-            <tr><td><strong>Enter</strong></td><td>Render LaTeX equation</td></tr>
+            <tr><td><strong>Enter</strong></td><td>Convert LaTeX to SVG</td></tr>
             <tr><td><strong>Shift + Enter</strong></td><td>Add newline in input</td></tr>
             <tr><td><strong>Tab</strong></td><td>Select autocomplete suggestion</td></tr>
             <tr><td><strong>Arrow keys</strong></td><td>Navigate autocomplete suggestions</td></tr>
@@ -229,6 +232,17 @@ $\\mathrm{roman text}$</code></pre>
           <li>Use the AI fix feature for syntax errors</li>
           <li>Contact the developer with specific error details</li>
         </ol>
+      </div>
+
+      <div class="help-section">
+        <h2>Progressive Web App (PWA)</h2>
+        <p>This tool can be installed as a Progressive Web App for a better experience:</p>
+        <ul>
+          <li><strong>Installation</strong>: Look for the install prompt that appears when you visit the site</li>
+          <li><strong>Offline Access</strong>: Once installed, the app works offline for previously rendered equations</li>
+          <li><strong>Native Experience</strong>: Get app-like experience with standalone window and shortcuts</li>
+          <li><strong>File Handling</strong>: Open SVG files directly from your device</li>
+        </ul>
       </div>
 
       <div class="help-section">
