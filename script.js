@@ -776,7 +776,6 @@ class LaTeXAutocomplete {
     this.container.style.zIndex = '10000';
     this.container.style.minWidth = '320px';
     this.container.style.maxWidth = '480px';
-    this.container.style.maxHeight = '320px';
     this.container.style.overflowY = 'auto';
 
     document.body.appendChild(this.container);
@@ -1255,7 +1254,6 @@ class LaTeXAutocomplete {
     }
 
     // Position the autocomplete dropdown strictly below the text box
-    const containerHeight = Math.min(this.filteredCommands.length * 56, 400);
     const viewportHeight = window.innerHeight;
     const spacing = 16; // Clear spacing between text box and dropdown
     
@@ -1272,19 +1270,48 @@ class LaTeXAutocomplete {
       }
     }
     
-    // Position below the text box (inputRect.bottom is relative to viewport, add scrollY for document position)
-    let finalTop = actualInputRect.bottom + scrollY + spacing;
+    // Calculate available space below the text box
+    const availableSpaceBelow = viewportHeight - actualInputRect.bottom - spacing;
     
-    // Check if there's enough space below, if not position above
-    const bottomSpace = viewportHeight - actualInputRect.bottom - spacing - containerHeight;
-    if (bottomSpace < 24) {
-      // Position above the input if not enough space below
-      finalTop = actualInputRect.top + scrollY - containerHeight - spacing;
+    // Calculate exact height needed based on number of items (56px per item)
+    const itemHeight = 56;
+    const exactHeightNeeded = this.filteredCommands.length * itemHeight;
+    const maxDesiredHeight = Math.min(exactHeightNeeded, 400);
+    
+    // Adjust container height to fit available space, ensuring it's fully visible
+    let containerHeight;
+    
+    if (availableSpaceBelow >= exactHeightNeeded) {
+      // Enough space for exact height needed (including single item)
+      containerHeight = exactHeightNeeded;
+    } else if (availableSpaceBelow >= itemHeight) {
+      // At least enough space for one item - use available space
+      containerHeight = availableSpaceBelow;
+    } else {
+      // Not enough space even for one item - scroll page to make it visible
+      containerHeight = exactHeightNeeded;
+    }
+    
+    // Always position below the text box
+    const finalTop = actualInputRect.bottom + scrollY + spacing;
+    
+    // Ensure the dropdown is fully visible - scroll into view if needed
+    const dropdownBottom = finalTop + containerHeight;
+    const viewportBottom = scrollY + viewportHeight;
+    
+    // If dropdown would be cut off at bottom, scroll page to make it fully visible
+    if (dropdownBottom > viewportBottom) {
+      const scrollNeeded = dropdownBottom - viewportBottom + 20; // Add 20px padding
+      window.scrollTo({
+        top: scrollY + scrollNeeded,
+        behavior: 'smooth'
+      });
     }
 
     this.container.style.top = `${finalTop}px`;
     this.container.style.left = `${actualInputRect.left + scrollX}px`;
     this.container.style.width = `${Math.max(320, actualInputRect.width)}px`;
+    this.container.style.maxHeight = `${containerHeight}px`;
 
     // Render suggestions immediately if already visible, or after a brief delay for new visibility
     if (this.isVisible) {
