@@ -1913,6 +1913,105 @@ window.historyManager = historyManager; // Make globally accessible for testing
     renderLaTeX();
   };
 
+  // Utility function for processing LaTeX input (extracted for reuse)
+  function processLatexInput(latex) {
+    let formattedLatex = latex;
+    let isMathMode = false;
+    const mathModeMatch = latex.match(/^[\$]+\$?(.*?)\$+[\$]?$/s);
+    if (mathModeMatch) {
+      isMathMode = true;
+      formattedLatex = mathModeMatch[1].trim();
+      // Use more efficient regex replacement
+      formattedLatex = formattedLatex.replace(/\\textbf\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/g, '\\mathbf{$1}');
+    } else {
+      formattedLatex = `\\text{${formattedLatex}}`;
+    }
+    return { formattedLatex, isMathMode };
+  }
+
+  // Utility function to create SVG URL from processed LaTeX
+  function createSvgUrl(formattedLatex) {
+    const encodedLatex = encodeURIComponent(`\\dpi{300} \\color{black} ${formattedLatex}`);
+    return `https://latex.codecogs.com/svg?${encodedLatex}`;
+  }
+
+  // Cache for processed SVG blobs to avoid repeated DOM manipulation
+  const svgBlobCache = new Map();
+  const MAX_CACHE_SIZE = 10; // Keep last 10 processed SVGs
+
+  // Utility function to process and cache scaled SVG
+  async function getProcessedSvgBlob(svgUrl, scale) {
+    const cacheKey = `${svgUrl}|${scale}`;
+
+    // Check cache first
+    if (svgBlobCache.has(cacheKey)) {
+      return svgBlobCache.get(cacheKey);
+    }
+
+    // Process SVG if not cached
+    const response = await fetch(svgUrl);
+    if (!response.ok) {
+      throw new Error('Failed to fetch SVG');
+    }
+    let svgText = await response.text();
+
+    // Parse and scale SVG
+    const parser = new DOMParser();
+    const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
+    const svgElement = svgDoc.querySelector('svg');
+    if (!svgElement) {
+      throw new Error('Invalid SVG content');
+    }
+
+    // Apply scaling transformation more efficiently
+    const group = svgDoc.createElementNS('http://www.w3.org/2000/svg', 'g');
+    group.setAttribute('transform', `scale(${scale})`);
+
+    // Move all children to group (more efficient than while loop)
+    const children = Array.from(svgElement.children);
+    children.forEach(child => group.appendChild(child));
+    svgElement.appendChild(group);
+
+    // Update width/height attributes efficiently
+    const viewBox = svgElement.getAttribute('viewBox');
+    let width, height;
+
+    if (viewBox) {
+      // Use viewBox dimensions if available (more reliable)
+      const [, , vbWidth, vbHeight] = viewBox.split(' ').map(Number);
+      width = vbWidth * scale;
+      height = vbHeight * scale;
+    } else {
+      // Fallback to width/height attributes
+      width = (parseFloat(svgElement.getAttribute('width')) || 100) * scale;
+      height = (parseFloat(svgElement.getAttribute('height')) || 100) * scale;
+    }
+
+    svgElement.setAttribute('width', width);
+    svgElement.setAttribute('height', height);
+
+    // Preserve viewBox for proper scaling (don't modify it)
+    // The viewBox stays the same, scaling is handled by the transform
+
+    // Serialize back to string
+    const serializer = new XMLSerializer();
+    svgText = serializer.serializeToString(svgDoc);
+
+    // Create blob
+    const blob = new Blob([svgText], { type: 'image/svg+xml' });
+
+    // Cache the result
+    svgBlobCache.set(cacheKey, blob);
+
+    // Maintain cache size limit (simple FIFO eviction)
+    if (svgBlobCache.size > MAX_CACHE_SIZE) {
+      const firstKey = svgBlobCache.keys().next().value;
+      svgBlobCache.delete(firstKey);
+    }
+
+    return blob;
+  }
+
   // Show spinner during rendering
   const renderSpinner = document.getElementById('render-spinner');
   const renderButton = document.getElementById('render-button');
@@ -2038,21 +2137,9 @@ window.historyManager = historyManager; // Make globally accessible for testing
         return;
       }
       
-      // Optimize LaTeX processing
-      let formattedLatex = latex;
-      let isMathMode = false;
-      const mathModeMatch = latex.match(/^[\$]+\$?(.*?)\$+[\$]?$/s);
-      if (mathModeMatch) {
-        isMathMode = true;
-        formattedLatex = mathModeMatch[1].trim();
-        // Use more efficient regex replacement
-        formattedLatex = formattedLatex.replace(/\\textbf\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/g, '\\mathbf{$1}');
-      } else {
-        formattedLatex = `\\text{${formattedLatex}}`;
-      }
-      
-      const encodedLatex = encodeURIComponent(`\\dpi{300} \\color{black} ${formattedLatex}`);
-      imageUrl = `https://latex.codecogs.com/svg?${encodedLatex}`;
+      // Process LaTeX input using shared utility
+      const { formattedLatex } = processLatexInput(latex);
+      imageUrl = createSvgUrl(formattedLatex);
       
       // Clear previous image immediately
       latexImage.src = '';
@@ -2116,66 +2203,20 @@ window.historyManager = historyManager; // Make globally accessible for testing
     }
 
     try {
-      let latex = latexInput.value.trim();
-      if (!latex) {
-        showError('No LaTeX to render');
+      // Use already-rendered SVG URL instead of reprocessing LaTeX
+      if (!imageUrl) {
+        showError('No image to copy - please render first');
         return;
       }
 
-      let formattedLatex = latex;
-      let isMathMode = false;
-
-      const mathModeMatch = latex.match(/^\$+\$?(.*?)\$+\$?$/s);
-      if (mathModeMatch) {
-        isMathMode = true;
-        formattedLatex = mathModeMatch[1].trim();
-        formattedLatex = formattedLatex.replace(/\\textbf\{((?:[^{}]|\{[^{}]*\})*)\}/g, '\\mathbf{$1}');
-      } else {
-        formattedLatex = `\\text{${formattedLatex}}`;
-      }
-
-      const encodedLatex = encodeURIComponent(`\\dpi{300} \\color{black} ${formattedLatex}`);
-      const tempImageUrl = `https://latex.codecogs.com/svg?${encodedLatex}`;
-      const response = await fetch(tempImageUrl);
-      if (!response.ok) {
-        throw new Error('Failed to fetch SVG');
-      }
-      let svgText = await response.text();
-
-      const parser = new DOMParser();
-      const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
-      const svgElement = svgDoc.querySelector('svg');
-      if (!svgElement) {
-        throw new Error('Invalid SVG content');
-      }
-
+      // Get current scale setting
       const ptSize = parseFloat(scaleInput.value);
       const scale = ptSize / BASE_PT_SIZE;
-      const group = svgDoc.createElementNS('http://www.w3.org/2000/svg', 'g');
-      group.setAttribute('transform', `scale(${scale})`);
 
-      while (svgElement.firstChild) {
-        group.appendChild(svgElement.firstChild);
-      }
-      svgElement.appendChild(group);
+      // Get processed SVG blob (with caching)
+      const blob = await getProcessedSvgBlob(imageUrl, scale);
 
-      let width = svgElement.getAttribute('width') || svgElement.getAttribute('viewBox')?.split(' ')[2] || 100;
-      let height = svgElement.getAttribute('height') || svgElement.getAttribute('viewBox')?.split(' ')[3] || 100;
-      width = parseFloat(width) * scale;
-      height = parseFloat(height) * scale;
-      svgElement.setAttribute('width', `${width}`);
-      svgElement.setAttribute('height', `${height}`);
-
-      const viewBox = svgElement.getAttribute('viewBox');
-      if (viewBox) {
-        const [minX, minY, vbWidth, vbHeight] = viewBox.split(' ').map(Number);
-        svgElement.setAttribute('viewBox', `${minX} ${minY} ${vbWidth} ${vbHeight}`);
-      }
-
-      const serializer = new XMLSerializer();
-      svgText = serializer.serializeToString(svgDoc);
-
-      const blob = new Blob([svgText], { type: 'image/svg+xml' });
+      // Copy to clipboard
       await navigator.clipboard.write([
         new ClipboardItem({ 'image/svg+xml': blob })
       ]);
