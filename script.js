@@ -68,6 +68,11 @@ let installPromptProgress;
 
 // Show install prompt
 function showInstallPrompt() {
+  // Don't show install prompt on desmos page
+  if (window.location.pathname.includes('/desmos')) {
+    return;
+  }
+  
   // Create install prompt if it doesn't exist
   if (!document.getElementById('install-prompt')) {
     const installPrompt = document.createElement('div');
