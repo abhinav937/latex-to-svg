@@ -13,14 +13,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LaTeX to SVG Generator - Free Online LaTeX to SVG Converter</title>
-    <meta name="description" content="Free online LaTeX to SVG generator and converter. Convert LaTeX equations to high-quality SVG images instantly. Best LaTeX to SVG converter alternative to TexText for Inkscape.">
+    <meta name="description" content="Free online LaTeX to SVG generator. Convert LaTeX equations to high-quality SVG images instantly. Best alternative to TexText for Inkscape.">
     <meta name="keywords" content="LaTeX to SVG generator, LaTeX to SVG converter, LaTeX SVG converter, LaTeX equation generator, LaTeX to SVG online, free LaTeX converter, LaTeX to SVG tool, LaTeX to SVG generator online, LaTeX to SVG converter tool, LaTeX to SVG converter free, LaTeX to SVG generator tool, LaTeX to SVG converter online, LaTeX to SVG generator free, LaTeX to SVG converter generator, LaTeX to SVG generator converter, LaTeX, SVG, TexText, Inkscape, math equations, image generator">
     <meta name="author" content="Abhinav Chinnusamy">
     <meta name="robots" content="index, follow, max-image-preview:large">
     <meta name="theme-color" content="#1976d2">
     <meta name="format-detection" content="telephone=no">
     <meta name="referrer" content="strict-origin-when-cross-origin">
-    <link rel="canonical" href="https://latex.cabhinav.com/">
+    <link rel="canonical" href="https://latex.cabhinav.com">
 
     <!-- Resource Hints for Performance -->
     <link rel="preconnect" href="https://www.googletagmanager.com">
@@ -369,33 +369,14 @@
       }
     </script>
     
-    <!-- Material Web Components JS - Using bundled version with enhanced error handling -->
+    <!-- Material Web Components JS -->
     <script type="module">
-      // Module resolution polyfill for tslib
-      if (typeof window !== 'undefined') {
-        // Override import map to handle tslib
-        if (!window.importMapPolyfill) {
-          window.importMapPolyfill = true;
-          const originalImport = window.import;
-          if (originalImport) {
-            window.import = function(specifier, options) {
-              if (specifier === 'tslib') {
-                return Promise.resolve(window.__tslib || window.tslib);
-              }
-              return originalImport.call(this, specifier, options);
-            };
-          }
-        }
-      }
+      // Simple Material Web Components loading with fallback
+      let materialWebLoaded = false;
 
-      // Enhanced Material Web Components loading with multiple fallbacks
-      let materialWebLoadAttempts = 0;
-      const maxLoadAttempts = 3;
-
-      function showMaterialWebError() {
+      function showMaterialWebFallback() {
         const latexInput = document.getElementById('latex-input');
-        if (latexInput) {
-          latexInput.placeholder = 'Loading Error: Material Web Components failed to load. Using basic HTML inputs as fallback.';
+        if (latexInput && !materialWebLoaded) {
           // Convert to basic textarea if Material components fail
           const basicTextarea = document.createElement('textarea');
           basicTextarea.id = 'latex-input';
@@ -412,79 +393,61 @@
             min-height: 80px;
           `;
           latexInput.parentNode.replaceChild(basicTextarea, latexInput);
-        }
 
-        // Show warning but don't break functionality
+          // Also replace other Material components with basic HTML
+          replaceMaterialButtons();
+        }
       }
 
-      function loadMaterialWebFromCDN() {
-        materialWebLoadAttempts++;
+      function replaceMaterialButtons() {
+        // Replace Material buttons with basic HTML buttons
+        const buttons = document.querySelectorAll('md-filled-button, md-outlined-button, md-icon-button, md-assist-chip, md-text-button');
+        buttons.forEach(button => {
+          const basicButton = document.createElement('button');
+          basicButton.innerHTML = button.innerHTML;
+          basicButton.className = button.className;
+          basicButton.onclick = button.onclick;
+          basicButton.style.cssText = `
+            padding: 8px 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: #f5f5f5;
+            cursor: pointer;
+            font-family: 'Roboto', sans-serif;
+            font-size: 14px;
+          `;
+          button.parentNode.replaceChild(basicButton, button);
+        });
+      }
 
+      function loadMaterialWeb() {
         const script = document.createElement('script');
         script.type = 'module';
         script.src = 'https://cdn.jsdelivr.net/npm/@material/web@2.0.0/all.js';
         script.crossOrigin = 'anonymous';
-        script.integrity = ''; // Remove integrity check for better compatibility
 
         script.onload = () => {
-          // Verify components are available
-          setTimeout(() => {
-            if (!customElements.get('md-outlined-text-field')) {
-              if (materialWebLoadAttempts < maxLoadAttempts) {
-                loadMaterialWebFromCDN();
-              } else {
-                showMaterialWebError();
-              }
-            }
-          }, 500);
+          materialWebLoaded = true;
+          console.log('Material Web Components loaded successfully');
         };
 
         script.onerror = () => {
-          if (materialWebLoadAttempts < maxLoadAttempts) {
-            // Try alternative CDN
-            setTimeout(() => {
-              script.src = 'https://unpkg.com/@material/web@2.0.0/all.js';
-              document.head.appendChild(script);
-            }, 1000);
-          } else {
-            showMaterialWebError();
-          }
+          console.warn('Material Web Components failed to load, using fallback');
+          setTimeout(showMaterialWebFallback, 100);
         };
 
         document.head.appendChild(script);
       }
 
-      // Check if Material Web Components are already loaded from bundle
-      function checkMaterialWebComponents() {
-        const requiredComponents = [
-          'md-outlined-text-field',
-          'md-filled-button',
-          'md-outlined-button',
-          'md-icon-button',
-          'md-assist-chip',
-          'md-circular-progress',
-          'md-text-button'
-        ];
+      // Try to load Material Web Components
+      loadMaterialWeb();
 
-        const missingComponents = requiredComponents.filter(comp => !customElements.get(comp));
-
-        if (missingComponents.length > 0) {
-          loadMaterialWebFromCDN();
-          return false;
-        }
-
-        return true;
-      }
-
-      // Check components after a short delay to allow for loading
-      setTimeout(checkMaterialWebComponents, 500);
-
-      // Additional check after longer delay in case bundle is slow
+      // Fallback check after 3 seconds
       setTimeout(() => {
-        if (!checkMaterialWebComponents()) {
-          setTimeout(checkMaterialWebComponents, 1000);
+        if (!materialWebLoaded) {
+          showMaterialWebFallback();
         }
-      }, 1500);
+      }, 3000);
     </script>
     <!-- Roboto Font -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap">
@@ -506,6 +469,7 @@
     <script type="module" src="./bundle.js"></script>
 </head>
 <body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
   <header>
     <div class="logo">LaTeX to SVG Generator</div>
     <nav>
@@ -518,7 +482,7 @@
   <div class="container">
     <div class="content-wrapper">
       <!-- Main Content -->
-      <div class="main-content">
+      <div class="main-content" id="main-content">
         <div class="button-group">
           <md-assist-chip
             class="filter-chip-style"
@@ -526,6 +490,7 @@
             label="div E = ρ / ε₀"
             onclick="setExample('$\\nabla \\cdot \\mathbf{E} = \\frac{\\rho}{\\varepsilon_0}$')"
             data-tooltip="Maxwell Equation example"
+            aria-label="Insert Maxwell Equation example"
           ></md-assist-chip>
           <md-assist-chip
             class="filter-chip-style"
@@ -533,6 +498,7 @@
             label="Subscript (V_gs)"
             onclick="setExample('$V_{gs}$')"
             data-tooltip="Subscript example"
+            aria-label="Insert subscript example"
           ></md-assist-chip>
           <md-assist-chip
             class="filter-chip-style"
@@ -540,6 +506,7 @@
             label="Fraction (di/dt)"
             onclick="setExample('$\\frac{di}{dt}$')"
             data-tooltip="Fraction example"
+            aria-label="Insert fraction example"
           ></md-assist-chip>
           <md-assist-chip
             class="filter-chip-style"
@@ -547,6 +514,7 @@
             label="Sum"
             onclick="setExample('$\\sum_{n=1}^{\\infty} \\frac{1}{n^2}$')"
             data-tooltip="Sum example"
+            aria-label="Insert sum example"
           ></md-assist-chip>
         </div>
 
@@ -559,10 +527,11 @@
             placeholder="Enter LaTeX code to convert to SVG (e.g., $E = mc^2$ or R_{DS}) - Autocomplete loading..."
             aria-label="LaTeX to SVG converter input"
           ></md-outlined-text-field>
-          <md-icon-button 
-            id="ai-fix-button" 
-            onclick="fixLatexWithAI()" 
+          <md-icon-button
+            id="ai-fix-button"
+            onclick="fixLatexWithAI()"
             data-tooltip="Fix LaTeX syntax errors with AI"
+            aria-label="Fix LaTeX syntax errors with AI"
             style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); z-index: 10;"
           >
             <md-icon>auto_fix_high</md-icon>
@@ -574,13 +543,13 @@
             <md-filled-button onclick="renderLaTeX()" id="render-button">Convert to SVG</md-filled-button>
             <md-circular-progress id="render-spinner" indeterminate style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) scale(0.75); display: none;"></md-circular-progress>
           </div>
-          <md-assist-chip onclick="clearInput()" id="clear-button">
+          <md-assist-chip onclick="clearInput()" id="clear-button" aria-label="Clear input field">
             <md-icon slot="icon">clear</md-icon>
             Clear
           </md-assist-chip>
           <div class="scale-control">
             <label for="scale-input" class="scale-label">Point Size:</label>
-            <input type="number" id="scale-input" min="8" max="72" value="12" step="1" class="scale-input">
+            <input type="number" id="scale-input" min="8" max="72" value="12" step="1" class="scale-input" aria-label="Font size in points">
             <span class="scale-unit">pt</span>
           </div>
         </div>
@@ -588,16 +557,16 @@
         <div id="latex-preview">
           <img id="latex-image" src="" alt="LaTeX to SVG Converter Output" style="display: none;">
           <div id="image-actions" style="display: none;">
-            <md-icon-button onclick="copyImage()" id="copy-button" data-tooltip="Copy SVG to clipboard">
+            <md-icon-button onclick="copyImage()" id="copy-button" data-tooltip="Copy SVG to clipboard" aria-label="Copy SVG to clipboard">
               <md-icon>content_copy</md-icon>
             </md-icon-button>
-            <md-icon-button onclick="downloadSVG()" id="download-button" data-tooltip="Download SVG file">
+            <md-icon-button onclick="downloadSVG()" id="download-button" data-tooltip="Download SVG file" aria-label="Download SVG file">
               <md-icon>download</md-icon>
             </md-icon-button>
-            <md-icon-button onclick="shareEquation()" id="share-button" data-tooltip="Share equation link">
+            <md-icon-button onclick="shareEquation()" id="share-button" data-tooltip="Share equation link" aria-label="Share equation link">
               <md-icon>share</md-icon>
             </md-icon-button>
-            <md-icon-button onclick="copySVGCode()" id="copy-svgcode-button" data-tooltip="Copy SVG code" style="display:none;">
+            <md-icon-button onclick="copySVGCode()" id="copy-svgcode-button" data-tooltip="Copy SVG code" aria-label="Copy SVG code" style="display:none;">
               <md-icon>code</md-icon>
             </md-icon-button>
           </div>

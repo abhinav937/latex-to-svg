@@ -1265,7 +1265,7 @@ md-filled-button, md-outlined-button {
   }
 
   md-assist-chip, md-filled-button, md-outlined-button, md-icon-button {
-    min-height: 40px;
+    min-height: 44px;
     font-size: 15px;
     border-radius: var(--md-sys-shape-button);
   }
@@ -1329,6 +1329,79 @@ md-filled-button, md-outlined-button {
   }
 }
 
+/* Extra small screens (<400px) */
+@media (max-width: 400px) {
+  .container {
+    padding: 0 4px 16px 4px !important;
+  }
+
+  .hero {
+    padding: 8px 2vw 4px 2vw;
+  }
+
+  .hero h1 {
+    font-size: 0.9rem;
+  }
+
+  .hero p {
+    font-size: 0.75rem;
+  }
+
+  #latex-preview {
+    padding: 6px !important;
+    min-height: 60px !important;
+  }
+
+  .button-group {
+    gap: 6px;
+  }
+
+  md-assist-chip {
+    max-width: calc(50% - 3px);
+    font-size: 12px;
+    padding: 8px 10px;
+    min-height: 44px;
+  }
+
+  md-filled-button, md-outlined-button, md-icon-button {
+    min-height: 44px;
+    padding: 12px 16px;
+  }
+
+  .scale-control {
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-start;
+  }
+
+  .scale-input {
+    width: 60px;
+    font-size: 0.9rem;
+    min-height: 44px;
+  }
+
+  .action-buttons {
+    gap: 6px !important;
+  }
+
+  #render-button {
+    max-width: 300px !important;
+    min-width: 160px !important;
+  }
+
+  #clear-button {
+    width: 100px !important;
+    min-width: 70px !important;
+    max-width: 140px !important;
+  }
+
+  /* Ensure all interactive elements have adequate touch targets */
+  button, [role="button"], input, select, textarea {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+}
+
 /* Card and surface elevation for MD3 */
 .card, .surface {
   background: var(--md-sys-color-surface);
@@ -1367,6 +1440,36 @@ md-filled-button:active::after, md-outlined-button:active::after, md-icon-button
 *:focus-visible {
   outline: 2px solid var(--md-sys-color-primary);
   outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Ensure all interactive elements are properly focusable */
+button, input, textarea, select, [role="button"], [tabindex]:not([tabindex="-1"]) {
+  transition: outline 0.2s ease;
+}
+
+button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible,
+[role="button"]:focus-visible, [tabindex]:focus-visible {
+  outline: 2px solid var(--md-sys-color-primary);
+  outline-offset: 2px;
+}
+
+/* Skip link for screen readers */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 6px;
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  padding: 8px;
+  text-decoration: none;
+  border-radius: 4px;
+  z-index: 1000;
+  transition: top 0.3s;
+}
+
+.skip-link:focus {
+  top: 6px;
 }
 
 @media (max-width: 700px) {

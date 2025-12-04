@@ -971,7 +971,11 @@ async function processLLMPrompt() {
     // Show loading
     if (promptButton) {
         promptButton.disabled = true;
-        promptButton.textContent = 'Processing...';
+        // Preserve the icon while changing the text
+        const icon = promptButton.querySelector('md-icon[slot="icon"]');
+        promptButton.innerHTML = '';
+        if (icon) promptButton.appendChild(icon);
+        promptButton.appendChild(document.createTextNode('Processing...'));
     }
     if (statusElement) {
         statusElement.className = '';
@@ -1017,7 +1021,11 @@ async function processLLMPrompt() {
         // Restore button
         if (promptButton) {
             promptButton.disabled = false;
-            promptButton.textContent = 'Plot with AI';
+            // Preserve the icon while changing the text
+            const icon = promptButton.querySelector('md-icon[slot="icon"]');
+            promptButton.innerHTML = '';
+            if (icon) promptButton.appendChild(icon);
+            promptButton.appendChild(document.createTextNode('Generate with AI'));
         }
     }
 }
