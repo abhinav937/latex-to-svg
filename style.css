@@ -823,6 +823,14 @@ nav a:hover, nav md-filled-button:hover, nav md-outlined-button:hover {
   margin-bottom: 4px;
 }
 
+.ai-fix-button-positioned {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+}
+
 md-outlined-text-field#latex-input {
   width: 100%;
   --md-outlined-text-field-container-shape: var(--md-sys-shape-card);
@@ -926,6 +934,23 @@ md-outlined-text-field#latex-input.ai-analyzing {
   gap: 8px;
   margin: 0 0 0 0;
   justify-content: flex-start;
+}
+
+.render-button-container {
+  position: relative;
+  display: inline-block;
+}
+
+.render-spinner-positioned {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(0.75);
+  display: none;
+}
+
+.latex-image-hidden {
+  display: none;
 }
 
 .action-buttons md-assist-chip {
