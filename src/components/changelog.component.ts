@@ -9,30 +9,30 @@ interface ChangelogEntry {
   selector: 'app-changelog',
   standalone: true,
   template: `
-    <div class="bg-gray-50 py-8">
-      <div class="max-w-3xl mx-auto px-4 py-8">
-        <div class="bg-white rounded-2xl shadow-sm p-8 md:p-12">
-          <div class="text-center mb-12">
-            <h1 class="text-4xl font-light text-gray-800 mb-4">Latest updates for LaTeX to SVG Generator</h1>
-            <p class="text-lg text-gray-600 max-w-2xl mx-auto">See what's new in LaTeX to SVG Generator. Here you'll find information about all the latest updates, new features, improvements, and bug fixes.</p>
+    <div class="bg-gray-50 min-h-[calc(100vh-4rem)] py-6 sm:py-8 overflow-y-auto">
+      <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 w-full">
+        <div class="bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 md:p-8 lg:p-12">
+          <div class="text-center mb-8 sm:mb-12">
+            <h1 class="text-2xl sm:text-3xl md:text-4xl font-light text-gray-800 mb-3 sm:mb-4 px-2">Latest updates for LaTeX to SVG Generator</h1>
+            <p class="text-sm sm:text-base md:text-lg text-gray-600 max-w-2xl mx-auto px-2">See what's new in LaTeX to SVG Generator. Here you'll find information about all the latest updates, new features, improvements, and bug fixes.</p>
           </div>
 
-          <div class="space-y-8">
+          <div class="space-y-6 sm:space-y-8">
             @for (entry of changelogData; track entry.date) {
-              <div class="bg-gray-50 rounded-xl p-8 border border-gray-200 shadow-sm">
-                <div class="text-xl font-medium text-indigo-600 mb-6 pb-2 border-b border-gray-200">
+              <div class="bg-gray-50 rounded-lg sm:rounded-xl p-4 sm:p-6 md:p-8 border border-gray-200 shadow-sm">
+                <div class="text-lg sm:text-xl font-medium text-indigo-600 mb-4 sm:mb-6 pb-2 border-b border-gray-200">
                   {{ entry.date }}
                 </div>
                 
                 @for (section of getSectionEntries(entry.sections); track section.title) {
-                  <div class="mb-6 last:mb-0">
-                    <div class="text-base font-semibold text-gray-800 mb-3 uppercase tracking-wide">
+                  <div class="mb-4 sm:mb-6 last:mb-0">
+                    <div class="text-sm sm:text-base font-semibold text-gray-800 mb-2 sm:mb-3 uppercase tracking-wide">
                       {{ section.title }}
                     </div>
                     <ul class="space-y-2 list-none pl-0">
                       @for (item of section.items; track item) {
-                        <li class="relative pl-6 text-gray-700 leading-relaxed">
-                          <span class="absolute left-0 text-indigo-600 font-bold text-lg leading-none top-0.5">•</span>
+                        <li class="relative pl-5 sm:pl-6 text-sm sm:text-base text-gray-700 leading-relaxed">
+                          <span class="absolute left-0 text-indigo-600 font-bold text-base sm:text-lg leading-none top-0.5">•</span>
                           {{ item }}
                         </li>
                       }
@@ -44,9 +44,10 @@ interface ChangelogEntry {
           </div>
 
           <!-- Back to Top -->
-          <div class="text-center mt-12 pt-6 border-t border-gray-200">
-            <button (click)="scrollToTop()" class="text-indigo-600 hover:text-indigo-700 font-medium mb-4">Back to Top</button>
-            <p class="text-sm text-gray-600">© 2025 <a href="https://cabhinav.com" class="text-indigo-600 hover:underline" target="_blank" rel="noopener noreferrer">Abhinav Chinnusamy</a></p>
+          <div class="text-center mt-8 sm:mt-12 pt-4 sm:pt-6 border-t border-gray-200">
+            <button (click)="scrollToTop()" class="text-sm sm:text-base text-indigo-600 hover:text-indigo-700 font-medium transition-colors">
+              ↑ Back to Top
+            </button>
           </div>
         </div>
       </div>
