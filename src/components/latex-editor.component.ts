@@ -1,6 +1,7 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { GeminiService } from '../services/gemini.service';
 import { HistoryService } from '../services/history.service';
+import { RateLimiterService, RateLimit } from '../services/rate-limiter.service';
 
 @Component({
   selector: 'app-latex-editor',
@@ -11,7 +12,7 @@ import { HistoryService } from '../services/history.service';
       <!-- Preview Section -->
       <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden flex flex-col md:flex-row min-h-[250px]">
         <div class="flex-1 p-8 latex-preview-container flex items-center justify-center relative bg-gray-50">
-           @if (latexInput()) {
+           @if (previewUrl()) {
              <img 
                [src]="previewUrl()" 
                alt="LaTeX Preview" 
@@ -25,7 +26,7 @@ import { HistoryService } from '../services/history.service';
                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto mb-2 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                </svg>
-               <p>Enter LaTeX code to preview</p>
+               <p>Enter LaTeX code and click Render to preview</p>
              </div>
            }
         </div>
@@ -78,25 +79,46 @@ import { HistoryService } from '../services/history.service';
             </svg>
             LaTeX Input
           </label>
-          
-          <button 
-            (click)="fixWithAi()"
-            [disabled]="isAiLoading() || !latexInput()"
-            class="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-md text-xs font-semibold hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            @if (isAiLoading()) {
-              <svg class="animate-spin h-3 w-3 text-indigo-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Fixing...
-            } @else {
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-              Fix with AI
-            }
-          </button>
+
+          <div class="flex gap-2">
+            <button
+              (click)="renderLatex()"
+              [disabled]="isRendering() || !latexInput().trim()"
+              class="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 rounded-md text-xs font-semibold hover:bg-green-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              @if (isRendering()) {
+                <svg class="animate-spin h-3 w-3 text-green-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Rendering...
+              } @else {
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Render
+              }
+            </button>
+
+            <button
+              (click)="fixWithAi()"
+              [disabled]="isAiLoading() || !latexInput()"
+              class="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-md text-xs font-semibold hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              @if (isAiLoading()) {
+                <svg class="animate-spin h-3 w-3 text-indigo-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Fixing...
+              } @else {
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                Fix with AI
+              }
+            </button>
+          </div>
         </div>
 
         <div class="relative group">
@@ -133,11 +155,20 @@ import { HistoryService } from '../services/history.service';
 export class LatexEditorComponent {
   private geminiService = inject(GeminiService);
   private historyService = inject(HistoryService);
+  private rateLimiter = inject(RateLimiterService);
 
   latexInput = signal('');
+  previewUrl = signal('');
+  isRendering = signal(false);
   isAiLoading = signal(false);
   copiedUrl = signal(false);
   copiedSvg = signal(false);
+
+  // Rate limits: CodeCogs allows reasonable usage, we'll limit to 30 requests per minute
+  private readonly CODECOGS_RATE_LIMIT: RateLimit = {
+    requests: 30,
+    windowMs: 60 * 1000 // 1 minute
+  };
 
   // Examples for quick start
   examples = [
@@ -147,12 +178,30 @@ export class LatexEditorComponent {
     { label: 'Summation', code: '\\sum_{i=0}^n i^2 = \\frac{(n^2+n)(2n+1)}{6}' }
   ];
 
-  previewUrl = computed(() => {
-    const code = this.latexInput();
-    if (!code) return '';
-    // Encode and add some styling for better visibility
-    return `https://latex.codecogs.com/svg.latex?\\huge ${encodeURIComponent(code)}`;
-  });
+  async renderLatex() {
+    const code = this.latexInput().trim();
+    if (!code) {
+      this.previewUrl.set('');
+      return;
+    }
+
+    // Check rate limit
+    if (!this.rateLimiter.canMakeRequest('codecogs', this.CODECOGS_RATE_LIMIT)) {
+      console.warn('CodeCogs API rate limit exceeded. Please wait before rendering again.');
+      return;
+    }
+
+    this.isRendering.set(true);
+    try {
+      // Encode and add some styling for better visibility
+      const url = `https://latex.codecogs.com/svg.latex?\\huge ${encodeURIComponent(code)}`;
+      this.previewUrl.set(url);
+    } catch (error) {
+      console.error('Failed to render LaTeX:', error);
+    } finally {
+      this.isRendering.set(false);
+    }
+  }
 
   updateLatex(event: Event) {
     const input = event.target as HTMLTextAreaElement;
@@ -162,6 +211,8 @@ export class LatexEditorComponent {
   setLatex(code: string) {
     this.latexInput.set(code);
     this.historyService.addToHistory(code);
+    // Auto-render when setting LaTeX from examples
+    this.renderLatex();
   }
 
   async fixWithAi() {
@@ -173,6 +224,8 @@ export class LatexEditorComponent {
       if (fixed) {
         this.latexInput.set(fixed);
         this.historyService.addToHistory(fixed);
+        // Auto-render the fixed LaTeX
+        await this.renderLatex();
       }
     } finally {
       this.isAiLoading.set(false);

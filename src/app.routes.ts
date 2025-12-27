@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { HomeComponent } from './components/home.component';
 import { HelpComponent } from './components/help.component';
 import { ChangelogComponent } from './components/changelog.component';
+import { NotFoundComponent } from './components/not-found.component';
 
 export const routes: Routes = [
   {
@@ -17,7 +18,11 @@ export const routes: Routes = [
     component: ChangelogComponent
   },
   {
+    path: '404',
+    component: NotFoundComponent
+  },
+  {
     path: '**',
-    redirectTo: ''
+    component: NotFoundComponent
   }
 ];

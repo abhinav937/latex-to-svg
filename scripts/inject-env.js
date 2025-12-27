@@ -24,4 +24,9 @@ const updatedHtml = indexHtml.replace(
 // Write the updated file
 fs.writeFileSync(indexPath, updatedHtml, 'utf8');
 
-console.log('Environment variable injected successfully');
+if (apiKey) {
+  console.log('✓ Environment variable injected successfully');
+} else {
+  console.warn('⚠ GEMINI_API_KEY not found in environment variables');
+  console.warn('  Make sure to set GEMINI_API_KEY in Vercel environment variables for production');
+}

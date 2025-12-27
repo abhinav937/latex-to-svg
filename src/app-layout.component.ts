@@ -75,10 +75,29 @@ export class AppLayoutComponent implements OnInit {
         });
         break;
       
+      case '/404':
+        this.seoService.updateSEO({
+          title: '404 - Page Not Found | LaTeX to SVG Generator',
+          description: 'The page you are looking for could not be found. Return to the LaTeX to SVG Generator homepage.',
+          keywords: '404, page not found, error',
+          url: 'https://latex.cabhinav.com/404'
+        });
+        break;
+      
       default:
-        // Home page
-        this.seoService.updateSEO();
-        this.seoService.addStructuredData(this.seoService.getDefaultStructuredData());
+        // Check if it's a 404 route (wildcard match)
+        if (url !== '/') {
+          this.seoService.updateSEO({
+            title: '404 - Page Not Found | LaTeX to SVG Generator',
+            description: 'The page you are looking for could not be found. Return to the LaTeX to SVG Generator homepage.',
+            keywords: '404, page not found, error',
+            url: 'https://latex.cabhinav.com' + url
+          });
+        } else {
+          // Home page
+          this.seoService.updateSEO();
+          this.seoService.addStructuredData(this.seoService.getDefaultStructuredData());
+        }
         break;
     }
   }
