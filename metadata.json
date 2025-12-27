@@ -1,0 +1,5 @@
+{
+  "name": "LaTeX to SVG Generator",
+  "description": "Convert LaTeX equations to SVG instantly with AI-powered syntax fixing and history management.",
+  "requestFramePermissions": []
+}

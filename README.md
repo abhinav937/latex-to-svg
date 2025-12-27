@@ -1,14 +1,20 @@
-# LaTeX to SVG Generator
+<div align="center">
+<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+</div>
 
-Generate high-quality SVG images from LaTeX code without any installation. This web-based tool is an easy alternative to TexText for Inkscape, perfect for creating mathematical equations and other LaTeX-based graphics.
+# Run and deploy your AI Studio app
 
-**Website**: [latex.cabhinav.com](https://latex.cabhinav.com)
+This contains everything you need to run your app locally.
 
-## Features
-- Convert LaTeX code (e.g., `$E = mc^2$` or `R\textsubscript{ds,on}`) to SVG images.
-- No software installation required.
-- User-friendly interface for quick and seamless rendering.
-- Ideal for mathematical typesetting and integration with tools like Inkscape.
+View your app in AI Studio: https://ai.studio/apps/drive/1CiIv6LjwurZsZ9PvHP3IJnMoK6Xnp4Ff
 
-## Usage
-Simply visit [latex.cabhinav.com](https://latex.cabhinav.com), enter your LaTeX code, and generate an SVG image instantly.
+## Run Locally
+
+**Prerequisites:**  Node.js
+
+
+1. Install dependencies:
+   `npm install`
+2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+3. Run the app:
+   `npm run dev`
