@@ -1,6 +1,8 @@
-import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component, OnInit, inject } from '@angular/core';
+import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { HeaderComponent } from './components/header.component';
+import { SEOService } from './services/seo.service';
+import { filter } from 'rxjs';
 
 @Component({
   selector: 'app-root',
@@ -15,4 +17,69 @@ import { HeaderComponent } from './components/header.component';
     </div>
   `
 })
-export class AppLayoutComponent {}
+export class AppLayoutComponent implements OnInit {
+  private router = inject(Router);
+  private seoService = inject(SEOService);
+
+  ngOnInit(): void {
+    // Set default SEO on initialization
+    this.seoService.updateSEO();
+    this.seoService.addStructuredData(this.seoService.getDefaultStructuredData());
+
+    // Update SEO on route changes
+    this.router.events
+      .pipe(filter(event => event instanceof NavigationEnd))
+      .subscribe(() => {
+        this.updateSEOForRoute();
+      });
+  }
+
+  private updateSEOForRoute(): void {
+    const url = this.router.url;
+    
+    switch (url) {
+      case '/help':
+        this.seoService.updateSEO({
+          title: 'LaTeX to SVG Generator - Help & Documentation',
+          description: 'Learn how to use the LaTeX to SVG Generator to create SVG images from LaTeX code. Comprehensive help documentation with examples and tutorials.',
+          keywords: 'LaTeX help, SVG tutorial, LaTeX examples, math equations guide, LaTeX documentation',
+          url: 'https://latex.cabhinav.com/help'
+        });
+        this.seoService.addStructuredData({
+          '@context': 'https://schema.org',
+          '@type': 'WebPage',
+          'name': 'LaTeX to SVG Generator - Help',
+          'url': 'https://latex.cabhinav.com/help',
+          'description': 'A help page explaining how to use the LaTeX to SVG Generator to create SVG images from LaTeX code.',
+          'isPartOf': {
+            '@type': 'WebApplication',
+            'name': 'LaTeX to SVG Generator',
+            'url': 'https://latex.cabhinav.com'
+          }
+        });
+        break;
+      
+      case '/changelog':
+        this.seoService.updateSEO({
+          title: 'LaTeX to SVG Generator - Changelog',
+          description: 'View the latest updates, features, and improvements to the LaTeX to SVG Generator. Stay informed about new capabilities and bug fixes.',
+          keywords: 'LaTeX SVG changelog, updates, new features, release notes',
+          url: 'https://latex.cabhinav.com/changelog'
+        });
+        this.seoService.addStructuredData({
+          '@context': 'https://schema.org',
+          '@type': 'WebPage',
+          'name': 'LaTeX to SVG Generator - Changelog',
+          'url': 'https://latex.cabhinav.com/changelog',
+          'description': 'Changelog and release notes for the LaTeX to SVG Generator.'
+        });
+        break;
+      
+      default:
+        // Home page
+        this.seoService.updateSEO();
+        this.seoService.addStructuredData(this.seoService.getDefaultStructuredData());
+        break;
+    }
+  }
+}
