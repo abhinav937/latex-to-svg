@@ -1,4 +1,4 @@
-import { Component, inject, signal, ElementRef, viewChild } from '@angular/core';
+import { Component, inject, signal, ElementRef, viewChild, HostListener } from '@angular/core';
 import { GeminiService } from '../services/gemini.service';
 import { HistoryService } from '../services/history.service';
 import { RateLimiterService, RateLimit } from '../services/rate-limiter.service';
@@ -574,6 +574,43 @@ export class LatexEditorComponent {
     const params = new URLSearchParams(window.location.search);
     if (params.get('ai') === 'true') {
       this.features.AI_FIX = true;
+    }
+  }
+
+  @HostListener('document:keydown', ['$event'])
+  onGlobalKeyDown(event: KeyboardEvent) {
+    // Skip if the textarea is already focused
+    const textarea = this.textareaRef()?.nativeElement;
+    if (!textarea || document.activeElement === textarea) {
+      return;
+    }
+
+    // Skip modifier keys and special keys
+    const specialKeys = [
+      'Shift', 'Control', 'Alt', 'Meta',
+      'CapsLock', 'NumLock', 'ScrollLock',
+      'Pause', 'Insert', 'Delete', 'Home', 'End', 'PageUp', 'PageDown',
+      'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
+      'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12',
+      'Escape', 'Tab', 'Enter'
+    ];
+
+    if (specialKeys.includes(event.key) || event.ctrlKey || event.altKey || event.metaKey) {
+      return;
+    }
+
+    // Focus the textarea and prevent default behavior
+    event.preventDefault();
+    textarea.focus();
+
+    // If it's a printable character, insert it into the textarea
+    if (event.key.length === 1) {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const value = textarea.value;
+      textarea.value = value.substring(0, start) + event.key + value.substring(end);
+      textarea.selectionStart = textarea.selectionEnd = start + 1;
+      this.latexInput.set(textarea.value);
     }
   }
 }

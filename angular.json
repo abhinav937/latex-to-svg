@@ -25,6 +25,11 @@
                 "output": "."
               },
               {
+                "glob": "**/*",
+                "input": "assets",
+                "output": "assets"
+              },
+              {
                 "glob": "site.webmanifest",
                 "input": ".",
                 "output": "."
