@@ -88,6 +88,15 @@ const FEATURES = {
              <span class="truncate">Download SVG</span>
            </button>
 
+           <button
+             (click)="downloadPng()"
+             class="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white border border-gray-300 rounded-lg text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-indigo-300 hover:text-indigo-600 transition-all shadow-sm group">
+             <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-400 group-hover:text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+             </svg>
+             <span class="truncate">Download PNG</span>
+           </button>
+
            <div class="mt-auto pt-3 sm:pt-4 border-t border-gray-200">
              <p class="text-xs text-gray-500 leading-relaxed">
                Uses <span class="font-semibold text-gray-700">CodeCogs API</span> for rendering.
@@ -541,6 +550,74 @@ export class LatexEditorComponent {
     }
   }
 
+  private generateFilename(latexInput: string, extension: string): string {
+    // Common LaTeX patterns and their readable names
+    const patterns = [
+      { regex: /\\epsilon_0|\\varepsilon_0/, name: 'epsilon_not' },
+      { regex: /\\epsilon|\\varepsilon/, name: 'epsilon' },
+      { regex: /\\alpha/, name: 'alpha' },
+      { regex: /\\beta/, name: 'beta' },
+      { regex: /\\gamma/, name: 'gamma' },
+      { regex: /\\delta/, name: 'delta' },
+      { regex: /\\Delta/, name: 'delta_capital' },
+      { regex: /\\pi/, name: 'pi' },
+      { regex: /\\theta/, name: 'theta' },
+      { regex: /\\lambda/, name: 'lambda' },
+      { regex: /\\mu/, name: 'mu' },
+      { regex: /\\sigma/, name: 'sigma' },
+      { regex: /\\omega/, name: 'omega' },
+      { regex: /\\int/, name: 'integral' },
+      { regex: /\\sum/, name: 'summation' },
+      { regex: /\\prod/, name: 'product' },
+      { regex: /\\lim/, name: 'limit' },
+      { regex: /\\frac/, name: 'fraction' },
+      { regex: /\\sqrt/, name: 'square_root' },
+      { regex: /\\begin\{matrix\}|\\begin\{bmatrix\}|\\begin\{pmatrix\}/, name: 'matrix' },
+      { regex: /\\partial/, name: 'partial_derivative' },
+      { regex: /\\nabla/, name: 'nabla' },
+      { regex: /\\infty/, name: 'infinity' },
+      { regex: /\\pm/, name: 'plus_minus' },
+      { regex: /\\approx/, name: 'approximately' },
+      { regex: /\\equiv/, name: 'equivalent' },
+      { regex: /\\leq/, name: 'less_equal' },
+      { regex: /\\geq/, name: 'greater_equal' },
+      { regex: /\\neq/, name: 'not_equal' }
+    ];
+
+    // Find the first matching pattern
+    for (const pattern of patterns) {
+      if (pattern.regex.test(latexInput)) {
+        return `${pattern.name}.${extension}`;
+      }
+    }
+
+    // If no specific pattern found, create a generic name based on length
+    if (latexInput.length <= 20) {
+      // Use the LaTeX content directly, sanitized
+      const sanitized = latexInput
+        .replace(/[^a-zA-Z0-9\s]/g, '_') // Replace special chars with underscores
+        .replace(/\s+/g, '_') // Replace spaces with underscores
+        .replace(/_+/g, '_') // Collapse multiple underscores
+        .replace(/^_|_$/g, '') // Remove leading/trailing underscores
+        .toLowerCase();
+      return sanitized || 'equation';
+    } else {
+      // For longer expressions, use a hash-based name
+      const hash = this.simpleHash(latexInput);
+      return `equation_${hash}.${extension}`;
+    }
+  }
+
+  private simpleHash(str: string): string {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    return Math.abs(hash).toString(36).substring(0, 8);
+  }
+
   async downloadSvg() {
     const url = this.previewUrl();
     if (!url) return;
@@ -557,7 +634,7 @@ export class LatexEditorComponent {
 
       const link = document.createElement('a');
       link.href = blobUrl;
-      link.download = 'equation.svg';
+      link.download = this.generateFilename(this.latexInput(), 'svg');
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -566,6 +643,101 @@ export class LatexEditorComponent {
       URL.revokeObjectURL(blobUrl);
     } catch (error) {
       console.error('Failed to download SVG:', error);
+    }
+  }
+
+  async downloadPng() {
+    const url = this.previewUrl();
+    if (!url) return;
+
+    try {
+      // Fetch the SVG content
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Network response was not ok');
+      const svgText = await response.text();
+
+      // Parse SVG to get dimensions
+      const parser = new DOMParser();
+      const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
+      const svgElement = svgDoc.documentElement;
+
+      // Get SVG dimensions (with fallback)
+      let width = parseFloat(svgElement.getAttribute('width') || '300');
+      let height = parseFloat(svgElement.getAttribute('height') || '100');
+
+      // If dimensions are in non-pixel units or missing, use viewBox
+      const viewBox = svgElement.getAttribute('viewBox');
+      if (viewBox) {
+        const [, , vbWidth, vbHeight] = viewBox.split(/\s+/).map(parseFloat);
+        if (vbWidth && vbHeight) {
+          width = vbWidth;
+          height = vbHeight;
+        }
+      }
+
+      // Scale up for better quality (4x)
+      const scale = 4;
+      const canvasWidth = Math.ceil(width * scale);
+      const canvasHeight = Math.ceil(height * scale);
+
+      // Create a blob URL from the SVG
+      const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
+      const svgUrl = URL.createObjectURL(svgBlob);
+
+      // Create image and canvas
+      const img = new Image();
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      if (!ctx) {
+        throw new Error('Failed to get canvas context');
+      }
+
+      // Wait for image to load
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error('Failed to load SVG image'));
+        img.src = svgUrl;
+      });
+
+      // Set canvas size and draw
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
+
+      // Fill with white background for better visibility
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+      // Draw scaled image
+      ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+
+      // Clean up SVG blob URL
+      URL.revokeObjectURL(svgUrl);
+
+      // Convert canvas to PNG blob
+      const pngBlob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob((blob) => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject(new Error('Failed to create PNG blob'));
+          }
+        }, 'image/png');
+      });
+
+      // Create download link for PNG
+      const pngUrl = URL.createObjectURL(pngBlob);
+      const link = document.createElement('a');
+      link.href = pngUrl;
+      link.download = this.generateFilename(this.latexInput(), 'png');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Clean up PNG blob URL
+      URL.revokeObjectURL(pngUrl);
+    } catch (error) {
+      console.error('Failed to download PNG:', error);
     }
   }
 
