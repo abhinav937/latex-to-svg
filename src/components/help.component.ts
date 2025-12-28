@@ -18,14 +18,13 @@ import { Component } from '@angular/core';
             <div class="bg-gray-50 rounded-lg sm:rounded-xl p-4 sm:p-6 md:p-8 hover:shadow-md transition-shadow">
               <h2 class="text-xl sm:text-2xl font-semibold text-gray-800 mb-4 sm:mb-6 pb-2 sm:pb-3 border-b-2 border-indigo-600">Features</h2>
               <ul class="space-y-2 sm:space-y-3 text-sm sm:text-base text-gray-700">
-                <li><strong class="text-gray-900">Instant LaTeX to SVG</strong>: Enter LaTeX code and render SVG images instantly</li>
-                <li><strong class="text-gray-900">AI LaTeX Fix</strong>: Click the AI button to automatically correct syntax errors</li>
-                <li><strong class="text-gray-900">Smart Autocomplete</strong>: Type <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\</code> to see LaTeX command suggestions</li>
-                <li><strong class="text-gray-900">Scale Control</strong>: Adjust the point size (8-72pt) using the number input for your output image</li>
-                <li><strong class="text-gray-900">Progressive Web App</strong>: Install the app for offline access and native app experience</li>
-                <li><strong class="text-gray-900">Copy & Download</strong>: Copy SVG to clipboard or download as file</li>
-                <li><strong class="text-gray-900">Share Equations</strong>: Generate shareable links so others can edit your equations</li>
-                <li><strong class="text-gray-900">Recent History</strong>: Stores your last 10 LaTeX inputs for quick reuse</li>
+                <li><strong class="text-gray-900">Instant LaTeX to SVG</strong>: Enter LaTeX code and press Enter to render SVG images instantly</li>
+                <li><strong class="text-gray-900">Smart Autocomplete</strong>: Type <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\</code> to see 265+ LaTeX command suggestions with live previews</li>
+                <li><strong class="text-gray-900">Copy as Image</strong>: Copy rendered equations as PNG images for pasting into Inkscape or other applications</li>
+                <li><strong class="text-gray-900">Copy SVG Code</strong>: Copy raw SVG markup for web use</li>
+                <li><strong class="text-gray-900">Download SVG</strong>: Download equations as SVG files</li>
+                <li><strong class="text-gray-900">Recent History</strong>: Stores your last 50 LaTeX inputs for quick reuse</li>
+                <li><strong class="text-gray-900">Quick Examples</strong>: Try Quadratic, Integral, Matrix, or Summation examples with one click</li>
                 <li><strong class="text-gray-900">Mobile Friendly</strong>: Fully responsive and easy to use on any device</li>
               </ul>
             </div>
@@ -36,47 +35,25 @@ import { Component } from '@angular/core';
               
               <h3 class="text-lg sm:text-xl font-semibold text-gray-800 mt-4 sm:mt-6 mb-3 sm:mb-4">Basic Usage</h3>
               <ol class="space-y-3 sm:space-y-4 text-sm sm:text-base text-gray-700 list-decimal list-inside">
-                <li><strong class="text-gray-900">Enter LaTeX Code</strong>: Type or paste your LaTeX code in the input box
-                  <ul class="mt-2 ml-4 sm:ml-6 space-y-2 list-disc text-sm sm:text-base">
-                    <li><strong class="text-gray-900">Inline Math</strong>: Use single <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">$</code> for inline equations</li>
-                    <li><strong class="text-gray-900">Display Math</strong>: Use <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">$$</code> for centered equations</li>
-                    <li><strong class="text-gray-900">Text Mode</strong>: Regular text is automatically wrapped in <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\text{{ '{' }}{{ '}' }}</code></li>
-                  </ul>
-                </li>
-                <li><strong class="text-gray-900">AI Fix</strong>: Click the AI button to automatically correct LaTeX syntax errors</li>
-                <li><strong class="text-gray-900">Use Autocomplete</strong>: Type <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\</code> to see command suggestions
+                <li><strong class="text-gray-900">Enter LaTeX Code</strong>: Type or paste your LaTeX code in the input box</li>
+                <li><strong class="text-gray-900">Use Autocomplete</strong>: Type <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\</code> to see command suggestions with live previews
                   <ul class="mt-2 ml-4 sm:ml-6 space-y-2 list-disc text-sm sm:text-base">
                     <li>Navigate with arrow keys or mouse</li>
-                    <li>Press Tab/Enter to select</li>
-                    <li>Press Escape to close</li>
+                    <li>Press <strong>Tab</strong> to select a suggestion</li>
+                    <li>Press <strong>Escape</strong> to close</li>
                   </ul>
                 </li>
-                <li><strong class="text-gray-900">Adjust Scale</strong>: Use the point size input field (8-72pt) to set image size</li>
-                <li><strong class="text-gray-900">Convert to SVG</strong>: Click <strong>Convert to SVG</strong> or press Enter to generate the SVG</li>
-                <li><strong class="text-gray-900">Manage Output</strong>:
+                <li><strong class="text-gray-900">Render</strong>: Press <strong>Enter</strong> or click the Render button to generate the SVG</li>
+                <li><strong class="text-gray-900">Quick Actions</strong>:
                   <ul class="mt-2 ml-4 sm:ml-6 space-y-2 list-disc text-sm sm:text-base">
-                    <li><strong class="text-gray-900">Copy</strong>: Copy the SVG image to your clipboard</li>
-                    <li><strong class="text-gray-900">Download</strong>: Download the SVG file with smart filename</li>
+                    <li><strong class="text-gray-900">Copy as Image</strong>: Copy as PNG for pasting into Inkscape or other apps</li>
                     <li><strong class="text-gray-900">Copy SVG Code</strong>: Copy the raw SVG markup</li>
+                    <li><strong class="text-gray-900">Download SVG</strong>: Download the SVG file</li>
                   </ul>
                 </li>
-                <li><strong class="text-gray-900">Share Equations</strong>: Click the share button to copy a link that others can use to edit your equation
-                  <ul class="mt-2 ml-4 sm:ml-6 space-y-2 list-disc text-sm sm:text-base">
-                    <li>Anyone with the link can view and modify the equation</li>
-                    <li>Perfect for collaborating on mathematical expressions</li>
-                    <li>Link automatically renders the equation when opened</li>
-                  </ul>
-                </li>
-                <li><strong class="text-gray-900">View History</strong>: Your last 10 LaTeX commands are shown in the sidebar. Click any to reuse.</li>
+                <li><strong class="text-gray-900">Try Examples</strong>: Click the example chips (Quadratic, Integral, Matrix, Summation) below the textarea</li>
+                <li><strong class="text-gray-900">View History</strong>: Your last 50 LaTeX equations are shown in the sidebar. Click any to reuse.</li>
               </ol>
-              
-              <h3 class="text-lg sm:text-xl font-semibold text-gray-800 mt-4 sm:mt-6 mb-3 sm:mb-4">AI LaTeX Fix Feature</h3>
-              <ul class="space-y-2 text-sm sm:text-base text-gray-700 list-disc list-inside">
-                <li><strong class="text-gray-900">Automatic Correction</strong>: Click the AI button to fix syntax errors</li>
-                <li><strong class="text-gray-900">Smart Analysis</strong>: AI analyzes your LaTeX and provides corrected version</li>
-                <li><strong class="text-gray-900">Auto-Render</strong>: Corrected LaTeX is automatically rendered after fixing</li>
-                <li><strong class="text-gray-900">Error Handling</strong>: Clear error messages for rate limits, invalid input, etc.</li>
-              </ul>
             </div>
 
             <!-- LaTeX Examples Section -->
@@ -99,25 +76,27 @@ import { Component } from '@angular/core';
             <!-- Autocomplete System Section -->
             <div class="bg-gray-50 rounded-lg sm:rounded-xl p-4 sm:p-6 md:p-8 hover:shadow-md transition-shadow">
               <h2 class="text-xl sm:text-2xl font-semibold text-gray-800 mb-4 sm:mb-6 pb-2 sm:pb-3 border-b-2 border-indigo-600">Autocomplete System</h2>
-              
+
               <h3 class="text-lg sm:text-xl font-semibold text-gray-800 mt-4 sm:mt-6 mb-3 sm:mb-4">How to Use</h3>
               <ol class="space-y-2 text-sm sm:text-base text-gray-700 list-decimal list-inside">
-                <li><strong class="text-gray-900">Start typing</strong>: Type <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\</code> to trigger autocomplete</li>
-                <li><strong class="text-gray-900">Browse suggestions</strong>: Use arrow keys or mouse to navigate</li>
-                <li><strong class="text-gray-900">Select command</strong>: Press Tab, Enter, or click to insert</li>
-                <li><strong class="text-gray-900">Close</strong>: Press Escape or click outside</li>
+                <li><strong class="text-gray-900">Start typing</strong>: Type <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\</code> followed by letters to trigger autocomplete</li>
+                <li><strong class="text-gray-900">Browse suggestions</strong>: Use arrow keys or mouse to navigate (first 4 show live previews)</li>
+                <li><strong class="text-gray-900">Select command</strong>: Press <strong>Tab</strong> or click to insert</li>
+                <li><strong class="text-gray-900">Close</strong>: Press <strong>Escape</strong> or click outside</li>
               </ol>
-              
-              <h3 class="text-lg sm:text-xl font-semibold text-gray-800 mt-4 sm:mt-6 mb-3 sm:mb-4">Supported Commands</h3>
-              <p class="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4">The autocomplete includes:</p>
+
+              <h3 class="text-lg sm:text-xl font-semibold text-gray-800 mt-4 sm:mt-6 mb-3 sm:mb-4">Supported Commands (265+)</h3>
+              <p class="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4">The autocomplete includes commands in these categories:</p>
               <ul class="space-y-2 text-sm sm:text-base text-gray-700 list-disc list-inside">
-                <li><strong class="text-gray-900">Greek letters</strong>: <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\alpha</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\beta</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\pi</code>, etc.</li>
-                <li><strong class="text-gray-900">Math symbols</strong>: <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\sum</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\int</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\sqrt</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\frac</code>, etc.</li>
-                <li><strong class="text-gray-900">Arrows</strong>: <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\rightarrow</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\leftarrow</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\Rightarrow</code>, etc.</li>
-                <li><strong class="text-gray-900">Set theory</strong>: <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\in</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\subset</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\cup</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\cap</code>, etc.</li>
-                <li><strong class="text-gray-900">Logic</strong>: <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\land</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\lor</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\neg</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\implies</code>, etc.</li>
-                <li><strong class="text-gray-900">Functions</strong>: <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\sin</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\cos</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\log</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\exp</code>, etc.</li>
-                <li><strong class="text-gray-900">Formatting</strong>: <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\mathbf</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\mathit</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\mathrm</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\text</code>, etc.</li>
+                <li><strong class="text-gray-900">Greek letters</strong>: <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\alpha</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\beta</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\varepsilon</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\varphi</code>, etc.</li>
+                <li><strong class="text-gray-900">Math symbols</strong>: <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\sum</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\int</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\sqrt</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\frac</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\boxed</code>, etc.</li>
+                <li><strong class="text-gray-900">Text formatting</strong>: <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\textsubscript</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\textsuperscript</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\textbf</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\textit</code>, etc.</li>
+                <li><strong class="text-gray-900">Arrows</strong>: <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\rightarrow</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\mapsto</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\xrightarrow</code>, etc.</li>
+                <li><strong class="text-gray-900">Brackets</strong>: <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\langle</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\lfloor</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\lceil</code>, etc.</li>
+                <li><strong class="text-gray-900">Logic & Sets</strong>: <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\forall</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\exists</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\subset</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\cup</code>, etc.</li>
+                <li><strong class="text-gray-900">Functions</strong>: <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\sin</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\sinh</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\det</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\gcd</code>, etc.</li>
+                <li><strong class="text-gray-900">Spacing</strong>: <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\quad</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\hspace</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\phantom</code>, etc.</li>
+                <li><strong class="text-gray-900">Colors</strong>: <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\color</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\textcolor</code>, <code class="bg-indigo-100 text-indigo-800 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono">\\colorbox</code></li>
               </ul>
             </div>
 
@@ -134,12 +113,12 @@ import { Component } from '@angular/core';
                     </tr>
                   </thead>
                   <tbody class="text-sm sm:text-base text-gray-700">
-                    <tr class="border-b border-gray-200"><td class="px-3 sm:px-4 py-2 sm:py-3"><strong>Enter</strong></td><td class="px-3 sm:px-4 py-2 sm:py-3">Convert LaTeX to SVG</td></tr>
+                    <tr class="border-b border-gray-200"><td class="px-3 sm:px-4 py-2 sm:py-3"><strong>Enter</strong></td><td class="px-3 sm:px-4 py-2 sm:py-3">Render LaTeX to SVG</td></tr>
                     <tr class="border-b border-gray-200"><td class="px-3 sm:px-4 py-2 sm:py-3"><strong>Shift + Enter</strong></td><td class="px-3 sm:px-4 py-2 sm:py-3">Add newline in input</td></tr>
+                    <tr class="border-b border-gray-200"><td class="px-3 sm:px-4 py-2 sm:py-3"><strong>\\</strong></td><td class="px-3 sm:px-4 py-2 sm:py-3">Trigger autocomplete suggestions</td></tr>
+                    <tr class="border-b border-gray-200"><td class="px-3 sm:px-4 py-2 sm:py-3"><strong>↑ / ↓</strong></td><td class="px-3 sm:px-4 py-2 sm:py-3">Navigate autocomplete suggestions</td></tr>
                     <tr class="border-b border-gray-200"><td class="px-3 sm:px-4 py-2 sm:py-3"><strong>Tab</strong></td><td class="px-3 sm:px-4 py-2 sm:py-3">Select autocomplete suggestion</td></tr>
-                    <tr class="border-b border-gray-200"><td class="px-3 sm:px-4 py-2 sm:py-3"><strong>Arrow keys</strong></td><td class="px-3 sm:px-4 py-2 sm:py-3">Navigate autocomplete suggestions</td></tr>
-                    <tr class="border-b border-gray-200"><td class="px-3 sm:px-4 py-2 sm:py-3"><strong>Escape</strong></td><td class="px-3 sm:px-4 py-2 sm:py-3">Close autocomplete</td></tr>
-                    <tr><td class="px-3 sm:px-4 py-2 sm:py-3"><strong>\\</strong></td><td class="px-3 sm:px-4 py-2 sm:py-3">Trigger autocomplete</td></tr>
+                    <tr><td class="px-3 sm:px-4 py-2 sm:py-3"><strong>Escape</strong></td><td class="px-3 sm:px-4 py-2 sm:py-3">Close autocomplete</td></tr>
                   </tbody>
                 </table>
               </div>

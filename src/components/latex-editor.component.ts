@@ -1,7 +1,14 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ElementRef, viewChild } from '@angular/core';
 import { GeminiService } from '../services/gemini.service';
 import { HistoryService } from '../services/history.service';
 import { RateLimiterService, RateLimit } from '../services/rate-limiter.service';
+import { AutocompleteService, LatexCommand } from '../services/autocomplete.service';
+
+// Feature flags
+const FEATURES = {
+  COPY_SVG_URL: false, // Disabled - use Copy as Image instead
+  AI_FIX: false, // Enabled via ?ai=true query param
+};
 
 @Component({
   selector: 'app-latex-editor',
@@ -35,16 +42,18 @@ import { RateLimiterService, RateLimit } from '../services/rate-limiter.service'
         <div class="w-full md:w-64 bg-gray-50 border-t md:border-t-0 md:border-l border-gray-200 p-4 sm:p-5 flex flex-col gap-3 sm:gap-4">
            <div class="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Quick Actions</div>
            
-           <button 
-             (click)="copySvgUrl()"
-             class="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white border border-gray-300 rounded-lg text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-indigo-300 hover:text-indigo-600 transition-all shadow-sm group">
-             <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-400 group-hover:text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-             </svg>
-             <span class="truncate">{{ copiedUrl() ? 'Copied URL!' : 'Copy URL' }}</span>
-           </button>
+           @if (features.COPY_SVG_URL) {
+             <button
+               (click)="copySvgUrl()"
+               class="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white border border-gray-300 rounded-lg text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-indigo-300 hover:text-indigo-600 transition-all shadow-sm group">
+               <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-400 group-hover:text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+               </svg>
+               <span class="truncate">{{ copiedUrl() ? 'Copied URL!' : 'Copy URL' }}</span>
+             </button>
+           }
 
-           <button 
+           <button
              (click)="copySvgCode()"
              class="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white border border-gray-300 rounded-lg text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-indigo-300 hover:text-indigo-600 transition-all shadow-sm group">
              <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-400 group-hover:text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -53,7 +62,24 @@ import { RateLimiterService, RateLimit } from '../services/rate-limiter.service'
              <span class="truncate">{{ copiedSvg() ? 'Copied SVG!' : 'Copy SVG Code' }}</span>
            </button>
 
-           <button 
+           <button
+             (click)="copySvgAsImage()"
+             [disabled]="isCopyingImage()"
+             class="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white border border-gray-300 rounded-lg text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-indigo-300 hover:text-indigo-600 transition-all shadow-sm group disabled:opacity-50 disabled:cursor-not-allowed">
+             @if (isCopyingImage()) {
+               <svg class="animate-spin h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+               </svg>
+             } @else {
+               <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-400 group-hover:text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+               </svg>
+             }
+             <span class="truncate">{{ copiedImage() ? 'Copied!' : 'Copy as Image' }}</span>
+           </button>
+
+           <button
              (click)="downloadSvg()"
              class="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white border border-gray-300 rounded-lg text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-indigo-300 hover:text-indigo-600 transition-all shadow-sm group">
              <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-400 group-hover:text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -102,54 +128,92 @@ import { RateLimiterService, RateLimit } from '../services/rate-limiter.service'
               }
             </button>
 
-            <button
-              (click)="fixWithAi()"
-              [disabled]="isAiLoading() || !latexInput()"
-              class="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-md text-xs font-semibold hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              @if (isAiLoading()) {
-                <svg class="animate-spin h-3 w-3 text-indigo-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span class="hidden sm:inline">Fixing...</span>
-                <span class="sm:hidden">...</span>
-              } @else {
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-                <span class="hidden sm:inline">Fix with AI</span>
-                <span class="sm:hidden">AI Fix</span>
-              }
-            </button>
+            @if (features.AI_FIX) {
+              <button
+                (click)="fixWithAi()"
+                [disabled]="isAiLoading() || !latexInput()"
+                class="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-md text-xs font-semibold hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                @if (isAiLoading()) {
+                  <svg class="animate-spin h-3 w-3 text-indigo-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span class="hidden sm:inline">Fixing...</span>
+                  <span class="sm:hidden">...</span>
+                } @else {
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  <span class="hidden sm:inline">Fix with AI</span>
+                  <span class="sm:hidden">AI Fix</span>
+                }
+              </button>
+            }
           </div>
         </div>
 
         <div class="relative group">
-          <textarea 
+          <textarea
+            #textareaRef
             [value]="latexInput()"
             (input)="updateLatex($event)"
+            (keydown)="handleKeydown($event)"
+            (blur)="hideAutocompleteDelayed()"
             class="w-full h-32 sm:h-36 p-3 sm:p-4 bg-white border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none font-mono text-xs sm:text-sm shadow-sm transition-all"
             placeholder="\\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}"
           ></textarea>
-          
-          <!-- Example Chips Overlay (if empty) -->
-          @if (!latexInput()) {
-            <div class="absolute top-12 sm:top-14 left-3 sm:left-4 right-3 sm:right-4 flex flex-wrap gap-1.5 sm:gap-2 pointer-events-none">
-              @for (ex of examples; track ex.label) {
-                <button 
-                  (click)="setLatex(ex.code)" 
-                  class="pointer-events-auto px-2 sm:px-3 py-0.5 sm:py-1 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs rounded-full border border-gray-200 transition-colors shadow-sm"
-                >
-                  {{ ex.label }}
-                </button>
-              }
-            </div>
+        </div>
+
+        <!-- Example Chips (outside textarea) -->
+        <div class="flex flex-wrap gap-1.5 sm:gap-2">
+          <span class="text-xs text-gray-500 py-1">Try:</span>
+          @for (ex of examples; track ex.label) {
+            <button
+              (click)="setLatex(ex.code)"
+              class="px-2 sm:px-3 py-1 bg-gray-100 hover:bg-indigo-100 hover:text-indigo-700 text-gray-600 text-xs rounded-full border border-gray-200 hover:border-indigo-300 transition-colors shadow-sm"
+            >
+              {{ ex.label }}
+            </button>
           }
         </div>
-        
+
+        <!-- Autocomplete Suggestions (outside textarea) -->
+        @if (showAutocomplete() && suggestions().length > 0) {
+          <div class="bg-white border border-gray-200 rounded-lg shadow-lg max-h-72 overflow-y-auto">
+            @for (cmd of suggestions(); track cmd.command; let i = $index) {
+              <button
+                type="button"
+                (mousedown)="selectCommand(cmd, $event)"
+                class="w-full px-3 py-2 flex items-center gap-3 hover:bg-indigo-50 transition-colors text-left border-b border-gray-100 last:border-b-0"
+                [class.bg-indigo-50]="i === selectedIndex()"
+              >
+                <!-- Preview image (only for first 4) -->
+                @if (autocompleteService.shouldShowPreview(i)) {
+                  <div class="w-16 h-8 flex items-center justify-center bg-gray-50 rounded border border-gray-200 flex-shrink-0 overflow-hidden">
+                    <img
+                      [src]="autocompleteService.getPreviewUrl(cmd)"
+                      alt=""
+                      class="max-w-full max-h-full object-contain"
+                      loading="lazy"
+                    />
+                  </div>
+                } @else {
+                  <div class="w-16 h-8 flex-shrink-0"></div>
+                }
+                <code class="text-indigo-600 font-mono text-sm font-medium min-w-[100px]">{{ cmd.command }}</code>
+                <span class="text-gray-500 text-xs flex-1 truncate">{{ cmd.description }}</span>
+                <span class="text-gray-400 text-xs px-1.5 py-0.5 bg-gray-100 rounded flex-shrink-0">{{ cmd.category }}</span>
+              </button>
+            }
+            <div class="px-3 py-1.5 text-xs text-gray-400 bg-gray-50 border-t border-gray-200">
+              <kbd class="px-1 py-0.5 bg-gray-200 rounded text-gray-600">Tab</kbd> to select, <kbd class="px-1 py-0.5 bg-gray-200 rounded text-gray-600">Esc</kbd> to close
+            </div>
+          </div>
+        }
+
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-1 sm:gap-0 text-xs text-gray-500 px-1">
-          <span class="text-xs">Supported: Standard LaTeX math syntax</span>
+          <span class="text-xs">Press <kbd class="px-1 py-0.5 bg-gray-200 rounded text-gray-600">Enter</kbd> to render</span>
           <span>{{ latexInput().length }} chars</span>
         </div>
       </div>
@@ -160,6 +224,13 @@ export class LatexEditorComponent {
   private geminiService = inject(GeminiService);
   private historyService = inject(HistoryService);
   private rateLimiter = inject(RateLimiterService);
+  autocompleteService = inject(AutocompleteService);
+
+  // Template reference for textarea
+  textareaRef = viewChild<ElementRef<HTMLTextAreaElement>>('textareaRef');
+
+  // Expose feature flags to template (mutable copy)
+  features = { ...FEATURES };
 
   latexInput = signal('');
   previewUrl = signal('');
@@ -167,6 +238,15 @@ export class LatexEditorComponent {
   isAiLoading = signal(false);
   copiedUrl = signal(false);
   copiedSvg = signal(false);
+  copiedImage = signal(false);
+  isCopyingImage = signal(false);
+
+  // Autocomplete state
+  showAutocomplete = signal(false);
+  suggestions = signal<LatexCommand[]>([]);
+  selectedIndex = signal(0);
+  private autocompleteStartIndex = 0;
+  private hideTimeout: ReturnType<typeof setTimeout> | null = null;
 
   // Rate limits: CodeCogs allows reasonable usage, we'll limit to 30 requests per minute
   private readonly CODECOGS_RATE_LIMIT: RateLimit = {
@@ -213,6 +293,101 @@ export class LatexEditorComponent {
   updateLatex(event: Event) {
     const input = event.target as HTMLTextAreaElement;
     this.latexInput.set(input.value);
+    this.checkAutocomplete(input);
+  }
+
+  private checkAutocomplete(textarea: HTMLTextAreaElement) {
+    const cursorPosition = textarea.selectionStart;
+    const partial = this.autocompleteService.getPartialCommand(textarea.value, cursorPosition);
+
+    if (partial && partial.term.length > 1) {
+      this.autocompleteStartIndex = partial.startIndex;
+      const results = this.autocompleteService.filterCommands(partial.term);
+      this.suggestions.set(results);
+      this.selectedIndex.set(0);
+      this.showAutocomplete.set(results.length > 0);
+    } else {
+      this.hideAutocomplete();
+    }
+  }
+
+  handleKeydown(event: KeyboardEvent) {
+    const suggestions = this.suggestions();
+
+    // Handle autocomplete navigation
+    if (this.showAutocomplete() && suggestions.length > 0) {
+      switch (event.key) {
+        case 'ArrowDown':
+          event.preventDefault();
+          this.selectedIndex.set((this.selectedIndex() + 1) % suggestions.length);
+          return;
+        case 'ArrowUp':
+          event.preventDefault();
+          this.selectedIndex.set((this.selectedIndex() - 1 + suggestions.length) % suggestions.length);
+          return;
+        case 'Tab':
+          event.preventDefault();
+          const selected = suggestions[this.selectedIndex()];
+          if (selected) {
+            this.selectCommand(selected);
+          }
+          return;
+        case 'Escape':
+          event.preventDefault();
+          this.hideAutocomplete();
+          return;
+      }
+    }
+
+    // Enter to render (when autocomplete is not active)
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      this.renderLatex();
+    }
+  }
+
+  selectCommand(cmd: LatexCommand, event?: MouseEvent) {
+    if (event) {
+      event.preventDefault();
+    }
+
+    const textarea = this.textareaRef()?.nativeElement;
+    if (!textarea) return;
+
+    const currentValue = textarea.value;
+    const cursorPosition = textarea.selectionStart;
+
+    // Get the insert text and cursor offset
+    const { text, cursorOffset } = this.autocompleteService.getInsertText(cmd);
+
+    // Replace the partial command with the full command
+    const beforeCommand = currentValue.substring(0, this.autocompleteStartIndex);
+    const afterCursor = currentValue.substring(cursorPosition);
+    const newValue = beforeCommand + text + afterCursor;
+
+    // Update the input
+    this.latexInput.set(newValue);
+    this.hideAutocomplete();
+
+    // Set cursor position inside first argument brackets
+    setTimeout(() => {
+      const newCursorPos = this.autocompleteStartIndex + cursorOffset;
+      textarea.focus();
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+    }, 0);
+  }
+
+  hideAutocomplete() {
+    this.showAutocomplete.set(false);
+    this.suggestions.set([]);
+    this.selectedIndex.set(0);
+  }
+
+  hideAutocompleteDelayed() {
+    // Delay hiding to allow click events on suggestions to fire
+    this.hideTimeout = setTimeout(() => {
+      this.hideAutocomplete();
+    }, 150);
   }
 
   setLatex(code: string) {
@@ -258,7 +433,7 @@ export class LatexEditorComponent {
       if (!response.ok) throw new Error('Network response was not ok');
       const svgText = await response.text();
       await navigator.clipboard.writeText(svgText);
-      
+
       this.copiedSvg.set(true);
       setTimeout(() => this.copiedSvg.set(false), 2000);
     } catch (error) {
@@ -266,18 +441,135 @@ export class LatexEditorComponent {
     }
   }
 
-  downloadSvg() {
+  async copySvgAsImage() {
     const url = this.previewUrl();
     if (!url) return;
-    
-    // Create a temporary link to download
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'equation.svg';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+
+    this.isCopyingImage.set(true);
+    try {
+      // Fetch the SVG content
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Network response was not ok');
+      const svgText = await response.text();
+
+      // Parse SVG to get dimensions
+      const parser = new DOMParser();
+      const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
+      const svgElement = svgDoc.documentElement;
+
+      // Get SVG dimensions (with fallback)
+      let width = parseFloat(svgElement.getAttribute('width') || '300');
+      let height = parseFloat(svgElement.getAttribute('height') || '100');
+
+      // If dimensions are in non-pixel units or missing, use viewBox
+      const viewBox = svgElement.getAttribute('viewBox');
+      if (viewBox) {
+        const [, , vbWidth, vbHeight] = viewBox.split(/\s+/).map(parseFloat);
+        if (vbWidth && vbHeight) {
+          width = vbWidth;
+          height = vbHeight;
+        }
+      }
+
+      // Scale up for better quality (4x)
+      const scale = 4;
+      const canvasWidth = Math.ceil(width * scale);
+      const canvasHeight = Math.ceil(height * scale);
+
+      // Create a blob URL from the SVG
+      const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
+      const svgUrl = URL.createObjectURL(svgBlob);
+
+      // Create image and canvas
+      const img = new Image();
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      if (!ctx) {
+        throw new Error('Failed to get canvas context');
+      }
+
+      // Wait for image to load
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error('Failed to load SVG image'));
+        img.src = svgUrl;
+      });
+
+      // Set canvas size and draw
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
+
+      // Fill with white background for better visibility
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+      // Draw scaled image
+      ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+
+      // Clean up blob URL
+      URL.revokeObjectURL(svgUrl);
+
+      // Convert canvas to PNG blob
+      const pngBlob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob((blob) => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject(new Error('Failed to create PNG blob'));
+          }
+        }, 'image/png');
+      });
+
+      // Copy to clipboard using Clipboard API
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'image/png': pngBlob
+        })
+      ]);
+
+      this.copiedImage.set(true);
+      setTimeout(() => this.copiedImage.set(false), 2000);
+    } catch (error) {
+      console.error('Failed to copy SVG as image:', error);
+    } finally {
+      this.isCopyingImage.set(false);
+    }
   }
 
-  constructor() {}
+  async downloadSvg() {
+    const url = this.previewUrl();
+    if (!url) return;
+
+    try {
+      // Fetch SVG content to bypass cross-origin download restrictions
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Network response was not ok');
+      const svgText = await response.text();
+
+      // Create blob and download
+      const blob = new Blob([svgText], { type: 'image/svg+xml' });
+      const blobUrl = URL.createObjectURL(blob);
+
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = 'equation.svg';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Clean up blob URL
+      URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error('Failed to download SVG:', error);
+    }
+  }
+
+  constructor() {
+    // Check URL query params for feature flags
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('ai') === 'true') {
+      this.features.AI_FIX = true;
+    }
+  }
 }

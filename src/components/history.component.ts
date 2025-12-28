@@ -40,10 +40,10 @@ import { HistoryService } from '../services/history.service';
             <div (click)="select.emit(item)" class="space-y-2 xl:space-y-3">
               <!-- Preview Image -->
               <div class="h-12 xl:h-16 overflow-hidden flex items-center justify-center bg-gray-50 xl:bg-gray-100 rounded-lg xl:rounded-xl border border-gray-100 xl:border-gray-200 p-1 xl:p-2">
-                 <img 
-                   [src]="'https://latex.codecogs.com/svg.latex?\\small ' + encode(item)" 
-                   alt="preview" 
-                   class="max-h-full max-w-full object-contain" 
+                 <img
+                   [src]="'https://latex.codecogs.com/svg.latex?' + encode(item)"
+                   alt="preview"
+                   class="max-h-full max-w-full object-contain"
                    loading="lazy"
                    onerror="this.style.display='none'"
                  />

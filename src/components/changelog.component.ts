@@ -57,6 +57,27 @@ interface ChangelogEntry {
 export class ChangelogComponent {
   changelogData: ChangelogEntry[] = [
     {
+      date: "Dec 28, 2025",
+      sections: {
+        "New Features": [
+          "Added 'Copy as Image' feature - copy rendered equations as PNG for pasting into Inkscape or other apps",
+          "Press Enter to render LaTeX (no need to click the button)",
+          "Autocomplete now shows live preview images for the first 4 suggestions",
+          "Added 125+ new LaTeX commands to autocomplete including \\textsubscript, \\textsuperscript, colors, brackets, spacing, and more",
+          "Quick example chips (Quadratic, Integral, Matrix, Summation) now always visible below textarea"
+        ],
+        "UI Improvements": [
+          "Moved autocomplete suggestions outside the textarea for better visibility",
+          "Tab key now selects autocomplete suggestion (Enter is for rendering)",
+          "Added preview caching to reduce API requests for autocomplete previews"
+        ],
+        "Bug Fixes": [
+          "Fixed Download SVG opening in new tab instead of downloading",
+          "Fixed history previews showing 'small' text prefix"
+        ]
+      }
+    },
+    {
       date: "Dec 2025",
       sections: {
         "New Features": [
