@@ -213,7 +213,11 @@ const FEATURES = {
         }
 
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-1 sm:gap-0 text-xs text-gray-500 px-1">
-          <span class="text-xs">Press <kbd class="px-1 py-0.5 bg-gray-200 rounded text-gray-600">Enter</kbd> to render</span>
+          <span class="text-xs">
+            <kbd class="px-1 py-0.5 bg-gray-200 rounded text-gray-600">Enter</kbd> to render
+            <span class="mx-2 text-gray-300">·</span>
+            <kbd class="px-1 py-0.5 bg-gray-200 rounded text-gray-600">\\</kbd> for autocomplete
+          </span>
           <span>{{ latexInput().length }} chars</span>
         </div>
       </div>
