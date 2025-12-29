@@ -274,10 +274,11 @@ export class LatexEditorComponent {
 
   // Examples for quick start
   examples = [
-    { label: 'Quadratic', code: 'x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}' },
-    { label: 'Integral', code: '\\int_{a}^{b} x^2 \\,dx' },
-    { label: 'Matrix', code: '\\begin{bmatrix} a & b \\\\ c & d \\end{bmatrix}' },
-    { label: 'Summation', code: '\\sum_{i=0}^n i^2 = \\frac{(n^2+n)(2n+1)}{6}' }
+    { label: 'Text', code: '\\text{Buck Converter}' },
+    { label: 'Greek', code: '\\eta = \\frac{P_{out}}{P_{in}}' },
+    { label: 'Equation', code: 'P = V \\cdot I' },
+    { label: 'Fraction', code: '\\frac{V_{out}}{V_{in}} = D' },
+    { label: 'State Space', code: '\\dot{x} = \\begin{bmatrix} 0 & -\\frac{1}{L} \\\\ \\frac{1}{C} & -\\frac{1}{RC} \\end{bmatrix} x + \\begin{bmatrix} \\frac{1}{L} \\\\ 0 \\end{bmatrix} u' }
   ];
 
   async renderLatex() {
