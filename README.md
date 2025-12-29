@@ -5,7 +5,7 @@
 
 A fast, browser-based tool for converting LaTeX equations to SVG and PNG images.
 
-[Live Demo](https://ai.studio/apps/drive/1CiIv6LjwurZsZ9PvHP3IJnMoK6Xnp4Ff) · [Report Bug](https://github.com/your-username/latex-to-svg/issues)
+[Report Bug](https://github.com/your-username/latex-to-svg/issues)
 
 </div>
 
@@ -17,7 +17,6 @@ A fast, browser-based tool for converting LaTeX equations to SVG and PNG images.
 - **Smart Autocomplete** - Type `\` to get suggestions for LaTeX commands
 - **History Sidebar** - Access previously rendered equations
 - **Keyboard Shortcuts** - Press Enter to render, Tab to select autocomplete
-- **AI-Powered Fix** - Optional Gemini AI integration to fix malformed LaTeX (enable with `?ai=true`)
 
 ## Quick Start
 
@@ -57,25 +56,11 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 \nabla \times \vec{E} = -\frac{\partial \vec{B}}{\partial t}
 ```
 
-## AI Features (Optional)
-
-To enable AI-powered LaTeX fixing:
-
-1. Create a `.env.local` file:
-   ```
-   GEMINI_API_KEY=your_api_key_here
-   ```
-
-2. Get your API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
-
-3. Access the app with `?ai=true` query parameter
-
 ## Tech Stack
 
 - **Framework:** Angular 21
 - **Styling:** Tailwind CSS 4
 - **LaTeX Rendering:** [CodeCogs API](https://latex.codecogs.com/)
-- **AI (Optional):** Google Gemini
 
 ## Scripts
 
