@@ -250,7 +250,7 @@ R\\textsubscript{ds,on}</code></pre>
         <ul>
           <li><strong>LaTeX Reference</strong>: See the <a href="https://editor.codecogs.com/docs">CodeCogs Equation Editor Documentation</a> for complete LaTeX syntax</li>
           <li><strong>Examples</strong>: Click the example chips on the main page for sample code</li>
-          <li><strong>Contact</strong>: For issues with this tool, contact <a href="https://x.com/abhinav_937">Abhinav Chinnusamy</a></li>
+          <li><strong>Contact</strong>: For issues with this tool, contact <a href="https://x.com/emotor">Abhinav Chinnusamy</a></li>
           <li><strong>GitHub</strong>: View the source code and contribute at <a href="https://github.com/abhinav937/latex-to-svg">GitHub Repository</a></li>
         </ul>
       </div>

@@ -17,8 +17,8 @@ export class HistoryService {
       if (stored) {
         this.history.set(JSON.parse(stored));
       }
-    } catch (e) {
-      console.error('Failed to load history', e);
+    } catch (error: unknown) {
+      console.error('Failed to load history', error);
     }
   }
 
@@ -50,8 +50,8 @@ export class HistoryService {
   private saveToStorage(items: string[]) {
     try {
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(items));
-    } catch (e) {
-      console.error('Failed to save history', e);
+    } catch (error: unknown) {
+      console.error('Failed to save history', error);
     }
   }
 }

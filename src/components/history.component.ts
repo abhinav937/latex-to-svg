@@ -1,4 +1,4 @@
-import { Component, input, output, inject } from '@angular/core';
+import { Component, input, output, inject, signal } from '@angular/core';
 import { HistoryService } from '../services/history.service';
 
 @Component({
@@ -44,8 +44,7 @@ import { HistoryService } from '../services/history.service';
                    [src]="'https://latex.codecogs.com/svg.latex?' + encode(item)"
                    alt="preview"
                    class="max-h-full max-w-full object-contain"
-                   loading="lazy"
-                   onerror="this.style.display='none'"
+                   (error)="onImageError($event)"
                  />
               </div>
               <!-- LaTeX Code -->
@@ -82,5 +81,10 @@ export class HistoryComponent {
   deleteItem(e: Event, item: string) {
     e.stopPropagation();
     this.historyService.removeFromHistory(item);
+  }
+
+  onImageError(event: Event) {
+    const img = event.target as HTMLImageElement;
+    img.style.display = 'none';
   }
 }

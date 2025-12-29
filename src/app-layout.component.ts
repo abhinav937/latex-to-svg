@@ -1,4 +1,5 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { HeaderComponent } from './components/header.component';
 import { FooterComponent } from './components/footer.component';
@@ -22,15 +23,19 @@ import { filter } from 'rxjs';
 export class AppLayoutComponent implements OnInit {
   private router = inject(Router);
   private seoService = inject(SEOService);
+  private destroyRef = inject(DestroyRef);
 
   ngOnInit(): void {
     // Set default SEO on initialization
     this.seoService.updateSEO();
     this.seoService.addStructuredData(this.seoService.getDefaultStructuredData());
 
-    // Update SEO on route changes
+    // Update SEO on route changes (auto-cleanup on destroy)
     this.router.events
-      .pipe(filter(event => event instanceof NavigationEnd))
+      .pipe(
+        filter(event => event instanceof NavigationEnd),
+        takeUntilDestroyed(this.destroyRef)
+      )
       .subscribe(() => {
         this.updateSEOForRoute();
       });

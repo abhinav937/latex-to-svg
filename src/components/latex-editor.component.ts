@@ -20,10 +20,12 @@ const FEATURES = {
       <div class="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 overflow-hidden flex flex-col md:flex-row min-h-[200px] sm:min-h-[250px]">
         <div class="flex-1 p-4 sm:p-6 md:p-8 latex-preview-container flex items-center justify-center relative bg-gray-50">
            @if (previewUrl()) {
-             <img 
-               [src]="previewUrl()" 
-               alt="LaTeX Preview" 
+             <img
+               [src]="previewUrl()"
+               alt="LaTeX Preview"
                class="max-w-full max-h-[150px] sm:max-h-[200px] transition-all duration-300 z-10"
+               loading="eager"
+               fetchpriority="high"
              />
              <div class="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 text-xs text-gray-400 bg-white/80 px-2 py-1 rounded backdrop-blur-sm border border-gray-200">
                 SVG Preview
@@ -267,6 +269,9 @@ export class LatexEditorComponent {
     windowMs: 60 * 1000 // 1 minute
   };
 
+  // Maximum LaTeX input length to prevent DoS
+  private readonly MAX_LATEX_LENGTH = 5000;
+
   // Examples for quick start
   examples = [
     { label: 'Quadratic', code: 'x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}' },
@@ -282,6 +287,12 @@ export class LatexEditorComponent {
       return;
     }
 
+    // Validate input length to prevent DoS
+    if (code.length > this.MAX_LATEX_LENGTH) {
+      console.warn(`LaTeX input exceeds maximum length of ${this.MAX_LATEX_LENGTH} characters.`);
+      return;
+    }
+
     // Check rate limit
     if (!this.rateLimiter.canMakeRequest('codecogs', this.CODECOGS_RATE_LIMIT)) {
       console.warn('CodeCogs API rate limit exceeded. Please wait before rendering again.');
@@ -293,10 +304,10 @@ export class LatexEditorComponent {
       // Encode and add some styling for better visibility
       const url = `https://latex.codecogs.com/svg.latex?\\huge ${encodeURIComponent(code)}`;
       this.previewUrl.set(url);
-      
+
       // Add to history after successful render
       this.historyService.addToHistory(code);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to render LaTeX:', error);
     } finally {
       this.isRendering.set(false);
@@ -449,7 +460,7 @@ export class LatexEditorComponent {
 
       this.copiedSvg.set(true);
       setTimeout(() => this.copiedSvg.set(false), 2000);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to copy SVG code:', error);
     }
   }
@@ -465,74 +476,8 @@ export class LatexEditorComponent {
       if (!response.ok) throw new Error('Network response was not ok');
       const svgText = await response.text();
 
-      // Parse SVG to get dimensions
-      const parser = new DOMParser();
-      const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
-      const svgElement = svgDoc.documentElement;
-
-      // Get SVG dimensions (with fallback)
-      let width = parseFloat(svgElement.getAttribute('width') || '300');
-      let height = parseFloat(svgElement.getAttribute('height') || '100');
-
-      // If dimensions are in non-pixel units or missing, use viewBox
-      const viewBox = svgElement.getAttribute('viewBox');
-      if (viewBox) {
-        const [, , vbWidth, vbHeight] = viewBox.split(/\s+/).map(parseFloat);
-        if (vbWidth && vbHeight) {
-          width = vbWidth;
-          height = vbHeight;
-        }
-      }
-
-      // Scale up for better quality (4x)
-      const scale = 4;
-      const canvasWidth = Math.ceil(width * scale);
-      const canvasHeight = Math.ceil(height * scale);
-
-      // Create a blob URL from the SVG
-      const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
-      const svgUrl = URL.createObjectURL(svgBlob);
-
-      // Create image and canvas
-      const img = new Image();
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-
-      if (!ctx) {
-        throw new Error('Failed to get canvas context');
-      }
-
-      // Wait for image to load
-      await new Promise<void>((resolve, reject) => {
-        img.onload = () => resolve();
-        img.onerror = () => reject(new Error('Failed to load SVG image'));
-        img.src = svgUrl;
-      });
-
-      // Set canvas size and draw
-      canvas.width = canvasWidth;
-      canvas.height = canvasHeight;
-
-      // Fill with white background for better visibility
-      ctx.fillStyle = 'white';
-      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-
-      // Draw scaled image
-      ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
-
-      // Clean up blob URL
-      URL.revokeObjectURL(svgUrl);
-
-      // Convert canvas to PNG blob
-      const pngBlob = await new Promise<Blob>((resolve, reject) => {
-        canvas.toBlob((blob) => {
-          if (blob) {
-            resolve(blob);
-          } else {
-            reject(new Error('Failed to create PNG blob'));
-          }
-        }, 'image/png');
-      });
+      // Convert to PNG using shared utility
+      const pngBlob = await this.svgToPngBlob(svgText);
 
       // Copy to clipboard using Clipboard API
       await navigator.clipboard.write([
@@ -543,7 +488,7 @@ export class LatexEditorComponent {
 
       this.copiedImage.set(true);
       setTimeout(() => this.copiedImage.set(false), 2000);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to copy SVG as image:', error);
     } finally {
       this.isCopyingImage.set(false);
@@ -618,72 +563,41 @@ export class LatexEditorComponent {
     return Math.abs(hash).toString(36).substring(0, 8);
   }
 
-  async downloadSvg() {
-    const url = this.previewUrl();
-    if (!url) return;
+  /**
+   * Converts SVG text to PNG blob with configurable scale
+   * Extracted to avoid code duplication between copySvgAsImage and downloadPng
+   */
+  private async svgToPngBlob(svgText: string, scale: number = 4): Promise<Blob> {
+    // Parse SVG to get dimensions
+    const parser = new DOMParser();
+    const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
+    const svgElement = svgDoc.documentElement;
 
-    try {
-      // Fetch SVG content to bypass cross-origin download restrictions
-      const response = await fetch(url);
-      if (!response.ok) throw new Error('Network response was not ok');
-      const svgText = await response.text();
+    // Get SVG dimensions (with fallback)
+    let width = parseFloat(svgElement.getAttribute('width') || '300');
+    let height = parseFloat(svgElement.getAttribute('height') || '100');
 
-      // Create blob and download
-      const blob = new Blob([svgText], { type: 'image/svg+xml' });
-      const blobUrl = URL.createObjectURL(blob);
-
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = this.generateFilename(this.latexInput(), 'svg');
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      // Clean up blob URL
-      URL.revokeObjectURL(blobUrl);
-    } catch (error) {
-      console.error('Failed to download SVG:', error);
-    }
-  }
-
-  async downloadPng() {
-    const url = this.previewUrl();
-    if (!url) return;
-
-    try {
-      // Fetch the SVG content
-      const response = await fetch(url);
-      if (!response.ok) throw new Error('Network response was not ok');
-      const svgText = await response.text();
-
-      // Parse SVG to get dimensions
-      const parser = new DOMParser();
-      const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
-      const svgElement = svgDoc.documentElement;
-
-      // Get SVG dimensions (with fallback)
-      let width = parseFloat(svgElement.getAttribute('width') || '300');
-      let height = parseFloat(svgElement.getAttribute('height') || '100');
-
-      // If dimensions are in non-pixel units or missing, use viewBox
-      const viewBox = svgElement.getAttribute('viewBox');
-      if (viewBox) {
-        const [, , vbWidth, vbHeight] = viewBox.split(/\s+/).map(parseFloat);
-        if (vbWidth && vbHeight) {
-          width = vbWidth;
-          height = vbHeight;
-        }
+    // If dimensions are in non-pixel units or missing, use viewBox
+    const viewBox = svgElement.getAttribute('viewBox');
+    if (viewBox) {
+      const parts = viewBox.split(/\s+/).map(parseFloat);
+      const vbWidth = parts[2];
+      const vbHeight = parts[3];
+      if (vbWidth && vbHeight && !isNaN(vbWidth) && !isNaN(vbHeight)) {
+        width = vbWidth;
+        height = vbHeight;
       }
+    }
 
-      // Scale up for better quality (4x)
-      const scale = 4;
-      const canvasWidth = Math.ceil(width * scale);
-      const canvasHeight = Math.ceil(height * scale);
+    // Scale up for better quality
+    const canvasWidth = Math.ceil(width * scale);
+    const canvasHeight = Math.ceil(height * scale);
 
-      // Create a blob URL from the SVG
-      const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
-      const svgUrl = URL.createObjectURL(svgBlob);
+    // Create a blob URL from the SVG
+    const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
+    const svgUrl = URL.createObjectURL(svgBlob);
 
+    try {
       // Create image and canvas
       const img = new Image();
       const canvas = document.createElement('canvas');
@@ -704,18 +618,12 @@ export class LatexEditorComponent {
       canvas.width = canvasWidth;
       canvas.height = canvasHeight;
 
-      // Fill with white background for better visibility
-      ctx.fillStyle = 'white';
-      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-
+      // Keep transparent background (no fill)
       // Draw scaled image
       ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
 
-      // Clean up SVG blob URL
-      URL.revokeObjectURL(svgUrl);
-
       // Convert canvas to PNG blob
-      const pngBlob = await new Promise<Blob>((resolve, reject) => {
+      return new Promise<Blob>((resolve, reject) => {
         canvas.toBlob((blob) => {
           if (blob) {
             resolve(blob);
@@ -724,19 +632,58 @@ export class LatexEditorComponent {
           }
         }, 'image/png');
       });
+    } finally {
+      // Always clean up blob URL
+      URL.revokeObjectURL(svgUrl);
+    }
+  }
 
-      // Create download link for PNG
-      const pngUrl = URL.createObjectURL(pngBlob);
-      const link = document.createElement('a');
-      link.href = pngUrl;
-      link.download = this.generateFilename(this.latexInput(), 'png');
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+  /**
+   * Triggers a file download using a temporary anchor element
+   */
+  private triggerDownload(blob: Blob, filename: string): void {
+    const blobUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(blobUrl);
+  }
 
-      // Clean up PNG blob URL
-      URL.revokeObjectURL(pngUrl);
-    } catch (error) {
+  async downloadSvg() {
+    const url = this.previewUrl();
+    if (!url) return;
+
+    try {
+      // Fetch SVG content to bypass cross-origin download restrictions
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Network response was not ok');
+      const svgText = await response.text();
+
+      // Create blob and download using shared utility
+      const blob = new Blob([svgText], { type: 'image/svg+xml' });
+      this.triggerDownload(blob, this.generateFilename(this.latexInput(), 'svg'));
+    } catch (error: unknown) {
+      console.error('Failed to download SVG:', error);
+    }
+  }
+
+  async downloadPng() {
+    const url = this.previewUrl();
+    if (!url) return;
+
+    try {
+      // Fetch the SVG content
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Network response was not ok');
+      const svgText = await response.text();
+
+      // Convert to PNG using shared utility
+      const pngBlob = await this.svgToPngBlob(svgText);
+
+      // Download using shared utility
+      this.triggerDownload(pngBlob, this.generateFilename(this.latexInput(), 'png'));
+    } catch (error: unknown) {
       console.error('Failed to download PNG:', error);
     }
   }

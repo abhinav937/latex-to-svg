@@ -56,7 +56,8 @@ export class RateLimiterService {
     }
 
     // Find the oldest request in the current window
-    const oldestRequest = Math.min(...validRequests);
+    // Guard against empty array (Math.min returns Infinity for empty spread)
+    const oldestRequest = validRequests.length > 0 ? Math.min(...validRequests) : Date.now();
     const nextAllowedTime = oldestRequest + limit.windowMs;
 
     return Math.max(0, nextAllowedTime - now);

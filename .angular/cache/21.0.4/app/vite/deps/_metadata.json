@@ -1,46 +1,55 @@
 {
-  "hash": "37273ccc",
-  "configHash": "ed11f770",
+  "hash": "1918c5fe",
+  "configHash": "ca30e6eb",
   "lockfileHash": "c5279fec",
-  "browserHash": "b4893a25",
+  "browserHash": "5cc14d84",
   "optimized": {
     "@angular/core": {
       "src": "../../../../../../node_modules/@angular/core/fesm2022/core.mjs",
       "file": "@angular_core.js",
-      "fileHash": "60a070fa",
+      "fileHash": "f5c7d94f",
+      "needsInterop": false
+    },
+    "@angular/core/rxjs-interop": {
+      "src": "../../../../../../node_modules/@angular/core/fesm2022/rxjs-interop.mjs",
+      "file": "@angular_core_rxjs-interop.js",
+      "fileHash": "2f1001c7",
       "needsInterop": false
     },
     "@angular/platform-browser": {
       "src": "../../../../../../node_modules/@angular/platform-browser/fesm2022/platform-browser.mjs",
       "file": "@angular_platform-browser.js",
-      "fileHash": "79782db9",
+      "fileHash": "b8110d08",
       "needsInterop": false
     },
     "@angular/router": {
       "src": "../../../../../../node_modules/@angular/router/fesm2022/router.mjs",
       "file": "@angular_router.js",
-      "fileHash": "b2df2e0e",
+      "fileHash": "ed65fdd3",
       "needsInterop": false
     },
     "@google/genai": {
       "src": "../../../../../../node_modules/@google/genai/dist/web/index.mjs",
       "file": "@google_genai.js",
-      "fileHash": "d5de4f38",
+      "fileHash": "b8639a02",
       "needsInterop": false
     },
     "rxjs": {
       "src": "../../../../../../node_modules/rxjs/dist/esm5/index.js",
       "file": "rxjs.js",
-      "fileHash": "f498224a",
+      "fileHash": "96c40622",
       "needsInterop": false
     }
   },
   "chunks": {
-    "chunk-LHFEZ3SU": {
-      "file": "chunk-LHFEZ3SU.js"
+    "chunk-PJKF6M3P": {
+      "file": "chunk-PJKF6M3P.js"
     },
-    "chunk-O3E2R42W": {
-      "file": "chunk-O3E2R42W.js"
+    "chunk-U3ENBTA4": {
+      "file": "chunk-U3ENBTA4.js"
+    },
+    "chunk-MHMOZ42A": {
+      "file": "chunk-MHMOZ42A.js"
     },
     "chunk-RSS3ODKE": {
       "file": "chunk-RSS3ODKE.js"

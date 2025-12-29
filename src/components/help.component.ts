@@ -115,7 +115,7 @@ import { RouterLink } from '@angular/router';
         <section class="pt-8 border-t border-gray-200">
           <div class="flex gap-6 text-sm">
             <a href="https://github.com/abhinav937/latex-to-svg" target="_blank" class="text-gray-500 hover:text-gray-900 transition-colors">GitHub</a>
-            <a href="https://x.com/abhinav_937" target="_blank" class="text-gray-500 hover:text-gray-900 transition-colors">Contact</a>
+            <a href="https://x.com/emotor" target="_blank" class="text-gray-500 hover:text-gray-900 transition-colors">Contact</a>
             <a routerLink="/changelog" class="text-gray-500 hover:text-gray-900 transition-colors">Changelog</a>
           </div>
         </section>
