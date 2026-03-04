@@ -43,7 +43,29 @@ const FEATURES = {
         <!-- Quick Actions / Info -->
         <div class="w-full md:w-64 bg-gray-50 border-t md:border-t-0 md:border-l border-gray-200 p-4 sm:p-5 flex flex-col gap-3 sm:gap-4">
            <div class="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Quick Actions</div>
-           
+
+           <!-- Font size control -->
+           <div class="bg-white border border-gray-200 rounded-lg p-3 flex flex-col gap-2">
+             <div class="flex items-center justify-between">
+               <span class="text-xs text-gray-600 font-medium">Font Size</span>
+               <span class="text-xs font-mono font-semibold text-indigo-600">{{ fontSize() }}pt</span>
+             </div>
+             <input
+               type="range"
+               min="8"
+               max="60"
+               step="1"
+               [value]="fontSize()"
+               (input)="updateFontSize($event)"
+               class="w-full h-1.5 rounded-lg appearance-none cursor-pointer accent-indigo-500 bg-gray-200"
+             />
+             <div class="flex justify-between text-xs text-gray-400">
+               <span>8pt</span>
+               <span>34pt</span>
+               <span>60pt</span>
+             </div>
+           </div>
+
            @if (features.COPY_SVG_URL) {
              <button
                (click)="copySvgUrl()"
@@ -256,6 +278,9 @@ export class LatexEditorComponent {
   copiedImage = signal(false);
   isCopyingImage = signal(false);
 
+  // Font size (pt) used when rendering – range 8–60
+  fontSize = signal(12);
+
   // Autocomplete state
   showAutocomplete = signal(false);
   suggestions = signal<LatexCommand[]>([]);
@@ -281,6 +306,37 @@ export class LatexEditorComponent {
     { label: 'State Space', code: '\\dot{x} = \\begin{bmatrix} 0 & -\\frac{1}{L} \\\\ \\frac{1}{C} & -\\frac{1}{RC} \\end{bmatrix} x + \\begin{bmatrix} \\frac{1}{L} \\\\ 0 \\end{bmatrix} u' }
   ];
 
+  updateFontSize(event: Event) {
+    const input = event.target as HTMLInputElement;
+    this.fontSize.set(parseInt(input.value, 10));
+  }
+
+  /**
+   * Maps a point size (8–60) to the appropriate LaTeX size command.
+   * Standard commands cover up to ~25pt; above that we use \fontsize{N}{M}\selectfont
+   * so CodeCogs renders the exact requested size.
+   *
+   * Standard LaTeX sizes (10pt document class):
+   *   \tiny=5pt  \scriptsize=7pt  \footnotesize=8pt  \small=9pt
+   *   \normalsize=10pt  \large=12pt  \Large=14.4pt  \LARGE=17pt
+   *   \huge=20pt  \Huge=25pt
+   */
+  private ptToLatexSize(pt: number): string {
+    if (pt <= 6)    return '\\tiny';
+    if (pt <= 7)    return '\\scriptsize';
+    if (pt <= 8.5)  return '\\footnotesize';
+    if (pt <= 9.5)  return '\\small';
+    if (pt <= 11)   return '\\normalsize';
+    if (pt <= 13)   return '\\large';
+    if (pt <= 15.5) return '\\Large';
+    if (pt <= 19)   return '\\LARGE';
+    if (pt <= 22)   return '\\huge';
+    if (pt <= 28)   return '\\Huge';
+    // Above 28pt: explicit \fontsize command (baseline = pt × 1.2)
+    const baseline = Math.round(pt * 1.2);
+    return `\\fontsize{${pt}}{${baseline}}\\selectfont`;
+  }
+
   async renderLatex() {
     const code = this.latexInput().trim();
     if (!code) {
@@ -302,8 +358,9 @@ export class LatexEditorComponent {
 
     this.isRendering.set(true);
     try {
-      // Encode and add some styling for better visibility
-      const url = `https://latex.codecogs.com/svg.latex?\\huge ${encodeURIComponent(code)}`;
+      // Build size command from current font size setting, then encode
+      const sizeCmd = this.ptToLatexSize(this.fontSize());
+      const url = `https://latex.codecogs.com/svg.latex?${sizeCmd} ${encodeURIComponent(code)}`;
       this.previewUrl.set(url);
 
       // Add to history after successful render
@@ -565,10 +622,13 @@ export class LatexEditorComponent {
   }
 
   /**
-   * Converts SVG text to PNG blob with configurable scale
-   * Extracted to avoid code duplication between copySvgAsImage and downloadPng
+   * Converts SVG text to PNG blob with configurable scale and DPI metadata.
+   * Extracted to avoid code duplication between copySvgAsImage and downloadPng.
+   * @param svgText  Raw SVG markup
+   * @param scale    Render scale multiplier (higher = more pixels)
+   * @param dpi      DPI value written into the PNG pHYs chunk (default 300)
    */
-  private async svgToPngBlob(svgText: string, scale: number = 4): Promise<Blob> {
+  private async svgToPngBlob(svgText: string, scale: number = 8, dpi: number = 600): Promise<Blob> {
     // Parse SVG to get dimensions
     const parser = new DOMParser();
     const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
@@ -615,16 +675,20 @@ export class LatexEditorComponent {
         img.src = svgUrl;
       });
 
-      // Set canvas size and draw
+      // Set canvas size
       canvas.width = canvasWidth;
       canvas.height = canvasHeight;
+
+      // Enable high-quality image smoothing before drawing
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
 
       // Keep transparent background (no fill)
       // Draw scaled image
       ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
 
-      // Convert canvas to PNG blob
-      return new Promise<Blob>((resolve, reject) => {
+      // Convert canvas to PNG blob, then inject DPI metadata
+      const rawBlob = await new Promise<Blob>((resolve, reject) => {
         canvas.toBlob((blob) => {
           if (blob) {
             resolve(blob);
@@ -633,10 +697,87 @@ export class LatexEditorComponent {
           }
         }, 'image/png');
       });
+
+      return this.injectPngDpi(rawBlob, dpi);
     } finally {
       // Always clean up blob URL
       URL.revokeObjectURL(svgUrl);
     }
+  }
+
+  /**
+   * Injects a PNG pHYs chunk carrying DPI metadata into an existing PNG blob.
+   *
+   * PNG structure: 8-byte signature | IHDR chunk (25 bytes) | … other chunks … | IEND
+   * The pHYs chunk must appear before the first IDAT chunk, so we insert it
+   * immediately after IHDR (byte offset 33).
+   *
+   * pHYs chunk layout (9 data bytes):
+   *   [0-3]  pixels-per-unit X  (uint32 big-endian)
+   *   [4-7]  pixels-per-unit Y  (uint32 big-endian)
+   *   [8]    unit = 1 (metre)
+   *
+   * 1 inch = 0.0254 m  →  pixels/metre = dpi / 0.0254
+   */
+  private async injectPngDpi(pngBlob: Blob, dpi: number): Promise<Blob> {
+    const buffer = await pngBlob.arrayBuffer();
+    const src = new Uint8Array(buffer);
+
+    const ppm = Math.round(dpi / 0.0254); // pixels per metre
+
+    // Build the 9-byte pHYs data payload
+    const data = new Uint8Array(9);
+    const writeU32 = (arr: Uint8Array, offset: number, value: number) => {
+      arr[offset]     = (value >>> 24) & 0xff;
+      arr[offset + 1] = (value >>> 16) & 0xff;
+      arr[offset + 2] = (value >>>  8) & 0xff;
+      arr[offset + 3] =  value         & 0xff;
+    };
+    writeU32(data, 0, ppm);
+    writeU32(data, 4, ppm);
+    data[8] = 1; // unit = metre
+
+    // CRC-32 over chunk type + data (13 bytes total)
+    const TYPE = new Uint8Array([0x70, 0x48, 0x59, 0x73]); // "pHYs"
+    const crcInput = new Uint8Array(13);
+    crcInput.set(TYPE, 0);
+    crcInput.set(data, 4);
+    const crcValue = this.crc32(crcInput);
+
+    // Assemble the full chunk: length(4) + type(4) + data(9) + crc(4) = 21 bytes
+    const chunk = new Uint8Array(21);
+    writeU32(chunk, 0, 9);          // data length
+    chunk.set(TYPE, 4);             // chunk type
+    chunk.set(data, 8);             // chunk data
+    writeU32(chunk, 17, crcValue);  // CRC
+
+    // Insert after the 8-byte PNG signature + 25-byte IHDR chunk = offset 33
+    const INSERT_AT = 33;
+    const out = new Uint8Array(src.length + 21);
+    out.set(src.subarray(0, INSERT_AT), 0);
+    out.set(chunk, INSERT_AT);
+    out.set(src.subarray(INSERT_AT), INSERT_AT + 21);
+
+    return new Blob([out], { type: 'image/png' });
+  }
+
+  /** CRC-32 used for PNG chunk integrity */
+  private crc32(data: Uint8Array): number {
+    // Build lookup table
+    const table = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) {
+      let c = n;
+      for (let k = 0; k < 8; k++) {
+        c = (c & 1) ? (0xedb88320 ^ (c >>> 1)) : (c >>> 1);
+      }
+      table[n] = c;
+    }
+
+    let crc = 0xffffffff;
+    for (let i = 0; i < data.length; i++) {
+      crc = (crc >>> 8) ^ table[(crc ^ data[i]) & 0xff];
+    }
+    return (crc ^ 0xffffffff) >>> 0;
   }
 
   /**

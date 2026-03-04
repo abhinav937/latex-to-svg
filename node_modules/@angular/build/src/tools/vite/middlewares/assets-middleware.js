@@ -29,8 +29,8 @@ function createAngularAssetsMiddleware(server, assets, outputFiles, componentSty
         // Rewrite all build assets to a vite raw fs URL
         const asset = assets.get(pathname);
         if (asset) {
-            // This is a workaround to serve CSS, JS and TS files without Vite transformations.
-            if (JS_TS_REGEXP.test(extension) || CSS_PREPROCESSOR_REGEXP.test(extension)) {
+            // This is a workaround to serve extensionless, CSS, JS and TS files without Vite transformations.
+            if (!extension || JS_TS_REGEXP.test(extension) || CSS_PREPROCESSOR_REGEXP.test(extension)) {
                 const contents = (0, node_fs_1.readFileSync)(asset.source);
                 const etag = `W/${(0, node_crypto_1.createHash)('sha256').update(contents).digest('hex')}`;
                 if (checkAndHandleEtag(req, res, etag)) {

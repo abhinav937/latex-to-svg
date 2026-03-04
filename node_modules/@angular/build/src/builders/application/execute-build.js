@@ -60,7 +60,7 @@ const i18n_1 = require("./i18n");
 const setup_bundling_1 = require("./setup-bundling");
 // eslint-disable-next-line max-lines-per-function
 async function executeBuild(options, context, rebuildState) {
-    const { projectRoot, workspaceRoot, i18nOptions, optimizationOptions, assets, cacheOptions, serverEntryPoint, baseHref, ssrOptions, verbose, colors, jsonLogs, } = options;
+    const { projectRoot, workspaceRoot, i18nOptions, optimizationOptions, assets, cacheOptions, serverEntryPoint, baseHref, ssrOptions, verbose, colors, jsonLogs, security, } = options;
     // TODO: Consider integrating into watch mode. Would require full rebuild on target changes.
     const browsers = (0, supported_browsers_1.getSupportedBrowsers)(projectRoot, context.logger);
     // Load active translations if inlining
@@ -216,7 +216,7 @@ async function executeBuild(options, context, rebuildState) {
     }
     // Create server app engine manifest
     if (serverEntryPoint) {
-        executionResult.addOutputFile(manifest_1.SERVER_APP_ENGINE_MANIFEST_FILENAME, (0, manifest_1.generateAngularServerAppEngineManifest)(i18nOptions, baseHref), bundler_context_1.BuildOutputFileType.ServerRoot);
+        executionResult.addOutputFile(manifest_1.SERVER_APP_ENGINE_MANIFEST_FILENAME, (0, manifest_1.generateAngularServerAppEngineManifest)(i18nOptions, security.allowedHosts, baseHref), bundler_context_1.BuildOutputFileType.ServerRoot);
     }
     // Perform i18n translation inlining if enabled
     if (i18nOptions.shouldInline) {

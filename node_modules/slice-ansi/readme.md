@@ -34,13 +34,13 @@ String with ANSI escape codes. Like one styled by [`chalk`](https://github.com/c
 
 Type: `number`
 
-Zero-based index at which to start the slice.
+Zero-based visible-column index at which to start the slice. Grapheme clusters (for example, emoji sequences and combining marks) are kept intact.
 
 #### endSlice
 
 Type: `number`
 
-Zero-based index at which to end the slice.
+Zero-based visible-column index at which to end the slice.
 
 ## Related
 

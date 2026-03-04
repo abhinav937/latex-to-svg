@@ -23,6 +23,7 @@ interface TestEntrypointsOptions {
     projectSourceRoot: string;
     workspaceRoot: string;
     removeTestExtension?: boolean;
+    prefix?: string;
 }
 /**
  * Generates unique, dash-delimited bundle names for a set of test files.
@@ -32,7 +33,7 @@ interface TestEntrypointsOptions {
  * @param options Configuration options for generating entry points.
  * @returns A map where keys are the generated unique bundle names and values are the original file paths.
  */
-export declare function getTestEntrypoints(testFiles: string[], { projectSourceRoot, workspaceRoot, removeTestExtension }: TestEntrypointsOptions): Map<string, string>;
+export declare function getTestEntrypoints(testFiles: string[], { projectSourceRoot, workspaceRoot, removeTestExtension, prefix, }: TestEntrypointsOptions): Map<string, string>;
 /**
  * Generates a unique, dash-delimited name from a file path. This is used to
  * create a consistent and readable bundle name for a given test file.

@@ -68,6 +68,9 @@ class KarmaExecutor {
         if (unitTestOptions.coverage?.include) {
             context.logger.warn('The "karma" test runner does not support the "coverageInclude" option. The option will be ignored.');
         }
+        if (unitTestOptions.headless !== undefined) {
+            context.logger.warn('The "karma" test runner does not support the "headless" option. The option will be ignored.');
+        }
         const buildTargetOptions = (await context.validateOptions(await context.getTargetOptions(unitTestOptions.buildTarget), await context.getBuilderNameForTarget(unitTestOptions.buildTarget)));
         let karmaConfig;
         if (typeof unitTestOptions.runnerConfig === 'string') {

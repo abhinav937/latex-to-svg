@@ -80,6 +80,7 @@ async function normalizeOptions(context, projectName, options) {
         exclude: options.exclude,
         filter,
         runnerName: runner ?? schema_1.Runner.Vitest,
+        headless: options.headless,
         coverage: {
             enabled: options.coverage,
             exclude: options.coverageExclude,

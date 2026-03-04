@@ -272,14 +272,19 @@ async function* execute(options, context, extensions) {
     let buildTargetOptions;
     try {
         const builderName = await context.getBuilderNameForTarget(normalizedOptions.buildTarget);
-        if (builderName !== '@angular/build:application' &&
-            // TODO: Add comprehensive support for ng-packagr.
-            builderName !== '@angular/build:ng-packagr') {
-            context.logger.warn(`The 'buildTarget' is configured to use '${builderName}', which is not supported. ` +
-                `The 'unit-test' builder is designed to work with '@angular/build:application'. ` +
-                'Unexpected behavior or build failures may occur.');
+        if (builderName === '@angular/build:application') {
+            buildTargetOptions = (await context.validateOptions(await context.getTargetOptions(normalizedOptions.buildTarget), builderName));
         }
-        buildTargetOptions = (await context.validateOptions(await context.getTargetOptions(normalizedOptions.buildTarget), builderName));
+        else if (builderName === '@angular/build:ng-packagr') {
+            const ngPackagrOptions = await context.validateOptions(await context.getTargetOptions(normalizedOptions.buildTarget), builderName);
+            buildTargetOptions = await transformNgPackagrOptions(context, ngPackagrOptions, normalizedOptions.projectRoot);
+        }
+        else {
+            context.logger.warn(`The 'buildTarget' is configured to use '${builderName}', which is not supported. ` +
+                `The 'unit-test' builder is designed to work with '@angular/build:application' or '@angular/build:ng-packagr'. ` +
+                'Unexpected behavior or build failures may occur.');
+            buildTargetOptions = (await context.validateOptions(await context.getTargetOptions(normalizedOptions.buildTarget), builderName));
+        }
     }
     catch (e) {
         (0, error_1.assertIsError)(e);
@@ -339,5 +344,37 @@ async function* execute(options, context, extensions) {
         context.logger.error(`An exception occurred while creating the test executor:\n${e.stack ?? e.message}`);
         yield { success: false };
     }
+}
+async function transformNgPackagrOptions(context, options, projectRoot) {
+    const projectPath = options['project'];
+    let ngPackagePath;
+    if (projectPath) {
+        if (typeof projectPath !== 'string') {
+            throw new Error('ng-packagr builder options "project" property must be a string.');
+        }
+        ngPackagePath = node_path_1.default.join(context.workspaceRoot, projectPath);
+    }
+    else {
+        ngPackagePath = node_path_1.default.join(projectRoot, 'ng-package.json');
+    }
+    let ngPackageJson;
+    try {
+        ngPackageJson = JSON.parse(await (0, promises_1.readFile)(ngPackagePath, 'utf-8'));
+    }
+    catch (e) {
+        (0, error_1.assertIsError)(e);
+        throw new Error(`Could not read ng-package.json at ${ngPackagePath}: ${e.message}`);
+    }
+    const lib = ngPackageJson['lib'] || {};
+    const styleIncludePaths = lib['styleIncludePaths'] || [];
+    const assets = ngPackageJson['assets'] || [];
+    const inlineStyleLanguage = ngPackageJson['inlineStyleLanguage'];
+    return {
+        stylePreprocessorOptions: styleIncludePaths.length
+            ? { includePaths: styleIncludePaths }
+            : undefined,
+        assets: assets.length ? assets : undefined,
+        inlineStyleLanguage: typeof inlineStyleLanguage === 'string' ? inlineStyleLanguage : undefined,
+    };
 }
 //# sourceMappingURL=builder.js.map

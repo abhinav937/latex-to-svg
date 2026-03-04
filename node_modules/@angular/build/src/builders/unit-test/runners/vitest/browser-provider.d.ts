@@ -9,8 +9,9 @@ import type { BrowserConfigOptions } from 'vitest/node';
 export interface BrowserConfiguration {
     browser?: BrowserConfigOptions;
     errors?: string[];
+    messages?: string[];
 }
-export declare function setupBrowserConfiguration(browsers: string[] | undefined, debug: boolean, projectSourceRoot: string, viewport: {
+export declare function setupBrowserConfiguration(browsers: string[] | undefined, headless: boolean | undefined, debug: boolean, projectSourceRoot: string, viewport: {
     width: number;
     height: number;
 } | undefined): Promise<BrowserConfiguration>;

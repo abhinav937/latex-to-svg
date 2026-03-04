@@ -200,6 +200,7 @@ export declare function normalizeOptions(context: BuilderContext, projectName: s
     externalRuntimeStyles: boolean | undefined;
     instrumentForCoverage: ((filename: string) => boolean) | undefined;
     security: {
+        allowedHosts: string[];
         autoCsp: {
             unsafeEval: boolean;
         } | undefined;

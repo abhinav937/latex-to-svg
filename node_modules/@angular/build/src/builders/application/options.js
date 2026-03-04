@@ -247,8 +247,9 @@ async function normalizeOptions(context, projectName, options, extensions) {
             throw new Error('The "index" option cannot be set to false when enabling "ssr", "prerender" or "app-shell".');
         }
     }
-    const autoCsp = options.security?.autoCsp;
+    const { autoCsp, allowedHosts = [] } = options.security ?? {};
     const security = {
+        allowedHosts,
         autoCsp: autoCsp
             ? {
                 unsafeEval: autoCsp === true ? false : !!autoCsp.unsafeEval,

@@ -68,6 +68,12 @@ export type Schema = {
      */
     filter?: string;
     /**
+     * Forces all configured browsers to run in headless mode. When using the Vitest runner,
+     * this option is ignored if no browsers are configured. The Karma runner does not support
+     * this option.
+     */
+    headless?: boolean;
+    /**
      * Specifies glob patterns of files to include for testing, relative to the project root.
      * This option also has special handling for directory paths (includes all test files
      * within) and file paths (includes the corresponding test file if one exists).
