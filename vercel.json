@@ -2,6 +2,7 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": null,
+  "nodeVersion": "22.x",
   "rewrites": [
     {
       "source": "/(.*)",
