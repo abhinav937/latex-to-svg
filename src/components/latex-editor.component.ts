@@ -528,9 +528,12 @@ export class LatexEditorComponent {
 
     this.isCopyingImage.set(true);
     try {
-      // Fetch SVG via JSON endpoint (no CORS issues) then scale+rasterise
+      // Fetch SVG via JSON endpoint (no CORS issues) then scale+rasterise.
+      // DPI = 144 (2× screen): raw pixel count matches screen expectations.
+      // At 144 DPI, 12pt inline equation ≈ 22px — apps that ignore pHYs
+      // show a sensible size; apps that honour pHYs display at correct pt.
       const svgText = await this.fetchSvgText();
-      const pngBlob = await this.svgToPngBlob(svgText, this.fontSize());
+      const pngBlob = await this.svgToPngBlob(svgText, this.fontSize(), 144);
 
       // Copy to clipboard using Clipboard API
       await navigator.clipboard.write([
