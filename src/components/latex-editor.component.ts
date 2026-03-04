@@ -309,32 +309,7 @@ export class LatexEditorComponent {
   updateFontSize(event: Event) {
     const input = event.target as HTMLInputElement;
     this.fontSize.set(parseInt(input.value, 10));
-  }
-
-  /**
-   * Maps a point size (8–60) to the appropriate LaTeX size command.
-   * Standard commands cover up to ~25pt; above that we use \fontsize{N}{M}\selectfont
-   * so CodeCogs renders the exact requested size.
-   *
-   * Standard LaTeX sizes (10pt document class):
-   *   \tiny=5pt  \scriptsize=7pt  \footnotesize=8pt  \small=9pt
-   *   \normalsize=10pt  \large=12pt  \Large=14.4pt  \LARGE=17pt
-   *   \huge=20pt  \Huge=25pt
-   */
-  private ptToLatexSize(pt: number): string {
-    if (pt <= 6)    return '\\tiny';
-    if (pt <= 7)    return '\\scriptsize';
-    if (pt <= 8.5)  return '\\footnotesize';
-    if (pt <= 9.5)  return '\\small';
-    if (pt <= 11)   return '\\normalsize';
-    if (pt <= 13)   return '\\large';
-    if (pt <= 15.5) return '\\Large';
-    if (pt <= 19)   return '\\LARGE';
-    if (pt <= 22)   return '\\huge';
-    if (pt <= 28)   return '\\Huge';
-    // Above 28pt: explicit \fontsize command (baseline = pt × 1.2)
-    const baseline = Math.round(pt * 1.2);
-    return `\\fontsize{${pt}}{${baseline}}\\selectfont`;
+    // No re-render needed — fontSize only affects export/copy, not the preview URL
   }
 
   async renderLatex() {
@@ -358,9 +333,9 @@ export class LatexEditorComponent {
 
     this.isRendering.set(true);
     try {
-      // Build size command from current font size setting, then encode
-      const sizeCmd = this.ptToLatexSize(this.fontSize());
-      const url = `https://latex.codecogs.com/svg.latex?${sizeCmd} ${encodeURIComponent(code)}`;
+      // No size command — CodeCogs renders at 10pt (normalsize) by default.
+      // Physical sizing for export/copy is handled entirely in svgToPngBlob.
+      const url = `https://latex.codecogs.com/svg.latex?${encodeURIComponent(code)}`;
       this.previewUrl.set(url);
 
       // Add to history after successful render
@@ -535,7 +510,7 @@ export class LatexEditorComponent {
       const svgText = await response.text();
 
       // Convert to PNG using shared utility
-      const pngBlob = await this.svgToPngBlob(svgText);
+      const pngBlob = await this.svgToPngBlob(svgText, this.fontSize());
 
       // Copy to clipboard using Clipboard API
       await navigator.clipboard.write([
@@ -622,37 +597,68 @@ export class LatexEditorComponent {
   }
 
   /**
-   * Converts SVG text to PNG blob with configurable scale and DPI metadata.
-   * Extracted to avoid code duplication between copySvgAsImage and downloadPng.
-   * @param svgText  Raw SVG markup
-   * @param scale    Render scale multiplier (higher = more pixels)
-   * @param dpi      DPI value written into the PNG pHYs chunk (default 300)
+   * Converts a CodeCogs SVG to a physically-accurate PNG blob.
+   *
+   * Bespoke scaling pipeline (no LaTeX size commands involved):
+   *
+   *  1. CodeCogs always renders at 10pt (normalsize) when given no size prefix.
+   *     Its SVGs carry real `pt` dimensions, e.g. width='6.61pt' height='27.39pt'.
+   *
+   *  2. Custom size scaler:
+   *       scale = targetPt / CODECOGS_REFERENCE_PT   (= targetPt / 10)
+   *       canvasPixels = svgDimPt × scale × (dpi / 72)
+   *
+   *     Example — target 12pt at 600 DPI:
+   *       canvasHeight = 27.39 × (12/10) × (600/72) = 273.9 px
+   *       pHYs metadata → 600 DPI
+   *       Physical height in output = 273.9/600 in = 32.87pt  ✓ (12pt-equivalent equation)
+   *
+   *  3. The pHYs DPI chunk is injected so Inkscape / Word read the correct
+   *     physical size without guessing.
+   *
+   * @param svgText   Raw SVG markup from CodeCogs (fetched with no size command)
+   * @param targetPt  Desired output font size in points (default: current fontSize signal)
+   * @param dpi       Output DPI written into the pHYs chunk (default 600)
    */
-  private async svgToPngBlob(svgText: string, scale: number = 8, dpi: number = 600): Promise<Blob> {
-    // Parse SVG to get dimensions
+  private async svgToPngBlob(svgText: string, targetPt: number = 12, dpi: number = 600): Promise<Blob> {
+    // CodeCogs renders at 10pt (normalsize) by default — verified empirically.
+    const CODECOGS_REFERENCE_PT = 10;
+
     const parser = new DOMParser();
     const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
     const svgElement = svgDoc.documentElement;
 
-    // Get SVG dimensions (with fallback)
-    let width = parseFloat(svgElement.getAttribute('width') || '300');
-    let height = parseFloat(svgElement.getAttribute('height') || '100');
+    // Parse a dimension that may carry a 'pt' suffix (CodeCogs always uses pt)
+    const parsePt = (attr: string | null): number => parseFloat(attr ?? '0');
+    const isPtUnit = (attr: string | null): boolean => (attr ?? '').endsWith('pt');
 
-    // If dimensions are in non-pixel units or missing, use viewBox
-    const viewBox = svgElement.getAttribute('viewBox');
-    if (viewBox) {
-      const parts = viewBox.split(/\s+/).map(parseFloat);
-      const vbWidth = parts[2];
-      const vbHeight = parts[3];
-      if (vbWidth && vbHeight && !isNaN(vbWidth) && !isNaN(vbHeight)) {
-        width = vbWidth;
-        height = vbHeight;
+    const wAttr = svgElement.getAttribute('width');
+    const hAttr = svgElement.getAttribute('height');
+    const wPt   = parsePt(wAttr);
+    const hPt   = parsePt(hAttr);
+
+    // Custom size scaler: scale = targetPt / referenceRenderPt
+    // Then convert pt → canvas pixels via  px = pt × (dpi / 72)
+    let canvasWidth: number;
+    let canvasHeight: number;
+
+    if (isPtUnit(wAttr) && isPtUnit(hAttr) && wPt > 0 && hPt > 0) {
+      const scale = targetPt / CODECOGS_REFERENCE_PT;
+      canvasWidth  = Math.ceil(wPt * scale * dpi / 72);
+      canvasHeight = Math.ceil(hPt * scale * dpi / 72);
+    } else {
+      // Fallback for SVGs without pt units (viewBox user-units × scale)
+      const viewBox = svgElement.getAttribute('viewBox');
+      let vbW = wPt || 300;
+      let vbH = hPt || 100;
+      if (viewBox) {
+        const parts = viewBox.split(/\s+/).map(parseFloat);
+        if (parts[2] && parts[3] && !isNaN(parts[2])) { vbW = parts[2]; vbH = parts[3]; }
       }
+      const scale = targetPt / CODECOGS_REFERENCE_PT;
+      canvasWidth  = Math.ceil(vbW * scale * 8); // 8 = legacy base scale
+      canvasHeight = Math.ceil(vbH * scale * 8);
     }
-
-    // Scale up for better quality
-    const canvasWidth = Math.ceil(width * scale);
-    const canvasHeight = Math.ceil(height * scale);
 
     // Create a blob URL from the SVG
     const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
@@ -821,7 +827,7 @@ export class LatexEditorComponent {
       const svgText = await response.text();
 
       // Convert to PNG using shared utility
-      const pngBlob = await this.svgToPngBlob(svgText);
+      const pngBlob = await this.svgToPngBlob(svgText, this.fontSize());
 
       // Download using shared utility
       this.triggerDownload(pngBlob, this.generateFilename(this.latexInput(), 'png'));
