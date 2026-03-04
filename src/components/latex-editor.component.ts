@@ -333,9 +333,10 @@ export class LatexEditorComponent {
 
     this.isRendering.set(true);
     try {
+      // Use the current svg.image endpoint (svg.latex is the legacy endpoint).
       // No size command — CodeCogs renders at 10pt (normalsize) by default.
       // Physical sizing for export/copy is handled entirely in svgToPngBlob.
-      const url = `https://latex.codecogs.com/svg.latex?${encodeURIComponent(code)}`;
+      const url = `https://latex.codecogs.com/svg.image?${encodeURIComponent(code)}`;
       this.previewUrl.set(url);
 
       // Add to history after successful render
@@ -471,6 +472,33 @@ export class LatexEditorComponent {
     }
   }
 
+  /**
+   * Fetches the current equation as raw SVG text using CodeCogs' JSON endpoint.
+   *
+   * Why JSON instead of fetching the svg.image? URL directly:
+   *  - The JSON endpoint returns the SVG pre-encoded as base64, so no CORS
+   *    issues and no intermediate blob-URL workaround required.
+   *  - Response shape: { "latex": { "base64": "<base64-svg>", ... } }
+   *  - The base64 is UTF-8 SVG text; we decode via TextDecoder for safety.
+   */
+  private async fetchSvgText(): Promise<string> {
+    const code = this.latexInput().trim();
+    if (!code) throw new Error('No LaTeX to fetch');
+
+    const url = `https://latex.codecogs.com/svg.json?${encodeURIComponent(code)}`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`CodeCogs JSON fetch failed: ${response.status}`);
+
+    const json = await response.json();
+    const base64 = json?.latex?.base64;
+    if (!base64) throw new Error('No base64 field in CodeCogs JSON response');
+
+    // Decode base64 → UTF-8 SVG string
+    const binaryStr = atob(base64);
+    const bytes = Uint8Array.from(binaryStr, c => c.charCodeAt(0));
+    return new TextDecoder('utf-8').decode(bytes);
+  }
+
   copySvgUrl() {
     const url = this.previewUrl();
     if (!url) return;
@@ -482,13 +510,10 @@ export class LatexEditorComponent {
   }
 
   async copySvgCode() {
-    const url = this.previewUrl();
-    if (!url) return;
+    if (!this.previewUrl()) return;
 
     try {
-      const response = await fetch(url);
-      if (!response.ok) throw new Error('Network response was not ok');
-      const svgText = await response.text();
+      const svgText = await this.fetchSvgText();
       await navigator.clipboard.writeText(svgText);
 
       this.copiedSvg.set(true);
@@ -499,17 +524,12 @@ export class LatexEditorComponent {
   }
 
   async copySvgAsImage() {
-    const url = this.previewUrl();
-    if (!url) return;
+    if (!this.previewUrl()) return;
 
     this.isCopyingImage.set(true);
     try {
-      // Fetch the SVG content
-      const response = await fetch(url);
-      if (!response.ok) throw new Error('Network response was not ok');
-      const svgText = await response.text();
-
-      // Convert to PNG using shared utility
+      // Fetch SVG via JSON endpoint (no CORS issues) then scale+rasterise
+      const svgText = await this.fetchSvgText();
       const pngBlob = await this.svgToPngBlob(svgText, this.fontSize());
 
       // Copy to clipboard using Clipboard API
@@ -799,16 +819,10 @@ export class LatexEditorComponent {
   }
 
   async downloadSvg() {
-    const url = this.previewUrl();
-    if (!url) return;
+    if (!this.previewUrl()) return;
 
     try {
-      // Fetch SVG content to bypass cross-origin download restrictions
-      const response = await fetch(url);
-      if (!response.ok) throw new Error('Network response was not ok');
-      const svgText = await response.text();
-
-      // Create blob and download using shared utility
+      const svgText = await this.fetchSvgText();
       const blob = new Blob([svgText], { type: 'image/svg+xml' });
       this.triggerDownload(blob, this.generateFilename(this.latexInput(), 'svg'));
     } catch (error: unknown) {
@@ -817,16 +831,10 @@ export class LatexEditorComponent {
   }
 
   async downloadPng() {
-    const url = this.previewUrl();
-    if (!url) return;
+    if (!this.previewUrl()) return;
 
     try {
-      // Fetch the SVG content
-      const response = await fetch(url);
-      if (!response.ok) throw new Error('Network response was not ok');
-      const svgText = await response.text();
-
-      // Convert to PNG using shared utility
+      const svgText = await this.fetchSvgText();
       const pngBlob = await this.svgToPngBlob(svgText, this.fontSize());
 
       // Download using shared utility
