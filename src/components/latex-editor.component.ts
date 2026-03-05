@@ -514,7 +514,22 @@ export class LatexEditorComponent {
 
     try {
       const svgText = await this.fetchSvgText();
-      await navigator.clipboard.writeText(svgText);
+
+      // Write SVG as image/svg+xml so Inkscape (and Illustrator / Figma) paste
+      // it as fully editable vector objects rather than a rasterised bitmap.
+      // Also include text/plain so the raw markup lands in fallback-only apps.
+      try {
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            'image/svg+xml': new Blob([svgText], { type: 'image/svg+xml' }),
+            'text/plain':    new Blob([svgText], { type: 'text/plain' }),
+          })
+        ]);
+      } catch {
+        // Some browsers restrict ClipboardItem to a whitelist of MIME types —
+        // fall back to plain-text copy (still paste-able as SVG in most editors).
+        await navigator.clipboard.writeText(svgText);
+      }
 
       this.copiedSvg.set(true);
       setTimeout(() => this.copiedSvg.set(false), 2000);
@@ -529,11 +544,13 @@ export class LatexEditorComponent {
     this.isCopyingImage.set(true);
     try {
       // Fetch SVG via JSON endpoint (no CORS issues) then scale+rasterise.
-      // DPI = 144 (2× screen): raw pixel count matches screen expectations.
-      // At 144 DPI, 12pt inline equation ≈ 22px — apps that ignore pHYs
-      // show a sensible size; apps that honour pHYs display at correct pt.
+      // renderDpi = 144 (2× screen): pixel count stays ~screen-size so apps
+      //   that ignore pHYs (Keynote, Google Slides) show a sensible visual size.
+      //   At 144 DPI, 12pt inline equation ≈ 22 px height — looks like 12pt text.
+      // metaDpi  = 7200 (50× renderDpi): the pHYs chunk claims 7200 DPI so
+      //   print / vector pipelines see a very-high-resolution image tag.
       const svgText = await this.fetchSvgText();
-      const pngBlob = await this.svgToPngBlob(svgText, this.fontSize(), 144);
+      const pngBlob = await this.svgToPngBlob(svgText, this.fontSize(), 144, 7200);
 
       // Copy to clipboard using Clipboard API
       await navigator.clipboard.write([
@@ -629,21 +646,23 @@ export class LatexEditorComponent {
    *
    *  2. Custom size scaler:
    *       scale = targetPt / CODECOGS_REFERENCE_PT   (= targetPt / 10)
-   *       canvasPixels = svgDimPt × scale × (dpi / 72)
+   *       canvasPixels = svgDimPt × scale × (renderDpi / 72)
    *
-   *     Example — target 12pt at 600 DPI:
-   *       canvasHeight = 27.39 × (12/10) × (600/72) = 273.9 px
-   *       pHYs metadata → 600 DPI
-   *       Physical height in output = 273.9/600 in = 32.87pt  ✓ (12pt-equivalent equation)
+   *     Example — target 12pt at 144 renderDpi:
+   *       canvasHeight = 9.12 × (12/10) × (144/72) = 21.9 px  ≈ 22 px
    *
-   *  3. The pHYs DPI chunk is injected so Inkscape / Word read the correct
-   *     physical size without guessing.
+   *  3. The pHYs DPI chunk is injected using `metaDpi` so Inkscape / Word read
+   *     the correct physical size without guessing.
+   *     `metaDpi` is intentionally decoupled from `renderDpi` so callers can
+   *     keep pixel dimensions sensible for screen/clipboard while claiming a
+   *     much higher DPI for print/vector pipelines.
    *
-   * @param svgText   Raw SVG markup from CodeCogs (fetched with no size command)
-   * @param targetPt  Desired output font size in points (default: current fontSize signal)
-   * @param dpi       Output DPI written into the pHYs chunk (default 600)
+   * @param svgText    Raw SVG markup from CodeCogs (fetched with no size command)
+   * @param targetPt   Desired output font size in points (default: 12)
+   * @param renderDpi  DPI used to calculate canvas pixel dimensions (default 600)
+   * @param metaDpi    DPI written into the PNG pHYs metadata chunk (defaults to renderDpi)
    */
-  private async svgToPngBlob(svgText: string, targetPt: number = 12, dpi: number = 600): Promise<Blob> {
+  private async svgToPngBlob(svgText: string, targetPt: number = 12, renderDpi: number = 600, metaDpi: number = renderDpi): Promise<Blob> {
     // CodeCogs renders at 10pt (normalsize) by default — verified empirically.
     const CODECOGS_REFERENCE_PT = 10;
 
@@ -667,8 +686,8 @@ export class LatexEditorComponent {
 
     if (isPtUnit(wAttr) && isPtUnit(hAttr) && wPt > 0 && hPt > 0) {
       const scale = targetPt / CODECOGS_REFERENCE_PT;
-      canvasWidth  = Math.ceil(wPt * scale * dpi / 72);
-      canvasHeight = Math.ceil(hPt * scale * dpi / 72);
+      canvasWidth  = Math.ceil(wPt * scale * renderDpi / 72);
+      canvasHeight = Math.ceil(hPt * scale * renderDpi / 72);
     } else {
       // Fallback for SVGs without pt units (viewBox user-units × scale)
       const viewBox = svgElement.getAttribute('viewBox');
@@ -727,7 +746,7 @@ export class LatexEditorComponent {
         }, 'image/png');
       });
 
-      return this.injectPngDpi(rawBlob, dpi);
+      return this.injectPngDpi(rawBlob, metaDpi);
     } finally {
       // Always clean up blob URL
       URL.revokeObjectURL(svgUrl);
