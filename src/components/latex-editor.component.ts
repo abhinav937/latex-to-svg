@@ -44,28 +44,6 @@ const FEATURES = {
         <div class="w-full md:w-64 bg-gray-50 border-t md:border-t-0 md:border-l border-gray-200 p-4 sm:p-5 flex flex-col gap-3 sm:gap-4">
            <div class="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Quick Actions</div>
 
-           <!-- Font size control -->
-           <div class="bg-white border border-gray-200 rounded-lg p-3 flex flex-col gap-2">
-             <div class="flex items-center justify-between">
-               <span class="text-xs text-gray-600 font-medium">Font Size</span>
-               <span class="text-xs font-mono font-semibold text-indigo-600">{{ fontSize() }}pt</span>
-             </div>
-             <input
-               type="range"
-               min="8"
-               max="60"
-               step="1"
-               [value]="fontSize()"
-               (input)="updateFontSize($event)"
-               class="w-full h-1.5 rounded-lg appearance-none cursor-pointer accent-indigo-500 bg-gray-200"
-             />
-             <div class="flex justify-between text-xs text-gray-400">
-               <span>8pt</span>
-               <span>34pt</span>
-               <span>60pt</span>
-             </div>
-           </div>
-
            @if (features.COPY_SVG_URL) {
              <button
                (click)="copySvgUrl()"
@@ -88,18 +66,10 @@ const FEATURES = {
 
            <button
              (click)="copySvgAsImage()"
-             [disabled]="isCopyingImage()"
-             class="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white border border-gray-300 rounded-lg text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-indigo-300 hover:text-indigo-600 transition-all shadow-sm group disabled:opacity-50 disabled:cursor-not-allowed">
-             @if (isCopyingImage()) {
-               <svg class="animate-spin h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-               </svg>
-             } @else {
-               <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-400 group-hover:text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-               </svg>
-             }
+             class="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white border border-gray-300 rounded-lg text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-indigo-300 hover:text-indigo-600 transition-all shadow-sm group">
+             <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-400 group-hover:text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+             </svg>
              <span class="truncate">{{ copiedImage() ? 'Copied!' : 'Copy as Image' }}</span>
            </button>
 
@@ -276,10 +246,6 @@ export class LatexEditorComponent {
   copiedUrl = signal(false);
   copiedSvg = signal(false);
   copiedImage = signal(false);
-  isCopyingImage = signal(false);
-
-  // Font size (pt) used when rendering – range 8–60
-  fontSize = signal(12);
 
   // Autocomplete state
   showAutocomplete = signal(false);
@@ -305,12 +271,6 @@ export class LatexEditorComponent {
     { label: 'Fraction', code: '\\frac{V_{out}}{V_{in}} = D' },
     { label: 'State Space', code: '\\dot{x} = \\begin{bmatrix} 0 & -\\frac{1}{L} \\\\ \\frac{1}{C} & -\\frac{1}{RC} \\end{bmatrix} x + \\begin{bmatrix} \\frac{1}{L} \\\\ 0 \\end{bmatrix} u' }
   ];
-
-  updateFontSize(event: Event) {
-    const input = event.target as HTMLInputElement;
-    this.fontSize.set(parseInt(input.value, 10));
-    // No re-render needed — fontSize only affects export/copy, not the preview URL
-  }
 
   async renderLatex() {
     const code = this.latexInput().trim();
@@ -511,21 +471,31 @@ export class LatexEditorComponent {
 
   async copySvgCode() {
     if (!this.previewUrl()) return;
+    try {
+      const svgText = await this.fetchSvgText();
+      await navigator.clipboard.writeText(svgText);
+      this.copiedSvg.set(true);
+      setTimeout(() => this.copiedSvg.set(false), 2000);
+    } catch (error: unknown) {
+      console.error('Failed to copy SVG code:', error);
+    }
+  }
 
+  async copySvgAsImage() {
+    if (!this.previewUrl()) return;
     try {
       const svgText = await this.fetchSvgText();
       const svgBlob = new Blob([svgText], { type: 'image/svg+xml' });
 
       if ('supports' in ClipboardItem && ClipboardItem.supports('image/svg+xml')) {
-        // Modern Chrome/Edge (2024+): native SVG support in the Async Clipboard API.
-        // Pastes as fully editable vectors in Inkscape, Illustrator, Figma etc.
+        // Modern Chrome/Edge: native SVG clipboard support — pastes as editable
+        // vectors in Inkscape, Illustrator, Figma etc.
         await navigator.clipboard.write([
           new ClipboardItem({ 'image/svg+xml': svgBlob })
         ]);
       } else {
-        // Fallback for browsers without native SVG clipboard support: intercept
-        // the native copy event fired by execCommand and set the MIME type there,
-        // which bypasses the browser's MIME whitelist for the Async Clipboard API.
+        // Fallback: intercept the native copy event so we can set image/svg+xml
+        // via event.clipboardData, bypassing the Async Clipboard API MIME whitelist.
         await new Promise<void>((resolve, reject) => {
           const dummy = document.createElement('textarea');
           dummy.value = ' ';
@@ -533,58 +503,26 @@ export class LatexEditorComponent {
           document.body.appendChild(dummy);
           dummy.focus();
           dummy.select();
-
           const onCopy = (e: ClipboardEvent) => {
             e.preventDefault();
             e.clipboardData?.setData('image/svg+xml', svgText);
             document.body.removeChild(dummy);
             resolve();
           };
-
           document.addEventListener('copy', onCopy, { once: true });
           const ok = document.execCommand('copy');
           if (!ok) {
             document.removeEventListener('copy', onCopy);
             document.body.removeChild(dummy);
-            reject(new Error('execCommand copy not supported in this browser'));
+            reject(new Error('execCommand copy not supported'));
           }
         });
       }
-
-      this.copiedSvg.set(true);
-      setTimeout(() => this.copiedSvg.set(false), 2000);
-    } catch (error: unknown) {
-      console.error('Failed to copy SVG as vector:', error);
-    }
-  }
-
-  async copySvgAsImage() {
-    if (!this.previewUrl()) return;
-
-    this.isCopyingImage.set(true);
-    try {
-      // Fetch SVG via JSON endpoint (no CORS issues) then scale+rasterise.
-      // renderDpi = 144 (2× screen): pixel count stays ~screen-size so apps
-      //   that ignore pHYs (Keynote, Google Slides) show a sensible visual size.
-      //   At 144 DPI, 12pt inline equation ≈ 22 px height — looks like 12pt text.
-      // metaDpi  = 7200 (50× renderDpi): the pHYs chunk claims 7200 DPI so
-      //   print / vector pipelines see a very-high-resolution image tag.
-      const svgText = await this.fetchSvgText();
-      const pngBlob = await this.svgToPngBlob(svgText, this.fontSize(), 144, 7200);
-
-      // Copy to clipboard using Clipboard API
-      await navigator.clipboard.write([
-        new ClipboardItem({
-          'image/png': pngBlob
-        })
-      ]);
 
       this.copiedImage.set(true);
       setTimeout(() => this.copiedImage.set(false), 2000);
     } catch (error: unknown) {
       console.error('Failed to copy SVG as image:', error);
-    } finally {
-      this.isCopyingImage.set(false);
     }
   }
 
@@ -657,198 +595,6 @@ export class LatexEditorComponent {
   }
 
   /**
-   * Converts a CodeCogs SVG to a physically-accurate PNG blob.
-   *
-   * Bespoke scaling pipeline (no LaTeX size commands involved):
-   *
-   *  1. CodeCogs always renders at 10pt (normalsize) when given no size prefix.
-   *     Its SVGs carry real `pt` dimensions, e.g. width='6.61pt' height='27.39pt'.
-   *
-   *  2. Custom size scaler:
-   *       scale = targetPt / CODECOGS_REFERENCE_PT   (= targetPt / 10)
-   *       canvasPixels = svgDimPt × scale × (renderDpi / 72)
-   *
-   *     Example — target 12pt at 144 renderDpi:
-   *       canvasHeight = 9.12 × (12/10) × (144/72) = 21.9 px  ≈ 22 px
-   *
-   *  3. The pHYs DPI chunk is injected using `metaDpi` so Inkscape / Word read
-   *     the correct physical size without guessing.
-   *     `metaDpi` is intentionally decoupled from `renderDpi` so callers can
-   *     keep pixel dimensions sensible for screen/clipboard while claiming a
-   *     much higher DPI for print/vector pipelines.
-   *
-   * @param svgText    Raw SVG markup from CodeCogs (fetched with no size command)
-   * @param targetPt   Desired output font size in points (default: 12)
-   * @param renderDpi  DPI used to calculate canvas pixel dimensions (default 600)
-   * @param metaDpi    DPI written into the PNG pHYs metadata chunk (defaults to renderDpi)
-   */
-  private async svgToPngBlob(svgText: string, targetPt: number = 12, renderDpi: number = 600, metaDpi: number = renderDpi): Promise<Blob> {
-    // CodeCogs renders at 10pt (normalsize) by default — verified empirically.
-    const CODECOGS_REFERENCE_PT = 10;
-
-    const parser = new DOMParser();
-    const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
-    const svgElement = svgDoc.documentElement;
-
-    // Parse a dimension that may carry a 'pt' suffix (CodeCogs always uses pt)
-    const parsePt = (attr: string | null): number => parseFloat(attr ?? '0');
-    const isPtUnit = (attr: string | null): boolean => (attr ?? '').endsWith('pt');
-
-    const wAttr = svgElement.getAttribute('width');
-    const hAttr = svgElement.getAttribute('height');
-    const wPt   = parsePt(wAttr);
-    const hPt   = parsePt(hAttr);
-
-    // Custom size scaler: scale = targetPt / referenceRenderPt
-    // Then convert pt → canvas pixels via  px = pt × (dpi / 72)
-    let canvasWidth: number;
-    let canvasHeight: number;
-
-    if (isPtUnit(wAttr) && isPtUnit(hAttr) && wPt > 0 && hPt > 0) {
-      const scale = targetPt / CODECOGS_REFERENCE_PT;
-      canvasWidth  = Math.ceil(wPt * scale * renderDpi / 72);
-      canvasHeight = Math.ceil(hPt * scale * renderDpi / 72);
-    } else {
-      // Fallback for SVGs without pt units (viewBox user-units × scale)
-      const viewBox = svgElement.getAttribute('viewBox');
-      let vbW = wPt || 300;
-      let vbH = hPt || 100;
-      if (viewBox) {
-        const parts = viewBox.split(/\s+/).map(parseFloat);
-        if (parts[2] && parts[3] && !isNaN(parts[2])) { vbW = parts[2]; vbH = parts[3]; }
-      }
-      const scale = targetPt / CODECOGS_REFERENCE_PT;
-      canvasWidth  = Math.ceil(vbW * scale * 8); // 8 = legacy base scale
-      canvasHeight = Math.ceil(vbH * scale * 8);
-    }
-
-    // Create a blob URL from the SVG
-    const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
-    const svgUrl = URL.createObjectURL(svgBlob);
-
-    try {
-      // Create image and canvas
-      const img = new Image();
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-
-      if (!ctx) {
-        throw new Error('Failed to get canvas context');
-      }
-
-      // Wait for image to load
-      await new Promise<void>((resolve, reject) => {
-        img.onload = () => resolve();
-        img.onerror = () => reject(new Error('Failed to load SVG image'));
-        img.src = svgUrl;
-      });
-
-      // Set canvas size
-      canvas.width = canvasWidth;
-      canvas.height = canvasHeight;
-
-      // Enable high-quality image smoothing before drawing
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-
-      // Keep transparent background (no fill)
-      // Draw scaled image
-      ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
-
-      // Convert canvas to PNG blob, then inject DPI metadata
-      const rawBlob = await new Promise<Blob>((resolve, reject) => {
-        canvas.toBlob((blob) => {
-          if (blob) {
-            resolve(blob);
-          } else {
-            reject(new Error('Failed to create PNG blob'));
-          }
-        }, 'image/png');
-      });
-
-      return this.injectPngDpi(rawBlob, metaDpi);
-    } finally {
-      // Always clean up blob URL
-      URL.revokeObjectURL(svgUrl);
-    }
-  }
-
-  /**
-   * Injects a PNG pHYs chunk carrying DPI metadata into an existing PNG blob.
-   *
-   * PNG structure: 8-byte signature | IHDR chunk (25 bytes) | … other chunks … | IEND
-   * The pHYs chunk must appear before the first IDAT chunk, so we insert it
-   * immediately after IHDR (byte offset 33).
-   *
-   * pHYs chunk layout (9 data bytes):
-   *   [0-3]  pixels-per-unit X  (uint32 big-endian)
-   *   [4-7]  pixels-per-unit Y  (uint32 big-endian)
-   *   [8]    unit = 1 (metre)
-   *
-   * 1 inch = 0.0254 m  →  pixels/metre = dpi / 0.0254
-   */
-  private async injectPngDpi(pngBlob: Blob, dpi: number): Promise<Blob> {
-    const buffer = await pngBlob.arrayBuffer();
-    const src = new Uint8Array(buffer);
-
-    const ppm = Math.round(dpi / 0.0254); // pixels per metre
-
-    // Build the 9-byte pHYs data payload
-    const data = new Uint8Array(9);
-    const writeU32 = (arr: Uint8Array, offset: number, value: number) => {
-      arr[offset]     = (value >>> 24) & 0xff;
-      arr[offset + 1] = (value >>> 16) & 0xff;
-      arr[offset + 2] = (value >>>  8) & 0xff;
-      arr[offset + 3] =  value         & 0xff;
-    };
-    writeU32(data, 0, ppm);
-    writeU32(data, 4, ppm);
-    data[8] = 1; // unit = metre
-
-    // CRC-32 over chunk type + data (13 bytes total)
-    const TYPE = new Uint8Array([0x70, 0x48, 0x59, 0x73]); // "pHYs"
-    const crcInput = new Uint8Array(13);
-    crcInput.set(TYPE, 0);
-    crcInput.set(data, 4);
-    const crcValue = this.crc32(crcInput);
-
-    // Assemble the full chunk: length(4) + type(4) + data(9) + crc(4) = 21 bytes
-    const chunk = new Uint8Array(21);
-    writeU32(chunk, 0, 9);          // data length
-    chunk.set(TYPE, 4);             // chunk type
-    chunk.set(data, 8);             // chunk data
-    writeU32(chunk, 17, crcValue);  // CRC
-
-    // Insert after the 8-byte PNG signature + 25-byte IHDR chunk = offset 33
-    const INSERT_AT = 33;
-    const out = new Uint8Array(src.length + 21);
-    out.set(src.subarray(0, INSERT_AT), 0);
-    out.set(chunk, INSERT_AT);
-    out.set(src.subarray(INSERT_AT), INSERT_AT + 21);
-
-    return new Blob([out], { type: 'image/png' });
-  }
-
-  /** CRC-32 used for PNG chunk integrity */
-  private crc32(data: Uint8Array): number {
-    // Build lookup table
-    const table = new Uint32Array(256);
-    for (let n = 0; n < 256; n++) {
-      let c = n;
-      for (let k = 0; k < 8; k++) {
-        c = (c & 1) ? (0xedb88320 ^ (c >>> 1)) : (c >>> 1);
-      }
-      table[n] = c;
-    }
-
-    let crc = 0xffffffff;
-    for (let i = 0; i < data.length; i++) {
-      crc = (crc >>> 8) ^ table[(crc ^ data[i]) & 0xff];
-    }
-    return (crc ^ 0xffffffff) >>> 0;
-  }
-
-  /**
    * Triggers a file download using a temporary anchor element
    */
   private triggerDownload(blob: Blob, filename: string): void {
@@ -873,14 +619,16 @@ export class LatexEditorComponent {
   }
 
   async downloadPng() {
-    if (!this.previewUrl()) return;
+    const code = this.latexInput().trim();
+    if (!code) return;
 
     try {
-      const svgText = await this.fetchSvgText();
-      const pngBlob = await this.svgToPngBlob(svgText, this.fontSize());
-
-      // Download using shared utility
-      this.triggerDownload(pngBlob, this.generateFilename(this.latexInput(), 'png'));
+      // Request PNG directly from CodeCogs — no client-side conversion needed.
+      const url = `https://latex.codecogs.com/png.image?${encodeURIComponent(code)}`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`CodeCogs PNG fetch failed: ${response.status}`);
+      const blob = await response.blob();
+      this.triggerDownload(blob, this.generateFilename(code, 'png'));
     } catch (error: unknown) {
       console.error('Failed to download PNG:', error);
     }
