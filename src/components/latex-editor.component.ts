@@ -514,17 +514,42 @@ export class LatexEditorComponent {
 
     try {
       const svgText = await this.fetchSvgText();
+      const svgBlob = new Blob([svgText], { type: 'image/svg+xml' });
 
-      // Write ONLY image/svg+xml — no PNG or text/plain fallback.
-      // Inkscape (and Illustrator / Figma) look for this exact MIME type and
-      // paste it as fully editable vector objects.
-      // Including other formats (text/plain, image/png) can cause Inkscape to
-      // prefer the raster/text entry instead of the vector one.
-      await navigator.clipboard.write([
-        new ClipboardItem({
-          'image/svg+xml': new Blob([svgText], { type: 'image/svg+xml' }),
-        })
-      ]);
+      if ('supports' in ClipboardItem && ClipboardItem.supports('image/svg+xml')) {
+        // Modern Chrome/Edge (2024+): native SVG support in the Async Clipboard API.
+        // Pastes as fully editable vectors in Inkscape, Illustrator, Figma etc.
+        await navigator.clipboard.write([
+          new ClipboardItem({ 'image/svg+xml': svgBlob })
+        ]);
+      } else {
+        // Fallback for browsers without native SVG clipboard support: intercept
+        // the native copy event fired by execCommand and set the MIME type there,
+        // which bypasses the browser's MIME whitelist for the Async Clipboard API.
+        await new Promise<void>((resolve, reject) => {
+          const dummy = document.createElement('textarea');
+          dummy.value = ' ';
+          dummy.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;pointer-events:none';
+          document.body.appendChild(dummy);
+          dummy.focus();
+          dummy.select();
+
+          const onCopy = (e: ClipboardEvent) => {
+            e.preventDefault();
+            e.clipboardData?.setData('image/svg+xml', svgText);
+            document.body.removeChild(dummy);
+            resolve();
+          };
+
+          document.addEventListener('copy', onCopy, { once: true });
+          const ok = document.execCommand('copy');
+          if (!ok) {
+            document.removeEventListener('copy', onCopy);
+            document.body.removeChild(dummy);
+            reject(new Error('execCommand copy not supported in this browser'));
+          }
+        });
+      }
 
       this.copiedSvg.set(true);
       setTimeout(() => this.copiedSvg.set(false), 2000);
