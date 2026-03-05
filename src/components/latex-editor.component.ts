@@ -515,26 +515,21 @@ export class LatexEditorComponent {
     try {
       const svgText = await this.fetchSvgText();
 
-      // Write SVG as image/svg+xml so Inkscape (and Illustrator / Figma) paste
-      // it as fully editable vector objects rather than a rasterised bitmap.
-      // Also include text/plain so the raw markup lands in fallback-only apps.
-      try {
-        await navigator.clipboard.write([
-          new ClipboardItem({
-            'image/svg+xml': new Blob([svgText], { type: 'image/svg+xml' }),
-            'text/plain':    new Blob([svgText], { type: 'text/plain' }),
-          })
-        ]);
-      } catch {
-        // Some browsers restrict ClipboardItem to a whitelist of MIME types —
-        // fall back to plain-text copy (still paste-able as SVG in most editors).
-        await navigator.clipboard.writeText(svgText);
-      }
+      // Write ONLY image/svg+xml — no PNG or text/plain fallback.
+      // Inkscape (and Illustrator / Figma) look for this exact MIME type and
+      // paste it as fully editable vector objects.
+      // Including other formats (text/plain, image/png) can cause Inkscape to
+      // prefer the raster/text entry instead of the vector one.
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'image/svg+xml': new Blob([svgText], { type: 'image/svg+xml' }),
+        })
+      ]);
 
       this.copiedSvg.set(true);
       setTimeout(() => this.copiedSvg.set(false), 2000);
     } catch (error: unknown) {
-      console.error('Failed to copy SVG code:', error);
+      console.error('Failed to copy SVG as vector:', error);
     }
   }
 
