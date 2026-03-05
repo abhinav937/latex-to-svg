@@ -55,25 +55,30 @@ export class ChangelogComponent {
   changelog: ChangelogEntry[] = [
     {
       version: "2.1.0",
-      date: "Dec 28, 2025",
+      date: "Mar 5, 2026",
       changes: [
-        "Added Copy as Image feature for pasting into Inkscape",
-        "Press Enter to render instead of clicking button",
-        "Autocomplete now shows live previews for first 4 suggestions",
-        "Added 125+ new LaTeX commands including text formatting, colors, brackets",
-        "Example chips now always visible below textarea",
-        "Fixed Download SVG opening in new tab",
-        "Fixed history previews display issue"
+        "Copy as Image now copies SVG blob via Clipboard API (image/svg+xml) — pastes as editable vectors in Inkscape, Illustrator, and Figma",
+        "Falls back to execCommand clipboard interception for browsers without native SVG clipboard support",
+        "Copy SVG Code copies raw markup as plain text for pasting into code editors",
+        "Download PNG now fetches directly from CodeCogs png.image endpoint — no client-side canvas conversion",
+        "Removed custom SVG-to-PNG canvas rasteriser and pHYs DPI metadata injector",
+        "Removed font size slider — equations render at CodeCogs default size",
+        "Version bumped to 2.1.0"
       ]
     },
     {
       version: "2.0.0",
       date: "Dec 2025",
       changes: [
-        "Converted to Angular components with proper routing",
+        "Full Angular 21 rewrite with standalone components and signals",
+        "CodeCogs svg.json endpoint for CORS-free SVG fetching",
+        "LaTeX autocomplete with live previews for first 4 suggestions",
+        "Press Enter to render, \\ triggers autocomplete",
+        "AI Fix button (opt-in via ?ai=true, powered by Gemini)",
+        "Copy SVG Code, Copy as Image, Download SVG, Download PNG buttons",
+        "Smart filename generation for downloads based on LaTeX content",
         "Added Help and Changelog pages",
-        "Improved layout consistency across all pages",
-        "Fixed duplicate header and scrolling issues"
+        "Rate limiter (30 requests / minute)"
       ]
     },
     {

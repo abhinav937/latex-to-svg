@@ -31,14 +31,14 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
           </a>
         </nav>
         <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold border border-green-200">
-          v2.0
+          v2.1
         </span>
       </div>
 
       <!-- Mobile Menu Button -->
       <div class="md:hidden flex items-center gap-3">
         <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold border border-green-200">
-          v2.0
+          v2.1
         </span>
         <button 
           (click)="mobileMenuOpen.set(!mobileMenuOpen())"
