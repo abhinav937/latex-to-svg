@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, HostListener } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
 @Component({
@@ -31,16 +31,15 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
           </a>
         </nav>
         <!-- Easter egg: version lore tooltip -->
-        <div class="relative" (mouseenter)="showLore()" (mouseleave)="hideLore()">
-          <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold border border-green-200 cursor-help select-none">
+        <div class="relative" (click)="toggleLore($event)">
+          <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold border border-green-200 cursor-pointer select-none">
             v2.1
           </span>
           @if (tooltipVisible()) {
-            <div class="absolute bottom-full right-0 mb-2 w-64 bg-gray-900 text-white text-xs rounded-xl px-3 py-2.5 shadow-xl z-50 pointer-events-none animate-fade-in">
+            <div class="absolute top-full right-0 mt-2 w-64 bg-gray-900 text-white text-xs rounded-xl px-3 py-2.5 shadow-xl z-50 pointer-events-none">
+              <div class="absolute bottom-full right-4 w-0 h-0 border-l-[5px] border-r-[5px] border-b-[5px] border-l-transparent border-r-transparent border-b-gray-900"></div>
               <div class="font-semibold text-green-400 mb-0.5">{{ currentLore().version }}</div>
               <div class="text-gray-300 italic leading-relaxed">{{ currentLore().lore }}</div>
-              <!-- Caret -->
-              <div class="absolute top-full right-4 w-0 h-0 border-l-[5px] border-r-[5px] border-t-[5px] border-l-transparent border-r-transparent border-t-gray-900"></div>
             </div>
           }
         </div>
@@ -49,15 +48,15 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
       <!-- Mobile Menu Button -->
       <div class="md:hidden flex items-center gap-3">
         <!-- Easter egg: version lore tooltip (mobile) -->
-        <div class="relative" (mouseenter)="showLore()" (mouseleave)="hideLore()">
-          <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold border border-green-200 cursor-help select-none">
+        <div class="relative" (click)="toggleLore($event)">
+          <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold border border-green-200 cursor-pointer select-none">
             v2.1
           </span>
           @if (tooltipVisible()) {
-            <div class="absolute bottom-full right-0 mb-2 w-56 bg-gray-900 text-white text-xs rounded-xl px-3 py-2.5 shadow-xl z-50 pointer-events-none">
+            <div class="absolute top-full right-0 mt-2 w-56 bg-gray-900 text-white text-xs rounded-xl px-3 py-2.5 shadow-xl z-50 pointer-events-none">
+              <div class="absolute bottom-full right-3 w-0 h-0 border-l-[5px] border-r-[5px] border-b-[5px] border-l-transparent border-r-transparent border-b-gray-900"></div>
               <div class="font-semibold text-green-400 mb-0.5">{{ currentLore().version }}</div>
               <div class="text-gray-300 italic leading-relaxed">{{ currentLore().lore }}</div>
-              <div class="absolute top-full right-3 w-0 h-0 border-l-[5px] border-r-[5px] border-t-[5px] border-l-transparent border-r-transparent border-t-gray-900"></div>
             </div>
           }
         </div>
@@ -120,13 +119,23 @@ export class HeaderComponent {
     { version: 'v2.1.0', lore: "No canvases were harmed in the making of this update. One was retired with full honours." },
   ];
 
-  showLore(): void {
-    const pick = this.versionLore[Math.floor(Math.random() * this.versionLore.length)];
-    this.currentLore.set(pick);
-    this.tooltipVisible.set(true);
+  toggleLore(event?: Event): void {
+    event?.stopPropagation();
+    if (this.tooltipVisible()) {
+      this.tooltipVisible.set(false);
+    } else {
+      const pick = this.versionLore[Math.floor(Math.random() * this.versionLore.length)];
+      this.currentLore.set(pick);
+      this.tooltipVisible.set(true);
+    }
   }
 
   hideLore(): void {
     this.tooltipVisible.set(false);
+  }
+
+  @HostListener('document:click')
+  onDocumentClick(): void {
+    this.hideLore();
   }
 }
