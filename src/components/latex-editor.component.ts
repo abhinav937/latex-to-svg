@@ -91,7 +91,51 @@ const FEATURES = {
              <span class="truncate">Download PNG</span>
            </button>
 
-           <div class="mt-auto pt-3 sm:pt-4 border-t border-gray-200">
+           <!-- Output Size -->
+           <div class="pt-3 sm:pt-4 border-t border-gray-200">
+             <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2.5">Output Size</div>
+
+             <!-- SVG Width -->
+             <div class="flex items-center gap-1.5 mb-2">
+               <span class="text-xs text-gray-500 w-8 flex-shrink-0">SVG</span>
+               <input
+                 type="number"
+                 min="1"
+                 max="9999"
+                 [value]="svgExportWidth() ?? ''"
+                 (input)="onSvgWidthInput($event)"
+                 placeholder="auto"
+                 class="w-16 px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-700"
+               />
+               <select
+                 [value]="svgExportUnit()"
+                 (change)="onSvgUnitChange($event)"
+                 class="flex-1 px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-700"
+               >
+                 <option value="mm">mm</option>
+                 <option value="pt">pt</option>
+                 <option value="px">px</option>
+               </select>
+             </div>
+
+             <!-- PNG DPI -->
+             <div class="flex items-center gap-1.5">
+               <span class="text-xs text-gray-500 w-8 flex-shrink-0">PNG</span>
+               <select
+                 [value]="pngDpi()"
+                 (change)="onPngDpiChange($event)"
+                 class="flex-1 px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-700"
+               >
+                 <option value="72">72 dpi</option>
+                 <option value="96">96 dpi</option>
+                 <option value="150">150 dpi</option>
+                 <option value="300">300 dpi</option>
+                 <option value="600">600 dpi</option>
+               </select>
+             </div>
+           </div>
+
+           <div class="pt-3 sm:pt-4 border-t border-gray-200">
              <p class="text-xs text-gray-500 leading-relaxed">
                Uses <span class="font-semibold text-gray-700">CodeCogs API</span> for rendering.
              </p>
@@ -246,6 +290,11 @@ export class LatexEditorComponent {
   copiedUrl = signal(false);
   copiedSvg = signal(false);
   copiedImage = signal(false);
+
+  // Output size / DPI
+  svgExportWidth = signal<number | null>(null); // null = auto
+  svgExportUnit = signal<'mm' | 'pt' | 'px'>('mm');
+  pngDpi = signal<number>(150);
 
   // Autocomplete state
   showAutocomplete = signal(false);
@@ -606,12 +655,63 @@ export class LatexEditorComponent {
     URL.revokeObjectURL(blobUrl);
   }
 
+  onSvgWidthInput(event: Event): void {
+    const val = (event.target as HTMLInputElement).value;
+    this.svgExportWidth.set(val ? parseFloat(val) : null);
+  }
+
+  onSvgUnitChange(event: Event): void {
+    this.svgExportUnit.set((event.target as HTMLSelectElement).value as 'mm' | 'pt' | 'px');
+  }
+
+  onPngDpiChange(event: Event): void {
+    this.pngDpi.set(parseInt((event.target as HTMLSelectElement).value, 10));
+  }
+
+  /**
+   * Scales an SVG string to a target width in the chosen unit.
+   * Preserves aspect ratio by computing height from the original w/h ratio.
+   * Ensures a viewBox is present so the SVG scales correctly in Inkscape.
+   */
+  private scaleSvg(svgText: string): string {
+    const targetWidth = this.svgExportWidth();
+    if (!targetWidth) return svgText; // auto — return as-is
+
+    const unit = this.svgExportUnit();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(svgText, 'image/svg+xml');
+    const svgEl = doc.documentElement;
+
+    const parseVal = (s: string | null): number | null => {
+      if (!s) return null;
+      const m = s.match(/^([\d.]+)/);
+      return m ? parseFloat(m[1]) : null;
+    };
+
+    const wVal = parseVal(svgEl.getAttribute('width'));
+    const hVal = parseVal(svgEl.getAttribute('height'));
+
+    // Ensure viewBox exists so Inkscape can scale without distortion
+    if (!svgEl.getAttribute('viewBox') && wVal !== null && hVal !== null) {
+      svgEl.setAttribute('viewBox', `0 0 ${wVal} ${hVal}`);
+    }
+
+    const aspectRatio = (wVal && hVal && hVal !== 0) ? wVal / hVal : 1;
+    const targetHeight = +(targetWidth / aspectRatio).toFixed(4);
+
+    svgEl.setAttribute('width', `${targetWidth}${unit}`);
+    svgEl.setAttribute('height', `${targetHeight}${unit}`);
+
+    return new XMLSerializer().serializeToString(doc);
+  }
+
   async downloadSvg() {
     if (!this.previewUrl()) return;
 
     try {
       const svgText = await this.fetchSvgText();
-      const blob = new Blob([svgText], { type: 'image/svg+xml' });
+      const scaled = this.scaleSvg(svgText);
+      const blob = new Blob([scaled], { type: 'image/svg+xml' });
       this.triggerDownload(blob, this.generateFilename(this.latexInput(), 'svg'));
     } catch (error: unknown) {
       console.error('Failed to download SVG:', error);
@@ -623,8 +723,10 @@ export class LatexEditorComponent {
     if (!code) return;
 
     try {
-      // Request PNG directly from CodeCogs — no client-side conversion needed.
-      const url = `https://latex.codecogs.com/png.image?${encodeURIComponent(code)}`;
+      // Prepend \dpi{N} so CodeCogs renders at the chosen resolution
+      const dpi = this.pngDpi();
+      const dpiPrefix = `\\dpi{${dpi}}`;
+      const url = `https://latex.codecogs.com/png.image?${encodeURIComponent(dpiPrefix + code)}`;
       const response = await fetch(url);
       if (!response.ok) throw new Error(`CodeCogs PNG fetch failed: ${response.status}`);
       const blob = await response.blob();
