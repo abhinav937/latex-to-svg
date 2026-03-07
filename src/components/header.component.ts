@@ -6,7 +6,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
   standalone: true,
   imports: [RouterLink, RouterLinkActive],
   template: `
-    <header class="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between shadow-sm z-10 relative">
+    <header class="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between shadow-sm z-50 relative">
       <div class="flex items-center gap-2 sm:gap-3">
         <a routerLink="/" class="flex items-center gap-2 sm:gap-3 hover:opacity-80 transition-opacity">
           <div class="bg-indigo-600 text-white p-1.5 sm:p-2 rounded-lg shadow-md">
@@ -36,7 +36,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
             v2.1
           </span>
           @if (tooltipVisible()) {
-            <div class="absolute top-full right-0 mt-2 w-64 bg-gray-900 text-white text-xs rounded-xl px-3 py-2.5 shadow-xl z-50 pointer-events-none">
+            <div class="absolute top-full right-0 mt-2 w-64 bg-gray-900 text-white text-xs rounded-xl px-3 py-2.5 shadow-xl z-[9999] pointer-events-none">
               <div class="absolute bottom-full right-4 w-0 h-0 border-l-[5px] border-r-[5px] border-b-[5px] border-l-transparent border-r-transparent border-b-gray-900"></div>
               <div class="font-semibold text-green-400 mb-0.5">{{ currentLore().version }}</div>
               <div class="text-gray-300 italic leading-relaxed">{{ currentLore().lore }}</div>
@@ -53,7 +53,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
             v2.1
           </span>
           @if (tooltipVisible()) {
-            <div class="absolute top-full right-0 mt-2 w-56 bg-gray-900 text-white text-xs rounded-xl px-3 py-2.5 shadow-xl z-50 pointer-events-none">
+            <div class="absolute top-full right-0 mt-2 w-56 bg-gray-900 text-white text-xs rounded-xl px-3 py-2.5 shadow-xl z-[9999] pointer-events-none">
               <div class="absolute bottom-full right-3 w-0 h-0 border-l-[5px] border-r-[5px] border-b-[5px] border-l-transparent border-r-transparent border-b-gray-900"></div>
               <div class="font-semibold text-green-400 mb-0.5">{{ currentLore().version }}</div>
               <div class="text-gray-300 italic leading-relaxed">{{ currentLore().lore }}</div>

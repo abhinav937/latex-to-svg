@@ -4,7 +4,7 @@
   "version": "2.1.0",
   "type": "module",
   "engines": {
-    "node": "24.x"
+    "node": ">=24.x"
   },
   "scripts": {
     "dev": "node scripts/prepare-dev.js && ng serve",
