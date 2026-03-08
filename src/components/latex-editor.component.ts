@@ -596,32 +596,27 @@ export class LatexEditorComponent {
   }
 
   /**
-   * Fetches the current equation as raw SVG text using CodeCogs' JSON endpoint.
+   * Fetches the current equation as raw SVG text.
    *
-   * Why JSON instead of fetching the svg.image? URL directly:
-   *  - The JSON endpoint returns the SVG pre-encoded as base64, so no CORS
-   *    issues and no intermediate blob-URL workaround required.
-   *  - Response shape: { "latex": { "base64": "<base64-svg>", ... } }
-   *  - The base64 is UTF-8 SVG text; we decode via TextDecoder for safety.
+   * Uses the old svg? endpoint (not svg.image?) exactly as the original code did:
+   *   fetch('https://latex.codecogs.com/svg?\\dpi{300} ...')
+   *
+   * The legacy svg? endpoint sends CORS headers that allow cross-origin fetching,
+   * which is why the old copy/download worked without any JSON/base64 wrapper.
+   * The svg.json? intermediary was added to work around svg.image? CORS restrictions,
+   * but svg.json? doesn't reliably honour \dpi{300}, so the fetched SVG always came
+   * back at default resolution — causing scaleSvg to apply scale to the wrong
+   * (too-small) native dimensions.
    */
   private async fetchSvgText(): Promise<string> {
     const code = this.latexInput().trim();
     if (!code) throw new Error('No LaTeX to fetch');
 
-    // Use the same \dpi{300} prefix as the preview render so the fetched SVG
-    // dimensions and paths match exactly what the user sees on screen.
-    const url = `https://latex.codecogs.com/svg.json?${encodeURIComponent('\\dpi{300} ' + code)}`;
+    // Identical to old code: direct fetch of the svg? endpoint with \dpi{300}
+    const url = `https://latex.codecogs.com/svg?${encodeURIComponent('\\dpi{300} ' + code)}`;
     const response = await fetch(url);
-    if (!response.ok) throw new Error(`CodeCogs JSON fetch failed: ${response.status}`);
-
-    const json = await response.json();
-    const base64 = json?.latex?.base64;
-    if (!base64) throw new Error('No base64 field in CodeCogs JSON response');
-
-    // Decode base64 → UTF-8 SVG string
-    const binaryStr = atob(base64);
-    const bytes = Uint8Array.from(binaryStr, c => c.charCodeAt(0));
-    return new TextDecoder('utf-8').decode(bytes);
+    if (!response.ok) throw new Error(`CodeCogs SVG fetch failed: ${response.status}`);
+    return response.text();
   }
 
   copySvgUrl() {
