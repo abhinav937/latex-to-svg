@@ -108,13 +108,12 @@ const FEATURES = {
                  class="w-16 px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-700"
                />
                <select
-                 [value]="svgExportUnit()"
                  (change)="onSvgUnitChange($event)"
                  class="flex-1 px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-700"
                >
-                 <option value="mm">mm</option>
-                 <option value="pt">pt</option>
-                 <option value="px">px</option>
+                 <option value="mm" [selected]="svgExportUnit() === 'mm'">mm</option>
+                 <option value="pt" [selected]="svgExportUnit() === 'pt'">pt</option>
+                 <option value="px" [selected]="svgExportUnit() === 'px'">px</option>
                </select>
              </div>
 
@@ -122,15 +121,14 @@ const FEATURES = {
              <div class="flex items-center gap-1.5">
                <span class="text-xs text-gray-500 w-8 flex-shrink-0">PNG</span>
                <select
-                 [value]="pngDpi()"
                  (change)="onPngDpiChange($event)"
                  class="flex-1 px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-700"
                >
-                 <option value="72">72 dpi</option>
-                 <option value="96">96 dpi</option>
-                 <option value="150">150 dpi</option>
-                 <option value="300">300 dpi</option>
-                 <option value="600">600 dpi</option>
+                 <option value="72"  [selected]="pngDpi() === 72">72 dpi</option>
+                 <option value="96"  [selected]="pngDpi() === 96">96 dpi</option>
+                 <option value="150" [selected]="pngDpi() === 150">150 dpi</option>
+                 <option value="300" [selected]="pngDpi() === 300">300 dpi</option>
+                 <option value="600" [selected]="pngDpi() === 600">600 dpi</option>
                </select>
              </div>
            </div>
@@ -670,39 +668,35 @@ export class LatexEditorComponent {
 
   /**
    * Scales an SVG string to a target width in the chosen unit.
-   * Preserves aspect ratio by computing height from the original w/h ratio.
-   * Ensures a viewBox is present so the SVG scales correctly in Inkscape.
+   * Uses regex replacement to avoid DOMParser/XMLSerializer mangling
+   * CodeCogs' single-quoted attributes and XML declaration.
+   * The viewBox is already present in CodeCogs output so aspect ratio
+   * is preserved automatically by the SVG renderer / Inkscape.
    */
   private scaleSvg(svgText: string): string {
     const targetWidth = this.svgExportWidth();
     if (!targetWidth) return svgText; // auto — return as-is
 
     const unit = this.svgExportUnit();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(svgText, 'image/svg+xml');
-    const svgEl = doc.documentElement;
 
-    const parseVal = (s: string | null): number | null => {
-      if (!s) return null;
-      const m = s.match(/^([\d.]+)/);
-      return m ? parseFloat(m[1]) : null;
-    };
+    // Match width/height in either single or double quotes, e.g. width='6.94pt' or width="6.94pt"
+    const wMatch = svgText.match(/\bwidth=['"]([0-9.]+)[^'"]*['"]/);
+    const hMatch = svgText.match(/\bheight=['"]([0-9.]+)[^'"]*['"]/);
 
-    const wVal = parseVal(svgEl.getAttribute('width'));
-    const hVal = parseVal(svgEl.getAttribute('height'));
+    if (!wMatch || !hMatch) return svgText;
 
-    // Ensure viewBox exists so Inkscape can scale without distortion
-    if (!svgEl.getAttribute('viewBox') && wVal !== null && hVal !== null) {
-      svgEl.setAttribute('viewBox', `0 0 ${wVal} ${hVal}`);
-    }
+    const wVal = parseFloat(wMatch[1]);
+    const hVal = parseFloat(hMatch[1]);
+    if (!wVal || !hVal) return svgText;
 
-    const aspectRatio = (wVal && hVal && hVal !== 0) ? wVal / hVal : 1;
+    const aspectRatio = wVal / hVal;
     const targetHeight = +(targetWidth / aspectRatio).toFixed(4);
 
-    svgEl.setAttribute('width', `${targetWidth}${unit}`);
-    svgEl.setAttribute('height', `${targetHeight}${unit}`);
-
-    return new XMLSerializer().serializeToString(doc);
+    // Direct string replacement — preserves everything else in the SVG untouched
+    let result = svgText;
+    result = result.replace(/\bwidth=['"][^'"]*['"]/, `width='${targetWidth}${unit}'`);
+    result = result.replace(/\bheight=['"][^'"]*['"]/, `height='${targetHeight}${unit}'`);
+    return result;
   }
 
   async downloadSvg() {
