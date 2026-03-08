@@ -26,7 +26,7 @@ const FEATURES = {
                (load)="onPreviewLoad($event)"
                [style.width]="previewDisplayWidth()"
                [style.maxWidth]="'100%'"
-               [style.maxHeight]="'200px'"
+               [style.maxHeight]="'400px'"
                class="transition-all duration-300 z-10"
                loading="eager"
                fetchpriority="high"
@@ -345,13 +345,25 @@ export class LatexEditorComponent {
    * Clamped to [24, 600] px so the preview stays usable at extreme values.
    */
   private static readonly BASE_PT_SIZE = 12; // 1× scale anchor, matches old code
+
+  /**
+   * SCREEN_SCALE compensates for CodeCogs' tiny default SVG dimensions.
+   * The old code used \dpi{300} which inflated SVG pt dims ~4×, making
+   * equations naturally display at ~40–70px in the browser at scale(1).
+   * The new svg.image endpoint gives ~7–12pt native width → only ~9–16px
+   * at 1.333px/pt CSS baseline — invisible.  Multiplying by 6 gives
+   * 12pt → 96px preview width, closely matching the old behaviour.
+   */
+  private static readonly SCREEN_SCALE = 6;
+
   readonly previewDisplayWidth = computed<string | undefined>(() => {
     const w = this.svgExportWidth();
     const unit = this.svgExportUnit();
     const pxPerUnit: Record<string, number> = { mm: 3.7795, pt: 1.3333, px: 1 };
-    const px = w * (pxPerUnit[unit] ?? 1);
-    // Clamp: 24px min (always visible), 600px max (fits side panel)
-    return `${Math.max(24, Math.min(600, px))}px`;
+    const physicalPx = w * (pxPerUnit[unit] ?? 1);
+    // Scale up so the preview reflects document appearance on screen.
+    // Clamp: 24px min (always visible), 600px max (fills side panel).
+    return `${Math.max(24, Math.min(600, physicalPx * LatexEditorComponent.SCREEN_SCALE))}px`;
   });
 
   /**
