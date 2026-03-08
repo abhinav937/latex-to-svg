@@ -729,36 +729,67 @@ export class LatexEditorComponent {
    * CodeCogs SVGs always use pt units (e.g. width='6.943783pt') and the viewBox
    * coordinates match those pt values, so the aspect ratio is simply wPt / hPt.
    */
+  /**
+   * Converts a user-specified value in mm/pt/px to CSS pixels at 96dpi.
+   * 96dpi is the CSS standard and Inkscape 1.x's internal unit baseline.
+   */
+  private toPixels(value: number, unit: 'mm' | 'pt' | 'px'): number {
+    const factors: Record<string, number> = { mm: 3.7795275591, pt: 1.3333333333, px: 1 };
+    return value * (factors[unit] ?? 1);
+  }
+
+  /**
+   * Scales an SVG to the user's chosen physical width and always outputs
+   * dimensions in px — never mm or pt.
+   *
+   * WHY px only:
+   *   When Inkscape receives an SVG via clipboard paste it uses its internal
+   *   96dpi px coordinate system. If the SVG says width='50mm', some versions
+   *   of Inkscape strip the unit during clipboard import and treat '50' as px
+   *   (≈13mm), so the pasted object appears the same tiny size as the original.
+   *   Outputting width='188.976px' is unambiguous — no unit conversion needed
+   *   at paste time — and 188.976px / 96dpi * 25.4 = exactly 50mm on canvas.
+   *
+   * WHY viewBox is untouched:
+   *   The SVG spec says the renderer maps viewBox coords to the physical
+   *   width/height. CodeCogs' viewBox is already in pt coords that match the
+   *   original width/height numerically. Changing only width/height lets the
+   *   renderer scale the paths automatically — no path data recalculation needed.
+   *
+   * WHY we scope to the opening <svg> tag:
+   *   A global /\bwidth/ regex would also match stroke-width in <path> / <style>
+   *   elements. We extract just the <svg ...> opening tag, operate on that
+   *   string slice, then splice it back.
+   */
   private scaleSvg(svgText: string): string {
     const targetWidth = this.svgExportWidth();
     if (!targetWidth) return svgText; // auto — no-op
 
     const unit = this.svgExportUnit();
 
-    // Extract just the opening <svg ...> tag (everything up to the first >)
+    // Extract only the opening <svg ...> tag
     const svgTagMatch = svgText.match(/<svg([^>]*)>/);
     if (!svgTagMatch) return svgText;
 
-    const originalTag = svgTagMatch[0];   // e.g. <svg version='1.1' width='6.94pt' ...>
-    const attrs = svgTagMatch[1];         // everything between <svg and >
+    const originalTag = svgTagMatch[0];
+    const attrs = svgTagMatch[1];
 
-    // Parse width and height strictly from inside the <svg> tag attrs only
+    // Parse original pt dimensions (CodeCogs always outputs pt)
     const wMatch = attrs.match(/\bwidth=['"]([0-9.]+)[a-z%]*['"]/);
     const hMatch = attrs.match(/\bheight=['"]([0-9.]+)[a-z%]*['"]/);
     if (!wMatch || !hMatch) return svgText;
 
-    const wVal = parseFloat(wMatch[1]);   // e.g. 6.943783
-    const hVal = parseFloat(hMatch[1]);   // e.g. 24.498628
-    if (!wVal || !hVal) return svgText;
+    const wPt = parseFloat(wMatch[1]);
+    const hPt = parseFloat(hMatch[1]);
+    if (!wPt || !hPt) return svgText;
 
-    // Both values are in pt (CodeCogs always outputs pt), so ratio is dimensionless
-    const aspectRatio = wVal / hVal;
-    const targetHeight = +(targetWidth / aspectRatio).toFixed(4);
+    // Convert target to px — always px in output for Inkscape clipboard reliability
+    const targetWidthPx  = +this.toPixels(targetWidth, unit).toFixed(3);
+    const targetHeightPx = +(targetWidthPx / (wPt / hPt)).toFixed(3);
 
-    // Rebuild only the opening tag with new width/height, leave viewBox + all internals alone
     const newAttrs = attrs
-      .replace(/\bwidth=['"][^'"]*['"]/, `width='${targetWidth}${unit}'`)
-      .replace(/\bheight=['"][^'"]*['"]/, `height='${targetHeight}${unit}'`);
+      .replace(/\bwidth=['"][^'"]*['"]/, `width='${targetWidthPx}px'`)
+      .replace(/\bheight=['"][^'"]*['"]/, `height='${targetHeightPx}px'`);
 
     return svgText.replace(originalTag, `<svg${newAttrs}>`);
   }
