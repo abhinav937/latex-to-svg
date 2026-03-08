@@ -1,4 +1,4 @@
-import { Component, inject, signal, ElementRef, viewChild, HostListener } from '@angular/core';
+import { Component, inject, signal, computed, ElementRef, viewChild, HostListener } from '@angular/core';
 import { GeminiService } from '../services/gemini.service';
 import { HistoryService } from '../services/history.service';
 import { RateLimiterService, RateLimit } from '../services/rate-limiter.service';
@@ -314,32 +314,32 @@ export class LatexEditorComponent {
   }
 
   /**
-   * Returns a CSS width string for the preview image based on the export width setting,
-   * converting real-world units to approximate screen pixels (96 dpi baseline).
-   * Returns undefined when set to auto so the image uses its natural size.
+   * Converts the user's target export width to approximate CSS pixels for the
+   * live preview image. Uses 96dpi as the screen baseline (standard CSS spec).
+   * Clamped so the preview stays readable at extreme values.
+   * Reactive computed signal — re-runs automatically when width or unit changes.
    */
-  previewDisplayWidth(): string | undefined {
+  readonly previewDisplayWidth = computed<string | undefined>(() => {
     const w = this.svgExportWidth();
     const unit = this.svgExportUnit();
     if (!w) return undefined;
     const pxPerUnit: Record<string, number> = { mm: 3.7795, pt: 1.3333, px: 1 };
     const px = w * (pxPerUnit[unit] ?? 1);
-    // Clamp so preview stays visible but still communicates scale direction
     return `${Math.max(30, Math.min(380, px))}px`;
-  }
+  });
 
   /**
-   * Returns the live output size label shown in the preview badge.
-   * Shows computed width × height with unit when a target size is set.
+   * Live badge label shown in the preview corner.
+   * Shows "50 × 16.2 mm" when a target width is set, "SVG Preview" otherwise.
    */
-  outputSizeLabel(): string {
+  readonly outputSizeLabel = computed<string>(() => {
     const w = this.svgExportWidth();
     const unit = this.svgExportUnit();
     const ratio = this.svgAspectRatio();
     if (!w) return 'SVG Preview';
     const h = ratio ? (w / ratio).toFixed(1) : '—';
     return `${w} × ${h} ${unit}`;
-  }
+  });
 
   // Autocomplete state
   showAutocomplete = signal(false);
@@ -714,36 +714,53 @@ export class LatexEditorComponent {
   }
 
   /**
-   * Scales an SVG string to a target width in the chosen unit.
-   * Uses regex replacement to avoid DOMParser/XMLSerializer mangling
-   * CodeCogs' single-quoted attributes and XML declaration.
-   * The viewBox is already present in CodeCogs output so aspect ratio
-   * is preserved automatically by the SVG renderer / Inkscape.
+   * Scales an SVG to the user's chosen physical width, preserving aspect ratio.
+   *
+   * How SVG sizing works:
+   *   - width/height attrs define the physical output size (what Inkscape puts on canvas)
+   *   - viewBox defines the internal coordinate space the paths live in
+   *   - Changing width/height while leaving viewBox untouched causes the renderer
+   *     to map the coordinate space to the new physical size — correct scaling
+   *
+   * Why we only touch the <svg> opening tag:
+   *   - \bwidth would also match stroke-width inside <path> / <style> elements
+   *   - We isolate just the opening tag, do replacements there, then splice it back
+   *
+   * CodeCogs SVGs always use pt units (e.g. width='6.943783pt') and the viewBox
+   * coordinates match those pt values, so the aspect ratio is simply wPt / hPt.
    */
   private scaleSvg(svgText: string): string {
     const targetWidth = this.svgExportWidth();
-    if (!targetWidth) return svgText; // auto — return as-is
+    if (!targetWidth) return svgText; // auto — no-op
 
     const unit = this.svgExportUnit();
 
-    // Match width/height in either single or double quotes, e.g. width='6.94pt' or width="6.94pt"
-    const wMatch = svgText.match(/\bwidth=['"]([0-9.]+)[^'"]*['"]/);
-    const hMatch = svgText.match(/\bheight=['"]([0-9.]+)[^'"]*['"]/);
+    // Extract just the opening <svg ...> tag (everything up to the first >)
+    const svgTagMatch = svgText.match(/<svg([^>]*)>/);
+    if (!svgTagMatch) return svgText;
 
+    const originalTag = svgTagMatch[0];   // e.g. <svg version='1.1' width='6.94pt' ...>
+    const attrs = svgTagMatch[1];         // everything between <svg and >
+
+    // Parse width and height strictly from inside the <svg> tag attrs only
+    const wMatch = attrs.match(/\bwidth=['"]([0-9.]+)[a-z%]*['"]/);
+    const hMatch = attrs.match(/\bheight=['"]([0-9.]+)[a-z%]*['"]/);
     if (!wMatch || !hMatch) return svgText;
 
-    const wVal = parseFloat(wMatch[1]);
-    const hVal = parseFloat(hMatch[1]);
+    const wVal = parseFloat(wMatch[1]);   // e.g. 6.943783
+    const hVal = parseFloat(hMatch[1]);   // e.g. 24.498628
     if (!wVal || !hVal) return svgText;
 
+    // Both values are in pt (CodeCogs always outputs pt), so ratio is dimensionless
     const aspectRatio = wVal / hVal;
     const targetHeight = +(targetWidth / aspectRatio).toFixed(4);
 
-    // Direct string replacement — preserves everything else in the SVG untouched
-    let result = svgText;
-    result = result.replace(/\bwidth=['"][^'"]*['"]/, `width='${targetWidth}${unit}'`);
-    result = result.replace(/\bheight=['"][^'"]*['"]/, `height='${targetHeight}${unit}'`);
-    return result;
+    // Rebuild only the opening tag with new width/height, leave viewBox + all internals alone
+    const newAttrs = attrs
+      .replace(/\bwidth=['"][^'"]*['"]/, `width='${targetWidth}${unit}'`)
+      .replace(/\bheight=['"][^'"]*['"]/, `height='${targetHeight}${unit}'`);
+
+    return svgText.replace(originalTag, `<svg${newAttrs}>`);
   }
 
   async downloadSvg() {
