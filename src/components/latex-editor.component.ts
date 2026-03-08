@@ -305,8 +305,9 @@ export class LatexEditorComponent {
   copiedImage = signal(false);
 
   // Output size / DPI
+  // Default to 12pt — matches the old BASE_PT_SIZE baseline where scale = 1×
   svgExportWidth = signal<number>(12);
-  svgExportUnit = signal<'mm' | 'pt' | 'px'>('px');
+  svgExportUnit = signal<'mm' | 'pt' | 'px'>('pt');
   pngDpi = signal<number>(150);
 
   /** Native SVG dimensions in pt, parsed from actual SVG source for accurate h≈ readout. */
@@ -318,15 +319,17 @@ export class LatexEditorComponent {
     return d && d.wPt && d.hPt ? d.wPt / d.hPt : null;
   });
 
-  /** Slider min/max/step that adapts to the currently selected unit. */
+  /** Slider min/max/step that adapts to the currently selected unit.
+   *  pt range mirrors the old code's 8–72pt font-size paradigm (BASE_PT_SIZE = 12).
+   *  px/mm are capped at sane screen/print sizes. */
   readonly sliderConfig = computed(() => {
     const unit = this.svgExportUnit();
     const configs: Record<string, { min: number; max: number; step: number }> = {
-      px: { min: 1,   max: 800, step: 1   },
-      mm: { min: 0.5, max: 300, step: 0.5 },
-      pt: { min: 1,   max: 800, step: 1   },
+      px: { min: 8,   max: 400, step: 1   },
+      mm: { min: 2,   max: 150, step: 0.5 },
+      pt: { min: 4,   max: 72,  step: 0.5 },
     };
-    return configs[unit] ?? { min: 1, max: 800, step: 1 };
+    return configs[unit] ?? { min: 4, max: 72, step: 0.5 };
   });
 
   onPreviewLoad(_event: Event): void {
@@ -335,16 +338,20 @@ export class LatexEditorComponent {
 
   /**
    * Converts the user's target export width to approximate CSS pixels for the
-   * live preview image. Uses 96dpi as the screen baseline (standard CSS spec).
-   * Clamped so the preview stays readable at extreme values.
-   * Reactive computed signal — re-runs automatically when width or unit changes.
+   * live preview image, mirroring the old code's scale(N) approach:
+   *   scale = ptSize / BASE_PT_SIZE (12)
+   * The preview grows/shrinks proportionally so what you see reflects what
+   * you get — same principle as the old CSS transform: scale(N).
+   * Clamped to [24, 600] px so the preview stays usable at extreme values.
    */
+  private static readonly BASE_PT_SIZE = 12; // 1× scale anchor, matches old code
   readonly previewDisplayWidth = computed<string | undefined>(() => {
     const w = this.svgExportWidth();
     const unit = this.svgExportUnit();
     const pxPerUnit: Record<string, number> = { mm: 3.7795, pt: 1.3333, px: 1 };
     const px = w * (pxPerUnit[unit] ?? 1);
-    return `${Math.max(30, Math.min(380, px))}px`;
+    // Clamp: 24px min (always visible), 600px max (fits side panel)
+    return `${Math.max(24, Math.min(600, px))}px`;
   });
 
   /**
