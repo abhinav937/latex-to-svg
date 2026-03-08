@@ -23,12 +23,16 @@ const FEATURES = {
              <img
                [src]="previewUrl()"
                alt="LaTeX Preview"
-               class="max-w-full max-h-[150px] sm:max-h-[200px] transition-all duration-300 z-10"
+               (load)="onPreviewLoad($event)"
+               [style.width]="previewDisplayWidth()"
+               [style.maxWidth]="'100%'"
+               [style.maxHeight]="'200px'"
+               class="transition-all duration-300 z-10"
                loading="eager"
                fetchpriority="high"
              />
              <div class="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 text-xs text-gray-400 bg-white/80 px-2 py-1 rounded backdrop-blur-sm border border-gray-200">
-                SVG Preview
+                {{ outputSizeLabel() }}
              </div>
            } @else {
              <div class="text-center text-gray-400 px-4">
@@ -96,7 +100,7 @@ const FEATURES = {
              <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2.5">Output Size</div>
 
              <!-- SVG Width -->
-             <div class="flex items-center gap-1.5 mb-2">
+             <div class="flex items-center gap-1.5 mb-1">
                <span class="text-xs text-gray-500 w-8 flex-shrink-0">SVG</span>
                <input
                  type="number"
@@ -116,6 +120,12 @@ const FEATURES = {
                  <option value="px" [selected]="svgExportUnit() === 'px'">px</option>
                </select>
              </div>
+             <!-- Live height readout -->
+             @if (svgExportWidth() && svgAspectRatio()) {
+               <div class="text-xs text-gray-400 pl-9 mb-1">
+                 h ≈ {{ (svgExportWidth()! / svgAspectRatio()!).toFixed(1) }} {{ svgExportUnit() }}
+               </div>
+             }
 
              <!-- PNG DPI -->
              <div class="flex items-center gap-1.5">
@@ -293,6 +303,43 @@ export class LatexEditorComponent {
   svgExportWidth = signal<number | null>(null); // null = auto
   svgExportUnit = signal<'mm' | 'pt' | 'px'>('mm');
   pngDpi = signal<number>(150);
+  svgAspectRatio = signal<number | null>(null); // w/h ratio captured on img load
+
+  /** Captures the natural aspect ratio of the rendered SVG for live size preview. */
+  onPreviewLoad(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    if (img.naturalWidth && img.naturalHeight) {
+      this.svgAspectRatio.set(img.naturalWidth / img.naturalHeight);
+    }
+  }
+
+  /**
+   * Returns a CSS width string for the preview image based on the export width setting,
+   * converting real-world units to approximate screen pixels (96 dpi baseline).
+   * Returns undefined when set to auto so the image uses its natural size.
+   */
+  previewDisplayWidth(): string | undefined {
+    const w = this.svgExportWidth();
+    const unit = this.svgExportUnit();
+    if (!w) return undefined;
+    const pxPerUnit: Record<string, number> = { mm: 3.7795, pt: 1.3333, px: 1 };
+    const px = w * (pxPerUnit[unit] ?? 1);
+    // Clamp so preview stays visible but still communicates scale direction
+    return `${Math.max(30, Math.min(380, px))}px`;
+  }
+
+  /**
+   * Returns the live output size label shown in the preview badge.
+   * Shows computed width × height with unit when a target size is set.
+   */
+  outputSizeLabel(): string {
+    const w = this.svgExportWidth();
+    const unit = this.svgExportUnit();
+    const ratio = this.svgAspectRatio();
+    if (!w) return 'SVG Preview';
+    const h = ratio ? (w / ratio).toFixed(1) : '—';
+    return `${w} × ${h} ${unit}`;
+  }
 
   // Autocomplete state
   showAutocomplete = signal(false);
