@@ -566,7 +566,7 @@ export class LatexEditorComponent {
   async copySvgCode() {
     if (!this.previewUrl()) return;
     try {
-      const svgText = await this.fetchSvgText();
+      const svgText = this.scaleSvg(await this.fetchSvgText());
       await navigator.clipboard.writeText(svgText);
       this.copiedSvg.set(true);
       setTimeout(() => this.copiedSvg.set(false), 2000);
@@ -578,7 +578,7 @@ export class LatexEditorComponent {
   async copySvgAsImage() {
     if (!this.previewUrl()) return;
     try {
-      const svgText = await this.fetchSvgText();
+      const svgText = this.scaleSvg(await this.fetchSvgText());
       const svgBlob = new Blob([svgText], { type: 'image/svg+xml' });
 
       if ('supports' in ClipboardItem && ClipboardItem.supports('image/svg+xml')) {
