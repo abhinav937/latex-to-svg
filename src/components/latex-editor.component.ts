@@ -99,33 +99,38 @@ const FEATURES = {
            <div class="pt-3 sm:pt-4 border-t border-gray-200">
              <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2.5">Output Size</div>
 
-             <!-- SVG Width -->
-             <div class="flex items-center gap-1.5 mb-1">
-               <span class="text-xs text-gray-500 w-8 flex-shrink-0">SVG</span>
-               <input
-                 type="number"
-                 min="1"
-                 max="9999"
-                 [value]="svgExportWidth() ?? ''"
-                 (input)="onSvgWidthInput($event)"
-                 placeholder="auto"
-                 class="w-16 px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-700"
-               />
-               <select
-                 (change)="onSvgUnitChange($event)"
-                 class="flex-1 px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-700"
-               >
-                 <option value="mm" [selected]="svgExportUnit() === 'mm'">mm</option>
-                 <option value="pt" [selected]="svgExportUnit() === 'pt'">pt</option>
-                 <option value="px" [selected]="svgExportUnit() === 'px'">px</option>
-               </select>
-             </div>
-             <!-- Live height readout -->
-             @if (svgExportWidth() && svgAspectRatio()) {
-               <div class="text-xs text-gray-400 pl-9 mb-1">
-                 h ≈ {{ (svgExportWidth()! / svgAspectRatio()!).toFixed(1) }} {{ svgExportUnit() }}
+             <!-- SVG Width Slider -->
+             <div class="mb-3">
+               <div class="flex items-center justify-between mb-1.5">
+                 <span class="text-xs text-gray-500">SVG width</span>
+                 <div class="flex items-center gap-1">
+                   <span class="text-xs font-semibold text-indigo-600 min-w-[2.5rem] text-right tabular-nums">{{ svgExportWidth() }}</span>
+                   <select
+                     (change)="onSvgUnitChange($event)"
+                     class="px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-700"
+                   >
+                     <option value="px" [selected]="svgExportUnit() === 'px'">px</option>
+                     <option value="mm" [selected]="svgExportUnit() === 'mm'">mm</option>
+                     <option value="pt" [selected]="svgExportUnit() === 'pt'">pt</option>
+                   </select>
+                 </div>
                </div>
-             }
+               <input
+                 type="range"
+                 [attr.min]="sliderConfig().min"
+                 [attr.max]="sliderConfig().max"
+                 [attr.step]="sliderConfig().step"
+                 [value]="svgExportWidth()"
+                 (input)="onSvgWidthInput($event)"
+                 class="w-full h-1.5 rounded-lg appearance-none cursor-pointer accent-indigo-600 bg-gray-200"
+               />
+               <!-- Live height readout — shown once the SVG aspect ratio is known -->
+               @if (svgAspectRatio()) {
+                 <div class="text-xs text-gray-400 mt-1">
+                   h ≈ {{ (svgExportWidth() / svgAspectRatio()!).toFixed(1) }} {{ svgExportUnit() }}
+                 </div>
+               }
+             </div>
 
              <!-- PNG DPI -->
              <div class="flex items-center gap-1.5">
@@ -300,17 +305,32 @@ export class LatexEditorComponent {
   copiedImage = signal(false);
 
   // Output size / DPI
-  svgExportWidth = signal<number | null>(null); // null = auto
-  svgExportUnit = signal<'mm' | 'pt' | 'px'>('mm');
+  svgExportWidth = signal<number>(12);
+  svgExportUnit = signal<'mm' | 'pt' | 'px'>('px');
   pngDpi = signal<number>(150);
-  svgAspectRatio = signal<number | null>(null); // w/h ratio captured on img load
 
-  /** Captures the natural aspect ratio of the rendered SVG for live size preview. */
-  onPreviewLoad(event: Event): void {
-    const img = event.target as HTMLImageElement;
-    if (img.naturalWidth && img.naturalHeight) {
-      this.svgAspectRatio.set(img.naturalWidth / img.naturalHeight);
-    }
+  /** Native SVG dimensions in pt, parsed from actual SVG source for accurate h≈ readout. */
+  private svgNativeDims = signal<{ wPt: number; hPt: number } | null>(null);
+
+  /** Aspect ratio (w/h) from the SVG's real pt dimensions — dimensionless and unit-safe. */
+  readonly svgAspectRatio = computed<number | null>(() => {
+    const d = this.svgNativeDims();
+    return d && d.wPt && d.hPt ? d.wPt / d.hPt : null;
+  });
+
+  /** Slider min/max/step that adapts to the currently selected unit. */
+  readonly sliderConfig = computed(() => {
+    const unit = this.svgExportUnit();
+    const configs: Record<string, { min: number; max: number; step: number }> = {
+      px: { min: 1,   max: 800, step: 1   },
+      mm: { min: 0.5, max: 300, step: 0.5 },
+      pt: { min: 1,   max: 800, step: 1   },
+    };
+    return configs[unit] ?? { min: 1, max: 800, step: 1 };
+  });
+
+  onPreviewLoad(_event: Event): void {
+    // no-op: aspect ratio is now derived from SVG source (see renderLatex background fetch)
   }
 
   /**
@@ -322,21 +342,18 @@ export class LatexEditorComponent {
   readonly previewDisplayWidth = computed<string | undefined>(() => {
     const w = this.svgExportWidth();
     const unit = this.svgExportUnit();
-    if (!w) return undefined;
     const pxPerUnit: Record<string, number> = { mm: 3.7795, pt: 1.3333, px: 1 };
     const px = w * (pxPerUnit[unit] ?? 1);
     return `${Math.max(30, Math.min(380, px))}px`;
   });
 
   /**
-   * Live badge label shown in the preview corner.
-   * Shows "50 × 16.2 mm" when a target width is set, "SVG Preview" otherwise.
+   * Live badge label shown in the preview corner — e.g. "50 × 176.1 px".
    */
   readonly outputSizeLabel = computed<string>(() => {
     const w = this.svgExportWidth();
     const unit = this.svgExportUnit();
     const ratio = this.svgAspectRatio();
-    if (!w) return 'SVG Preview';
     const h = ratio ? (w / ratio).toFixed(1) : '—';
     return `${w} × ${h} ${unit}`;
   });
@@ -392,6 +409,19 @@ export class LatexEditorComponent {
       // Physical sizing for export/copy is handled entirely in svgToPngBlob.
       const url = `https://latex.codecogs.com/svg.image?${encodeURIComponent(code)}`;
       this.previewUrl.set(url);
+
+      // Background: fetch SVG source to extract real pt dimensions for accurate h≈ readout.
+      // img.naturalWidth/naturalHeight can be unreliable for cross-origin SVGs — parsing the
+      // actual wPt/hPt values is dimensionless-correct for all unit modes.
+      this.fetchSvgText().then(svgText => {
+        const svgTagMatch = svgText.match(/<svg([^>]*)>/);
+        if (!svgTagMatch) return;
+        const wMatch = svgTagMatch[1].match(/\bwidth=['"]([0-9.]+)[a-z%]*['"]/);
+        const hMatch = svgTagMatch[1].match(/\bheight=['"]([0-9.]+)[a-z%]*['"]/);
+        if (wMatch && hMatch) {
+          this.svgNativeDims.set({ wPt: parseFloat(wMatch[1]), hPt: parseFloat(hMatch[1]) });
+        }
+      }).catch(() => { /* silent — h≈ stays hidden if fetch fails */ });
 
       // Add to history after successful render
       this.historyService.addToHistory(code);
@@ -701,12 +731,18 @@ export class LatexEditorComponent {
   }
 
   onSvgWidthInput(event: Event): void {
-    const val = (event.target as HTMLInputElement).value;
-    this.svgExportWidth.set(val ? parseFloat(val) : null);
+    const val = parseFloat((event.target as HTMLInputElement).value);
+    this.svgExportWidth.set(isNaN(val) ? 12 : val);
   }
 
   onSvgUnitChange(event: Event): void {
-    this.svgExportUnit.set((event.target as HTMLSelectElement).value as 'mm' | 'pt' | 'px');
+    const newUnit = (event.target as HTMLSelectElement).value as 'mm' | 'pt' | 'px';
+    // Convert current value to the new unit so the physical size stays the same
+    const currentPx = this.toPixels(this.svgExportWidth(), this.svgExportUnit());
+    const factors: Record<string, number> = { mm: 3.7795275591, pt: 1.3333333333, px: 1 };
+    const converted = +(currentPx / (factors[newUnit] ?? 1)).toFixed(1);
+    this.svgExportWidth.set(converted);
+    this.svgExportUnit.set(newUnit);
   }
 
   onPngDpiChange(event: Event): void {
