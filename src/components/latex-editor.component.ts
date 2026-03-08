@@ -124,10 +124,10 @@ const FEATURES = {
                  (input)="onSvgWidthInput($event)"
                  class="w-full h-1.5 rounded-lg appearance-none cursor-pointer accent-indigo-600 bg-gray-200"
                />
-               <!-- Live height readout — shown once the SVG aspect ratio is known -->
-               @if (svgAspectRatio()) {
+               <!-- Live height readout — shown once the SVG has loaded -->
+               @if (scaledOutputDims()) {
                  <div class="text-xs text-gray-400 mt-1">
-                   h ≈ {{ (svgExportWidth() / svgAspectRatio()!).toFixed(1) }} {{ svgExportUnit() }}
+                   h ≈ {{ scaledOutputDims()!.h }} pt
                  </div>
                }
              </div>
@@ -344,37 +344,57 @@ export class LatexEditorComponent {
    * you get — same principle as the old CSS transform: scale(N).
    * Clamped to [24, 600] px so the preview stays usable at extreme values.
    */
-  private static readonly BASE_PT_SIZE = 12; // 1× scale anchor, matches old code
+  /** Matches old code's BASE_PT_SIZE = 12 — 1× scale anchor. */
+  private static readonly BASE_PT_SIZE = 12;
 
   /**
-   * SCREEN_SCALE compensates for CodeCogs' tiny default SVG dimensions.
-   * The old code used \dpi{300} which inflated SVG pt dims ~4×, making
-   * equations naturally display at ~40–70px in the browser at scale(1).
-   * The new svg.image endpoint gives ~7–12pt native width → only ~9–16px
-   * at 1.333px/pt CSS baseline — invisible.  Multiplying by 6 gives
-   * 12pt → 96px preview width, closely matching the old behaviour.
+   * Convert user's slider value to a dimensionless scale factor,
+   * exactly as the old code did:  scale = ptSize / BASE_PT_SIZE
    */
-  private static readonly SCREEN_SCALE = 6;
-
-  readonly previewDisplayWidth = computed<string | undefined>(() => {
+  private readonly outputScale = computed<number>(() => {
     const w = this.svgExportWidth();
     const unit = this.svgExportUnit();
-    const pxPerUnit: Record<string, number> = { mm: 3.7795, pt: 1.3333, px: 1 };
-    const physicalPx = w * (pxPerUnit[unit] ?? 1);
-    // Scale up so the preview reflects document appearance on screen.
-    // Clamp: 24px min (always visible), 600px max (fills side panel).
-    return `${Math.max(24, Math.min(600, physicalPx * LatexEditorComponent.SCREEN_SCALE))}px`;
+    // pt value per user unit  (mirrors old code's single pt slider)
+    const toPt: Record<string, number> = { mm: 2.834645669, pt: 1, px: 0.75 };
+    const ptVal = w * (toPt[unit] ?? 1);
+    return ptVal / LatexEditorComponent.BASE_PT_SIZE;
   });
 
   /**
-   * Live badge label shown in the preview corner — e.g. "50 × 176.1 px".
+   * Preview width: mirrors old code's  latexImage.style.transform = scale(N).
+   * Natural CSS width of the \dpi{300} SVG × scale — no magic multiplier needed
+   * because \dpi{300} already gives a correctly-sized native render (~30-60px).
+   * Falls back to 40px × scale if svgNativeDims haven't loaded yet.
    */
+  readonly previewDisplayWidth = computed<string | undefined>(() => {
+    const native = this.svgNativeDims();
+    const scale  = this.outputScale();
+    // 1pt = 1.3333 CSS px (96dpi standard).  \dpi{300} SVG width is in pt.
+    const nativeCssPx = native ? native.wPt * 1.3333 : 40;
+    const previewPx   = nativeCssPx * scale;
+    return `${Math.max(24, Math.min(600, previewPx))}px`;
+  });
+
+  /**
+   * Actual output dimensions = native \dpi{300} dims × scale.
+   * Both signals react whenever the slider or the loaded SVG changes.
+   */
+  readonly scaledOutputDims = computed<{ w: string; h: string } | null>(() => {
+    const native = this.svgNativeDims();
+    if (!native) return null;
+    const s = this.outputScale();
+    return {
+      w: (native.wPt * s).toFixed(1),
+      h: (native.hPt * s).toFixed(1),
+    };
+  });
+
+  /** Badge shown in the preview corner — e.g. "56.2 × 18.1 pt". */
   readonly outputSizeLabel = computed<string>(() => {
-    const w = this.svgExportWidth();
-    const unit = this.svgExportUnit();
-    const ratio = this.svgAspectRatio();
-    const h = ratio ? (w / ratio).toFixed(1) : '—';
-    return `${w} × ${h} ${unit}`;
+    const dims = this.scaledOutputDims();
+    if (dims) return `${dims.w} × ${dims.h} pt`;
+    // Fallback before the SVG loads
+    return `${this.svgExportWidth()} ${this.svgExportUnit()}`;
   });
 
   // Autocomplete state
@@ -423,10 +443,10 @@ export class LatexEditorComponent {
 
     this.isRendering.set(true);
     try {
-      // Use the current svg.image endpoint (svg.latex is the legacy endpoint).
-      // No size command — CodeCogs renders at 10pt (normalsize) by default.
-      // Physical sizing for export/copy is handled entirely in svgToPngBlob.
-      const url = `https://latex.codecogs.com/svg.image?${encodeURIComponent(code)}`;
+      // Embed \dpi{300} in the URL exactly as the old code did.
+      // This matches the original BASE_PT_SIZE=12 scaling paradigm:
+      // scale = ptSize/12 is applied on top of the \dpi{300} native render.
+      const url = `https://latex.codecogs.com/svg.image?${encodeURIComponent('\\dpi{300} ' + code)}`;
       this.previewUrl.set(url);
 
       // Background: fetch SVG source to extract real pt dimensions for accurate h≈ readout.
@@ -588,7 +608,9 @@ export class LatexEditorComponent {
     const code = this.latexInput().trim();
     if (!code) throw new Error('No LaTeX to fetch');
 
-    const url = `https://latex.codecogs.com/svg.json?${encodeURIComponent(code)}`;
+    // Use the same \dpi{300} prefix as the preview render so the fetched SVG
+    // dimensions and paths match exactly what the user sees on screen.
+    const url = `https://latex.codecogs.com/svg.json?${encodeURIComponent('\\dpi{300} ' + code)}`;
     const response = await fetch(url);
     if (!response.ok) throw new Error(`CodeCogs JSON fetch failed: ${response.status}`);
 
@@ -816,35 +838,41 @@ export class LatexEditorComponent {
    *   elements. We extract just the <svg ...> opening tag, operate on that
    *   string slice, then splice it back.
    */
+  /**
+   * Scales the SVG exactly as the old code did:
+   *   scale = ptSize / BASE_PT_SIZE  (e.g. 24pt → scale 2×)
+   *   new width  = parseFloat(nativeWidth)  × scale   ← strips pt unit, like old code
+   *   new height = parseFloat(nativeHeight) × scale
+   *   viewBox is left unchanged (renderer maps it to new physical dims → correct scaling)
+   *
+   * Note: the old code also wrapped children in <g transform="scale(N)"> but that
+   * combined with an unchanged viewBox causes double-scaling / clipping — it was a
+   * latent bug.  We reproduce the intent (scale by N) without the bug.
+   */
   private scaleSvg(svgText: string): string {
-    const targetWidth = this.svgExportWidth();
-    if (!targetWidth) return svgText; // auto — no-op
+    const scale = this.outputScale();
 
-    const unit = this.svgExportUnit();
-
-    // Extract only the opening <svg ...> tag
     const svgTagMatch = svgText.match(/<svg([^>]*)>/);
     if (!svgTagMatch) return svgText;
 
     const originalTag = svgTagMatch[0];
-    const attrs = svgTagMatch[1];
+    const attrs       = svgTagMatch[1];
 
-    // Parse original pt dimensions (CodeCogs always outputs pt)
+    // parseFloat strips the 'pt' unit exactly as the old code did
     const wMatch = attrs.match(/\bwidth=['"]([0-9.]+)[a-z%]*['"]/);
     const hMatch = attrs.match(/\bheight=['"]([0-9.]+)[a-z%]*['"]/);
     if (!wMatch || !hMatch) return svgText;
 
-    const wPt = parseFloat(wMatch[1]);
-    const hPt = parseFloat(hMatch[1]);
-    if (!wPt || !hPt) return svgText;
+    const nativeW = parseFloat(wMatch[1]);
+    const nativeH = parseFloat(hMatch[1]);
+    if (!nativeW || !nativeH) return svgText;
 
-    // Convert target to px — always px in output for Inkscape clipboard reliability
-    const targetWidthPx  = +this.toPixels(targetWidth, unit).toFixed(3);
-    const targetHeightPx = +(targetWidthPx / (wPt / hPt)).toFixed(3);
+    const scaledW = (nativeW * scale).toFixed(3);
+    const scaledH = (nativeH * scale).toFixed(3);
 
     const newAttrs = attrs
-      .replace(/\bwidth=['"][^'"]*['"]/, `width='${targetWidthPx}px'`)
-      .replace(/\bheight=['"][^'"]*['"]/, `height='${targetHeightPx}px'`);
+      .replace(/\bwidth=['"][^'"]*['"]/, `width="${scaledW}"`)
+      .replace(/\bheight=['"][^'"]*['"]/, `height="${scaledH}"`);
 
     return svgText.replace(originalTag, `<svg${newAttrs}>`);
   }
