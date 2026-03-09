@@ -903,9 +903,9 @@ export class LatexEditorComponent {
   }
 
   constructor() {
-    // Check URL query params for feature flags
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('ai') === 'true') {
+    // Enable AI Fix if the Vercel AI_FIX environment flag is set to 'true'
+    const windowAiFix = (window as any).AI_FIX;
+    if (windowAiFix === 'true' || windowAiFix === true) {
       this.features.AI_FIX = true;
     }
   }

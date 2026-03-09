@@ -58,19 +58,24 @@ if (!fs.existsSync(indexPath)) {
 
 const indexHtml = fs.readFileSync(indexPath, 'utf8');
 
-// Get the GEMINI_API_KEY from environment variable or .env.local
+// Get environment variables
 const apiKey = env.GEMINI_API_KEY || '';
+const aiFix = env.AI_FIX || 'false';
 
-// Check if placeholder exists and replace it
-if (indexHtml.includes("{{GEMINI_API_KEY}}")) {
-  const updatedHtml = indexHtml.replace(
+// Check if placeholders exist and replace them
+if (indexHtml.includes("{{GEMINI_API_KEY}}") || indexHtml.includes("{{AI_FIX}}")) {
+  let updatedHtml = indexHtml.replace(
     "window.GEMINI_API_KEY = '{{GEMINI_API_KEY}}';",
     `window.GEMINI_API_KEY = '${apiKey}';`
   );
-  
+  updatedHtml = updatedHtml.replace(
+    "window.AI_FIX = '{{AI_FIX}}';",
+    `window.AI_FIX = '${aiFix}';`
+  );
+
   // Write the updated file
   fs.writeFileSync(indexPath, updatedHtml, 'utf8');
-  
+
   if (apiKey) {
     console.log('✓ Gemini API key injected into index.html');
   } else {
@@ -80,8 +85,9 @@ if (indexHtml.includes("{{GEMINI_API_KEY}}")) {
       console.warn(`  Create .env.local file with: GEMINI_API_KEY=your_key_here`);
     }
   }
+  console.log(`✓ AI_FIX flag: ${aiFix}`);
 } else {
-  console.log('ℹ API key placeholder not found in index.html (may already be processed)');
+  console.log('ℹ Placeholders not found in index.html (may already be processed)');
 }
 
 // Ensure site.webmanifest is accessible at root for dev server
