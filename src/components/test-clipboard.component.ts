@@ -133,6 +133,10 @@ export class TestClipboardComponent implements OnInit {
   /**
    * Scales an SVG to a target width in px, preserving aspect ratio.
    * Mirrors scaleSvgForExport from latex-editor.component.ts
+   *
+   * KEY FIX: Inkscape clipboard paste ignores width/height and uses viewBox
+   * dimensions as the object size. So we must scale the viewBox AND the
+   * <g> matrix transform to actually change the pasted size.
    */
   private scaleSvg(svgText: string, targetWidthPx: number): string {
     const tagMatch = svgText.match(/<svg([^>]*)>/);
@@ -149,15 +153,26 @@ export class TestClipboardComponent implements OnInit {
     const nativeH = parseFloat(hMatch[1]);
     this.log(`  Native: ${nativeW} × ${nativeH} (raw attr: ${wMatch[0]})`);
 
-    // Ensure viewBox
-    if (!/\bviewBox\s*=/.test(attrs)) {
-      attrs += ` viewBox="0 0 ${nativeW} ${nativeH}"`;
-      this.log(`  Added viewBox`);
+    const targetH = targetWidthPx * (nativeH / nativeW);
+    const scaleFactor = targetWidthPx / nativeW;
+    this.log(`  Scale factor: ${scaleFactor.toFixed(4)}  →  ${targetWidthPx.toFixed(1)}px × ${targetH.toFixed(1)}px`);
+
+    // Scale the viewBox so Inkscape sees the target dimensions
+    const vbMatch = attrs.match(/\bviewBox=['"]([^'"]+)['"]/);
+    if (vbMatch) {
+      const vbParts = vbMatch[1].trim().split(/[\s,]+/).map(Number);
+      if (vbParts.length === 4) {
+        const [minX, minY, vbW, vbH] = vbParts;
+        const newVB = `${(minX * scaleFactor).toFixed(6)} ${(minY * scaleFactor).toFixed(6)} ${(vbW * scaleFactor).toFixed(6)} ${(vbH * scaleFactor).toFixed(6)}`;
+        attrs = attrs.replace(/\bviewBox=['"][^'"]*['"]/, `viewBox="${newVB}"`);
+        this.log(`  ViewBox: ${vbMatch[1]}  →  ${newVB}`);
+      }
+    } else {
+      attrs += ` viewBox="0 0 ${targetWidthPx.toFixed(6)} ${targetH.toFixed(6)}"`;
+      this.log(`  Added viewBox at target size`);
     }
 
-    const targetH = targetWidthPx * (nativeH / nativeW);
-    this.log(`  Scaled: ${targetWidthPx.toFixed(1)}px × ${targetH.toFixed(1)}px`);
-
+    // Replace width/height
     attrs = attrs
       .replace(/\bwidth=['"][^'"]*['"]/, `width="${targetWidthPx.toFixed(3)}px"`)
       .replace(/\bheight=['"][^'"]*['"]/, `height="${targetH.toFixed(3)}px"`);
@@ -167,7 +182,27 @@ export class TestClipboardComponent implements OnInit {
       newTag = newTag.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
     }
 
-    const result = svgText.replace(originalTag, newTag);
+    let result = svgText.replace(originalTag, newTag);
+
+    // Scale the <g> matrix transform so paths render correctly in new viewBox
+    result = result.replace(
+      /(<g\s[^>]*transform=['"])matrix\(([^)]+)\)(['"][^>]*>)/,
+      (_match, before, matrixStr, after) => {
+        const m = matrixStr.trim().split(/[\s,]+/).map(Number);
+        if (m.length === 6) {
+          const origMatrix = m.map(v => v.toFixed(4)).join(', ');
+          m[0] *= scaleFactor; // scaleX
+          m[3] *= scaleFactor; // scaleY
+          m[4] *= scaleFactor; // translateX
+          m[5] *= scaleFactor; // translateY
+          const newMatrix = m.map(v => v.toFixed(6)).join(' ');
+          this.log(`  Matrix: (${origMatrix})  →  (${newMatrix})`);
+          return `${before}matrix(${newMatrix})${after}`;
+        }
+        return _match;
+      }
+    );
+
     const finalSvgTag = result.match(/<svg[^>]*>/)?.[0] ?? '???';
     this.log(`  Final tag: ${finalSvgTag}`);
     return result;

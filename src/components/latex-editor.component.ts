@@ -779,14 +779,28 @@ export class LatexEditorComponent {
   /**
    * Scales an SVG to the user's target export dimensions for Inkscape compatibility.
    *
-   * - Outputs width/height with explicit `px` units (Inkscape's 96 DPI baseline)
-   * - Preserves viewBox unchanged so the renderer maps coordinates automatically
-   * - Adds viewBox from native dimensions if missing
-   * - Ensures xmlns declaration is present for standalone SVG validity
-   * - Scopes replacements to the <svg> opening tag to avoid matching stroke-width
+   * KEY INSIGHT: Inkscape's clipboard paste ignores width/height attributes and
+   * uses the viewBox dimensions directly as the object size. CodeCogs SVGs use a
+   * matrix transform on <g> to map large absolute coordinates into the viewBox,
+   * so simply changing width/height has no visible effect in Inkscape.
+   *
+   * SOLUTION: Scale the viewBox to match the target px dimensions and adjust the
+   * <g> matrix transform so paths still map correctly into the new viewBox space.
+   * This makes the SVG self-consistent at the target size regardless of whether
+   * the consumer honours width/height or viewBox.
+   *
+   * Steps:
+   *   1. Parse native width/height (pt) and viewBox from CodeCogs SVG
+   *   2. Compute a uniform scale factor: targetWidthPx / nativeWidthPt
+   *   3. Scale the viewBox origin and dimensions by this factor
+   *   4. Scale the <g> matrix transform's translation (e/f) by the same factor
+   *      so the shifted coordinates land inside the new viewBox
+   *   5. Multiply the matrix scale components (a/d) by the factor so path
+   *      geometry scales proportionally
+   *   6. Set width/height to targetPx values (with explicit "px" unit)
    */
-  private scaleSvgForExport(svgText: string): string {
-    const dims = this.scaledDimsPx();
+  private scaleSvgForExport(svgText: string, overrideDims?: { wPx: number; hPx: number }): string {
+    const dims = overrideDims ?? this.scaledDimsPx();
 
     const svgTagMatch = svgText.match(/<svg([^>]*)>/);
     if (!svgTagMatch) return svgText;
@@ -794,6 +808,7 @@ export class LatexEditorComponent {
     const originalTag = svgTagMatch[0];
     let attrs = svgTagMatch[1];
 
+    // ── 1. Parse native width / height (always in pt from CodeCogs) ──
     const wMatch = attrs.match(/\bwidth=['"]([0-9.]+)[a-z%]*['"]/);
     const hMatch = attrs.match(/\bheight=['"]([0-9.]+)[a-z%]*['"]/);
     if (!wMatch || !hMatch) return svgText;
@@ -802,12 +817,7 @@ export class LatexEditorComponent {
     const nativeH = parseFloat(hMatch[1]);
     if (!nativeW || !nativeH) return svgText;
 
-    // Ensure viewBox exists for correct scaling when width/height change
-    if (!/\bviewBox\s*=/.test(attrs)) {
-      attrs += ` viewBox="0 0 ${nativeW} ${nativeH}"`;
-    }
-
-    // Compute target pixel dimensions (aspect-ratio-preserving)
+    // ── 2. Compute target pixel dimensions ──
     let targetW: number;
     let targetH: number;
     if (dims) {
@@ -819,7 +829,24 @@ export class LatexEditorComponent {
       targetH = targetWidthPx * (nativeH / nativeW);
     }
 
-    // Replace width/height with explicit px values
+    // Uniform scale factor from native pt coords → target px coords
+    const scaleFactor = targetW / nativeW;
+
+    // ── 3. Scale the viewBox ──
+    const vbMatch = attrs.match(/\bviewBox=['"]([^'"]+)['"]/);
+    if (vbMatch) {
+      const vbParts = vbMatch[1].trim().split(/[\s,]+/).map(Number);
+      if (vbParts.length === 4) {
+        const [minX, minY, vbW, vbH] = vbParts;
+        const newVB = `${(minX * scaleFactor).toFixed(6)} ${(minY * scaleFactor).toFixed(6)} ${(vbW * scaleFactor).toFixed(6)} ${(vbH * scaleFactor).toFixed(6)}`;
+        attrs = attrs.replace(/\bviewBox=['"][^'"]*['"]/, `viewBox="${newVB}"`);
+      }
+    } else {
+      // No viewBox — add one at target size
+      attrs += ` viewBox="0 0 ${targetW.toFixed(6)} ${targetH.toFixed(6)}"`;
+    }
+
+    // ── 4. Replace width / height with explicit px values ──
     attrs = attrs
       .replace(/\bwidth=['"][^'"]*['"]/, `width="${targetW.toFixed(3)}px"`)
       .replace(/\bheight=['"][^'"]*['"]/, `height="${targetH.toFixed(3)}px"`);
@@ -830,7 +857,30 @@ export class LatexEditorComponent {
       newTag = newTag.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
     }
 
-    return svgText.replace(originalTag, newTag);
+    let result = svgText.replace(originalTag, newTag);
+
+    // ── 5. Scale the <g> matrix transform ──
+    // CodeCogs SVGs have: <g id='page1' transform='matrix(a 0 0 d e f)'>
+    // a,d = scale components;  e,f = translation
+    // We multiply a,d by scaleFactor and e,f by scaleFactor so the
+    // transformed path coordinates land inside the new (scaled) viewBox.
+    result = result.replace(
+      /(<g\s[^>]*transform=['"])matrix\(([^)]+)\)(['"][^>]*>)/,
+      (_match, before, matrixStr, after) => {
+        const m = matrixStr.trim().split(/[\s,]+/).map(Number);
+        if (m.length === 6) {
+          // matrix(a b c d e f) → scale a,d and e,f
+          m[0] *= scaleFactor; // a (scaleX)
+          m[3] *= scaleFactor; // d (scaleY)
+          m[4] *= scaleFactor; // e (translateX)
+          m[5] *= scaleFactor; // f (translateY)
+          return `${before}matrix(${m.map(v => v.toFixed(6)).join(' ')})${after}`;
+        }
+        return _match; // don't touch if unexpected format
+      }
+    );
+
+    return result;
   }
 
   async downloadSvg() {

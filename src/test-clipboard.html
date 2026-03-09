@@ -123,6 +123,8 @@ async function fetchSvgText(latex) {
 }
 
 // ─── SCALE SVG (mirrors scaleSvgForExport from your app) ───────────────
+// KEY FIX: Inkscape clipboard paste ignores width/height and reads viewBox
+// dimensions as the object size. So we scale viewBox + <g> matrix transform.
 function scaleSvg(svgText, targetWidthPx) {
   const tagMatch = svgText.match(/<svg([^>]*)>/);
   if (!tagMatch) { log('ERROR: no <svg> tag found'); return svgText; }
@@ -136,37 +138,57 @@ function scaleSvg(svgText, targetWidthPx) {
 
   const nativeW = parseFloat(wMatch[1]);
   const nativeH = parseFloat(hMatch[1]);
-  log(`  Native dims: ${nativeW} × ${nativeH} (unit from SVG: "${wMatch[0]}")`);
-
-  // Ensure viewBox exists
-  if (!/\bviewBox\s*=/.test(attrs)) {
-    attrs += ` viewBox="0 0 ${nativeW} ${nativeH}"`;
-    log(`  Added viewBox="0 0 ${nativeW} ${nativeH}"`);
-  }
+  log(`  Native dims: ${nativeW} × ${nativeH} (raw: "${wMatch[0]}")`);
 
   const aspectRatio = nativeH / nativeW;
   const targetH = targetWidthPx * aspectRatio;
+  const scaleFactor = targetWidthPx / nativeW;
+  log(`  Scale factor: ${scaleFactor.toFixed(4)}  →  ${targetWidthPx.toFixed(1)}px × ${targetH.toFixed(1)}px`);
 
-  log(`  Target dims: ${targetWidthPx.toFixed(1)}px × ${targetH.toFixed(1)}px`);
+  // Scale viewBox so Inkscape sees target dimensions
+  const vbMatch = attrs.match(/\bviewBox=['"]([^'"]+)['"]/);
+  if (vbMatch) {
+    const vb = vbMatch[1].trim().split(/[\s,]+/).map(Number);
+    if (vb.length === 4) {
+      const newVB = `${(vb[0]*scaleFactor).toFixed(6)} ${(vb[1]*scaleFactor).toFixed(6)} ${(vb[2]*scaleFactor).toFixed(6)} ${(vb[3]*scaleFactor).toFixed(6)}`;
+      attrs = attrs.replace(/\bviewBox=['"][^'"]*['"]/, `viewBox="${newVB}"`);
+      log(`  ViewBox: ${vbMatch[1]}  →  ${newVB}`);
+    }
+  } else {
+    attrs += ` viewBox="0 0 ${targetWidthPx.toFixed(6)} ${targetH.toFixed(6)}"`;
+  }
 
-  // Replace width/height with explicit px values
+  // Replace width/height with explicit px
   attrs = attrs
     .replace(/\bwidth=['"][^'"]*['"]/, `width="${targetWidthPx.toFixed(3)}px"`)
     .replace(/\bheight=['"][^'"]*['"]/, `height="${targetH.toFixed(3)}px"`);
 
-  // Ensure xmlns
   let newTag = `<svg${attrs}>`;
   if (!/\bxmlns\s*=/.test(attrs)) {
     newTag = newTag.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
-    log('  Added xmlns');
   }
 
-  const result = svgText.replace(originalTag, newTag);
+  let result = svgText.replace(originalTag, newTag);
 
-  // Also log the final <svg> opening tag for inspection
+  // Scale <g> matrix transform so paths render correctly in new viewBox
+  result = result.replace(
+    /(<g\s[^>]*transform=['"])matrix\(([^)]+)\)(['"][^>]*>)/,
+    (_match, before, matrixStr, after) => {
+      const m = matrixStr.trim().split(/[\s,]+/).map(Number);
+      if (m.length === 6) {
+        const orig = m.map(v => v.toFixed(4)).join(', ');
+        m[0] *= scaleFactor; m[3] *= scaleFactor;
+        m[4] *= scaleFactor; m[5] *= scaleFactor;
+        const scaled = m.map(v => v.toFixed(6)).join(' ');
+        log(`  Matrix: (${orig})  →  (${scaled})`);
+        return `${before}matrix(${scaled})${after}`;
+      }
+      return _match;
+    }
+  );
+
   const finalTag = result.match(/<svg[^>]*>/)?.[0] ?? '???';
   log(`  Final <svg> tag:\n    ${finalTag}`);
-
   return result;
 }
 
