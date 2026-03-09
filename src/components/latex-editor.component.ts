@@ -1,4 +1,4 @@
-import { Component, inject, signal, ElementRef, viewChild, HostListener } from '@angular/core';
+import { Component, inject, signal, computed, ElementRef, viewChild, HostListener } from '@angular/core';
 import { GeminiService } from '../services/gemini.service';
 import { HistoryService } from '../services/history.service';
 import { RateLimiterService, RateLimit } from '../services/rate-limiter.service';
@@ -23,12 +23,16 @@ const FEATURES = {
              <img
                [src]="previewUrl()"
                alt="LaTeX Preview"
-               class="max-w-full max-h-[150px] sm:max-h-[200px] transition-all duration-300 z-10"
+               (load)="onPreviewLoad($event)"
+               [style.width]="previewDisplayWidth()"
+               [style.maxWidth]="'100%'"
+               [style.maxHeight]="'400px'"
+               class="transition-all duration-300 z-10"
                loading="eager"
                fetchpriority="high"
              />
              <div class="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 text-xs text-gray-400 bg-white/80 px-2 py-1 rounded backdrop-blur-sm border border-gray-200">
-                SVG Preview
+                {{ outputSizeLabel() }}
              </div>
            } @else {
              <div class="text-center text-gray-400 px-4">
@@ -91,7 +95,54 @@ const FEATURES = {
              <span class="truncate">Download PNG</span>
            </button>
 
-           <div class="mt-auto pt-3 sm:pt-4 border-t border-gray-200">
+           <!-- Output Size -->
+           <div class="pt-3 sm:pt-4 border-t border-gray-200">
+             <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2.5">Output Size</div>
+
+             <!-- Font Size Slider -->
+             <div class="mb-3">
+               <div class="flex items-center justify-between mb-1.5">
+                 <span class="text-xs text-gray-500">Font size</span>
+                 <div class="flex items-center gap-1">
+                   <span class="text-xs font-semibold text-indigo-600 min-w-[2.5rem] text-right tabular-nums">{{ svgFontSize() }}</span>
+                   <select
+                     (change)="onSvgUnitChange($event)"
+                     class="px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-700"
+                   >
+                     <option value="pt" [selected]="svgExportUnit() === 'pt'">pt</option>
+                     <option value="px" [selected]="svgExportUnit() === 'px'">px</option>
+                     <option value="mm" [selected]="svgExportUnit() === 'mm'">mm</option>
+                   </select>
+                 </div>
+               </div>
+               <input
+                 type="range"
+                 [attr.min]="sliderConfig().min"
+                 [attr.max]="sliderConfig().max"
+                 [attr.step]="sliderConfig().step"
+                 [value]="svgFontSize()"
+                 (input)="onFontSizeInput($event)"
+                 class="w-full h-1.5 rounded-lg appearance-none cursor-pointer accent-indigo-600 bg-gray-200"
+               />
+             </div>
+
+             <!-- PNG DPI -->
+             <div class="flex items-center gap-1.5">
+               <span class="text-xs text-gray-500 w-8 flex-shrink-0">PNG</span>
+               <select
+                 (change)="onPngDpiChange($event)"
+                 class="flex-1 px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-700"
+               >
+                 <option value="72"  [selected]="pngDpi() === 72">72 dpi</option>
+                 <option value="96"  [selected]="pngDpi() === 96">96 dpi</option>
+                 <option value="150" [selected]="pngDpi() === 150">150 dpi</option>
+                 <option value="300" [selected]="pngDpi() === 300">300 dpi</option>
+                 <option value="600" [selected]="pngDpi() === 600">600 dpi</option>
+               </select>
+             </div>
+           </div>
+
+           <div class="pt-3 sm:pt-4 border-t border-gray-200">
              <p class="text-xs text-gray-500 leading-relaxed">
                Uses <span class="font-semibold text-gray-700">CodeCogs API</span> for rendering.
              </p>
@@ -247,6 +298,94 @@ export class LatexEditorComponent {
   copiedSvg = signal(false);
   copiedImage = signal(false);
 
+  // Output size / DPI — slider controls the FONT SIZE (text body size).
+  // CodeCogs renders at TeX 10pt body size with \dpi{300}.
+  // Scale factor = sliderValue / CODECOGS_BASE_PT.
+  // Default 12pt = standard LaTeX \12pt document class.
+  svgFontSize = signal<number>(12);
+  svgExportUnit = signal<'mm' | 'pt' | 'px'>('pt');
+  pngDpi = signal<number>(150);
+
+  /**
+   * CodeCogs renders at TeX 10pt body size when using \dpi{300}.
+   * All scaling is relative to this baseline.
+   */
+  private static readonly CODECOGS_BASE_PT = 10;
+
+  /** Native SVG dimensions in pt, parsed from actual SVG source. */
+  private svgNativeDims = signal<{ wPt: number; hPt: number } | null>(null);
+
+  readonly sliderConfig = computed(() => {
+    const unit = this.svgExportUnit();
+    const configs: Record<string, { min: number; max: number; step: number }> = {
+      pt: { min: 6,   max: 72,  step: 1 },
+      px: { min: 8,   max: 96,  step: 1 },
+      mm: { min: 2,   max: 25,  step: 1 },
+    };
+    return configs[unit] ?? configs['pt'];
+  });
+
+  onPreviewLoad(_event: Event): void {
+    // no-op: aspect ratio is now derived from SVG source (see renderLatex background fetch)
+  }
+
+  /** Pixel-to-unit conversion factors at 96 DPI (CSS / Inkscape standard). */
+  private static readonly PX_TO_UNIT: Record<string, number> = {
+    mm: 25.4 / 96,    // 1px = 0.26458mm
+    pt: 72 / 96,      // 1px = 0.75pt
+    px: 1,
+  };
+
+  /** Convert a value in mm/pt/px to pt (typographic points). */
+  private toPt(value: number, unit: 'mm' | 'pt' | 'px'): number {
+    const factors: Record<string, number> = { mm: 72 / 25.4, pt: 1, px: 72 / 96 };
+    return value * (factors[unit] ?? 1);
+  }
+
+  /**
+   * Uniform scale factor: desiredFontSize / CodeCogs baseline (10pt).
+   * This scales the entire SVG so that body text matches the slider value.
+   * Taller constructs (fractions, integrals) naturally grow proportionally,
+   * just like in a real LaTeX document.
+   */
+  readonly fontScaleFactor = computed<number>(() => {
+    const desiredPt = this.toPt(this.svgFontSize(), this.svgExportUnit());
+    return desiredPt / LatexEditorComponent.CODECOGS_BASE_PT;
+  });
+
+  /** Scaled output dimensions in CSS pixels, using font-size-based scale factor. */
+  private readonly scaledDimsPx = computed<{ wPx: number; hPx: number } | null>(() => {
+    const native = this.svgNativeDims();
+    if (!native?.wPt || !native?.hPt) return null;
+    const scale = this.fontScaleFactor();
+    // Convert native pt → px (1pt = 96/72 px) then apply scale
+    const ptToPx = 96 / 72;
+    return {
+      wPx: native.wPt * scale * ptToPx,
+      hPx: native.hPt * scale * ptToPx,
+    };
+  });
+
+  /** CSS width for the preview image, clamped for usability. */
+  readonly previewDisplayWidth = computed<string>(() => {
+    const dims = this.scaledDimsPx();
+    if (dims) {
+      return `${Math.max(24, Math.min(600, dims.wPx))}px`;
+    }
+    // Fallback before SVG loads
+    return '120px';
+  });
+
+  /** Badge shown in the preview corner — e.g. "50.6 × 35.7 pt @ 12pt". */
+  readonly outputSizeLabel = computed<string>(() => {
+    const dims = this.scaledDimsPx();
+    const unit = this.svgExportUnit();
+    const fontSize = this.svgFontSize();
+    if (!dims) return `${fontSize} ${unit}`;
+    const f = LatexEditorComponent.PX_TO_UNIT[unit] ?? 1;
+    return `${(dims.wPx * f).toFixed(1)} × ${(dims.hPx * f).toFixed(1)} ${unit}`;
+  });
+
   // Autocomplete state
   showAutocomplete = signal(false);
   suggestions = signal<LatexCommand[]>([]);
@@ -293,11 +432,24 @@ export class LatexEditorComponent {
 
     this.isRendering.set(true);
     try {
-      // Use the current svg.image endpoint (svg.latex is the legacy endpoint).
-      // No size command — CodeCogs renders at 10pt (normalsize) by default.
-      // Physical sizing for export/copy is handled entirely in svgToPngBlob.
-      const url = `https://latex.codecogs.com/svg.image?${encodeURIComponent(code)}`;
+      // Embed \dpi{300} in the URL exactly as the old code did.
+      // This matches the original BASE_PT_SIZE=12 scaling paradigm:
+      // scale = ptSize/12 is applied on top of the \dpi{300} native render.
+      const url = `https://latex.codecogs.com/svg.image?${encodeURIComponent('\\dpi{300} ' + code)}`;
       this.previewUrl.set(url);
+
+      // Background: fetch SVG source to extract real pt dimensions for accurate h≈ readout.
+      // img.naturalWidth/naturalHeight can be unreliable for cross-origin SVGs — parsing the
+      // actual wPt/hPt values is dimensionless-correct for all unit modes.
+      this.fetchSvgText().then(svgText => {
+        const svgTagMatch = svgText.match(/<svg([^>]*)>/);
+        if (!svgTagMatch) return;
+        const wMatch = svgTagMatch[1].match(/\bwidth=['"]([0-9.]+)[a-z%]*['"]/);
+        const hMatch = svgTagMatch[1].match(/\bheight=['"]([0-9.]+)[a-z%]*['"]/);
+        if (wMatch && hMatch) {
+          this.svgNativeDims.set({ wPt: parseFloat(wMatch[1]), hPt: parseFloat(hMatch[1]) });
+        }
+      }).catch(() => { /* silent — h≈ stays hidden if fetch fails */ });
 
       // Add to history after successful render
       this.historyService.addToHistory(code);
@@ -433,30 +585,27 @@ export class LatexEditorComponent {
   }
 
   /**
-   * Fetches the current equation as raw SVG text using CodeCogs' JSON endpoint.
+   * Fetches the current equation as raw SVG text.
    *
-   * Why JSON instead of fetching the svg.image? URL directly:
-   *  - The JSON endpoint returns the SVG pre-encoded as base64, so no CORS
-   *    issues and no intermediate blob-URL workaround required.
-   *  - Response shape: { "latex": { "base64": "<base64-svg>", ... } }
-   *  - The base64 is UTF-8 SVG text; we decode via TextDecoder for safety.
+   * Uses the old svg? endpoint (not svg.image?) exactly as the original code did:
+   *   fetch('https://latex.codecogs.com/svg?\\dpi{300} ...')
+   *
+   * The legacy svg? endpoint sends CORS headers that allow cross-origin fetching,
+   * which is why the old copy/download worked without any JSON/base64 wrapper.
+   * The svg.json? intermediary was added to work around svg.image? CORS restrictions,
+   * but svg.json? doesn't reliably honour \dpi{300}, so the fetched SVG always came
+   * back at default resolution — causing scaleSvg to apply scale to the wrong
+   * (too-small) native dimensions.
    */
   private async fetchSvgText(): Promise<string> {
     const code = this.latexInput().trim();
     if (!code) throw new Error('No LaTeX to fetch');
 
-    const url = `https://latex.codecogs.com/svg.json?${encodeURIComponent(code)}`;
+    // Identical to old code: direct fetch of the svg? endpoint with \dpi{300}
+    const url = `https://latex.codecogs.com/svg?${encodeURIComponent('\\dpi{300} ' + code)}`;
     const response = await fetch(url);
-    if (!response.ok) throw new Error(`CodeCogs JSON fetch failed: ${response.status}`);
-
-    const json = await response.json();
-    const base64 = json?.latex?.base64;
-    if (!base64) throw new Error('No base64 field in CodeCogs JSON response');
-
-    // Decode base64 → UTF-8 SVG string
-    const binaryStr = atob(base64);
-    const bytes = Uint8Array.from(binaryStr, c => c.charCodeAt(0));
-    return new TextDecoder('utf-8').decode(bytes);
+    if (!response.ok) throw new Error(`CodeCogs SVG fetch failed: ${response.status}`);
+    return response.text();
   }
 
   copySvgUrl() {
@@ -472,7 +621,7 @@ export class LatexEditorComponent {
   async copySvgCode() {
     if (!this.previewUrl()) return;
     try {
-      const svgText = await this.fetchSvgText();
+      const svgText = this.scaleSvgForExport(await this.fetchSvgText());
       await navigator.clipboard.writeText(svgText);
       this.copiedSvg.set(true);
       setTimeout(() => this.copiedSvg.set(false), 2000);
@@ -484,18 +633,22 @@ export class LatexEditorComponent {
   async copySvgAsImage() {
     if (!this.previewUrl()) return;
     try {
-      const svgText = await this.fetchSvgText();
+      const svgText = this.scaleSvgForExport(await this.fetchSvgText());
       const svgBlob = new Blob([svgText], { type: 'image/svg+xml' });
 
       if ('supports' in ClipboardItem && ClipboardItem.supports('image/svg+xml')) {
-        // Modern Chrome/Edge: native SVG clipboard support — pastes as editable
-        // vectors in Inkscape, Illustrator, Figma etc.
+        // Clipboard API with dual MIME types for maximum Inkscape compatibility:
+        // image/svg+xml — Inkscape's preferred vector clipboard format
+        // text/plain — fallback for Inkscape builds that parse SVG from plain text
         await navigator.clipboard.write([
-          new ClipboardItem({ 'image/svg+xml': svgBlob })
+          new ClipboardItem({
+            'image/svg+xml': svgBlob,
+            'text/plain': new Blob([svgText], { type: 'text/plain' }),
+          })
         ]);
       } else {
-        // Fallback: intercept the native copy event so we can set image/svg+xml
-        // via event.clipboardData, bypassing the Async Clipboard API MIME whitelist.
+        // Fallback: intercept the native copy event to set both MIME types
+        // via event.clipboardData, bypassing the Async Clipboard API whitelist.
         await new Promise<void>((resolve, reject) => {
           const dummy = document.createElement('textarea');
           dummy.value = ' ';
@@ -506,6 +659,7 @@ export class LatexEditorComponent {
           const onCopy = (e: ClipboardEvent) => {
             e.preventDefault();
             e.clipboardData?.setData('image/svg+xml', svgText);
+            e.clipboardData?.setData('text/plain', svgText);
             document.body.removeChild(dummy);
             resolve();
           };
@@ -606,12 +760,124 @@ export class LatexEditorComponent {
     URL.revokeObjectURL(blobUrl);
   }
 
+  onFontSizeInput(event: Event): void {
+    const val = parseFloat((event.target as HTMLInputElement).value);
+    this.svgFontSize.set(isNaN(val) ? 12 : val);
+  }
+
+  onSvgUnitChange(event: Event): void {
+    const newUnit = (event.target as HTMLSelectElement).value as 'mm' | 'pt' | 'px';
+    // Convert current font size to pt, then to the new unit
+    const currentPt = this.toPt(this.svgFontSize(), this.svgExportUnit());
+    const ptToUnit: Record<string, number> = { mm: 25.4 / 72, pt: 1, px: 96 / 72 };
+    const converted = Math.round(currentPt * (ptToUnit[newUnit] ?? 1));
+    const ranges: Record<string, { min: number; max: number }> = {
+      pt: { min: 6,   max: 72 },
+      px: { min: 8,   max: 96 },
+      mm: { min: 2,   max: 25 },
+    };
+    const range = ranges[newUnit] ?? ranges['pt'];
+    this.svgExportUnit.set(newUnit);
+    this.svgFontSize.set(Math.max(range.min, Math.min(range.max, converted)));
+  }
+
+  onPngDpiChange(event: Event): void {
+    this.pngDpi.set(parseInt((event.target as HTMLSelectElement).value, 10));
+  }
+
+  /** Converts a value in mm/pt/px to CSS pixels at 96 DPI. */
+
+  /**
+   * Scales an SVG for export / clipboard using the font-size-based scale factor.
+   *
+   * CodeCogs renders at TeX 10pt body size. The slider controls the desired font
+   * size (e.g. 12pt). Scale factor = desiredPt / 10.
+   *
+   * This means a fraction like V_in/V_out at 12pt will have its body text at 12pt
+   * but the total bounding box will be taller — exactly like in a real LaTeX document.
+   *
+   * For Inkscape clipboard compatibility we scale:
+   *   - width/height attributes (with explicit px units)
+   *   - viewBox (so Inkscape, which reads viewBox as object size, gets the right dims)
+   *   - <g> matrix transform (so path coordinates map correctly into the new viewBox)
+   */
+  private scaleSvgForExport(svgText: string, overrideScale?: number): string {
+    const scaleFactor = overrideScale ?? this.fontScaleFactor();
+
+    const svgTagMatch = svgText.match(/<svg([^>]*)>/);
+    if (!svgTagMatch) return svgText;
+
+    const originalTag = svgTagMatch[0];
+    let attrs = svgTagMatch[1];
+
+    // Parse native width / height (always in pt from CodeCogs)
+    const wMatch = attrs.match(/\bwidth=['"]([0-9.]+)[a-z%]*['"]/);
+    const hMatch = attrs.match(/\bheight=['"]([0-9.]+)[a-z%]*['"]/);
+    if (!wMatch || !hMatch) return svgText;
+
+    const nativeW = parseFloat(wMatch[1]);
+    const nativeH = parseFloat(hMatch[1]);
+    if (!nativeW || !nativeH) return svgText;
+
+    // Target dimensions: native pt × scale factor → output pt, then to px
+    const ptToPx = 96 / 72;
+    const targetW = nativeW * scaleFactor * ptToPx;
+    const targetH = nativeH * scaleFactor * ptToPx;
+
+    // The combined factor applied to SVG coordinate space
+    const coordScale = scaleFactor * ptToPx;
+
+    // Scale the viewBox
+    const vbMatch = attrs.match(/\bviewBox=['"]([^'"]+)['"]/);
+    if (vbMatch) {
+      const vbParts = vbMatch[1].trim().split(/[\s,]+/).map(Number);
+      if (vbParts.length === 4) {
+        const newVB = vbParts.map(v => (v * coordScale).toFixed(6)).join(' ');
+        attrs = attrs.replace(/\bviewBox=['"][^'"]*['"]/, `viewBox="${newVB}"`);
+      }
+    } else {
+      attrs += ` viewBox="0 0 ${targetW.toFixed(6)} ${targetH.toFixed(6)}"`;
+    }
+
+    // Replace width / height with explicit px values
+    attrs = attrs
+      .replace(/\bwidth=['"][^'"]*['"]/, `width="${targetW.toFixed(3)}px"`)
+      .replace(/\bheight=['"][^'"]*['"]/, `height="${targetH.toFixed(3)}px"`);
+
+    // Ensure xmlns for standalone validity
+    let newTag = `<svg${attrs}>`;
+    if (!/\bxmlns\s*=/.test(attrs)) {
+      newTag = newTag.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+    }
+
+    let result = svgText.replace(originalTag, newTag);
+
+    // Scale the <g> matrix transform
+    result = result.replace(
+      /(<g\s[^>]*transform=['"])matrix\(([^)]+)\)(['"][^>]*>)/,
+      (_match, before, matrixStr, after) => {
+        const m = matrixStr.trim().split(/[\s,]+/).map(Number);
+        if (m.length === 6) {
+          m[0] *= coordScale;
+          m[3] *= coordScale;
+          m[4] *= coordScale;
+          m[5] *= coordScale;
+          return `${before}matrix(${m.map(v => v.toFixed(6)).join(' ')})${after}`;
+        }
+        return _match;
+      }
+    );
+
+    return result;
+  }
+
   async downloadSvg() {
     if (!this.previewUrl()) return;
 
     try {
       const svgText = await this.fetchSvgText();
-      const blob = new Blob([svgText], { type: 'image/svg+xml' });
+      const scaled = this.scaleSvgForExport(svgText);
+      const blob = new Blob([scaled], { type: 'image/svg+xml' });
       this.triggerDownload(blob, this.generateFilename(this.latexInput(), 'svg'));
     } catch (error: unknown) {
       console.error('Failed to download SVG:', error);
@@ -623,8 +889,10 @@ export class LatexEditorComponent {
     if (!code) return;
 
     try {
-      // Request PNG directly from CodeCogs — no client-side conversion needed.
-      const url = `https://latex.codecogs.com/png.image?${encodeURIComponent(code)}`;
+      // Prepend \dpi{N} so CodeCogs renders at the chosen resolution
+      const dpi = this.pngDpi();
+      const dpiPrefix = `\\dpi{${dpi}}`;
+      const url = `https://latex.codecogs.com/png.image?${encodeURIComponent(dpiPrefix + code)}`;
       const response = await fetch(url);
       if (!response.ok) throw new Error(`CodeCogs PNG fetch failed: ${response.status}`);
       const blob = await response.blob();
