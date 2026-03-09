@@ -99,12 +99,12 @@ const FEATURES = {
            <div class="pt-3 sm:pt-4 border-t border-gray-200">
              <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2.5">Output Size</div>
 
-             <!-- SVG Size Slider (controls height ≈ font size) -->
+             <!-- Font Size Slider -->
              <div class="mb-3">
                <div class="flex items-center justify-between mb-1.5">
-                 <span class="text-xs text-gray-500">Size</span>
+                 <span class="text-xs text-gray-500">Font size</span>
                  <div class="flex items-center gap-1">
-                   <span class="text-xs font-semibold text-indigo-600 min-w-[2.5rem] text-right tabular-nums">{{ svgExportHeight() }}</span>
+                   <span class="text-xs font-semibold text-indigo-600 min-w-[2.5rem] text-right tabular-nums">{{ svgFontSize() }}</span>
                    <select
                      (change)="onSvgUnitChange($event)"
                      class="px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-700"
@@ -120,16 +120,10 @@ const FEATURES = {
                  [attr.min]="sliderConfig().min"
                  [attr.max]="sliderConfig().max"
                  [attr.step]="sliderConfig().step"
-                 [value]="svgExportHeight()"
-                 (input)="onSvgHeightInput($event)"
+                 [value]="svgFontSize()"
+                 (input)="onFontSizeInput($event)"
                  class="w-full h-1.5 rounded-lg appearance-none cursor-pointer accent-indigo-600 bg-gray-200"
                />
-               <!-- Live width readout — shown once the SVG has loaded -->
-               @if (scaledOutputWidth()) {
-                 <div class="text-xs text-gray-400 mt-1">
-                   w ≈ {{ scaledOutputWidth() }} {{ svgExportUnit() }}
-                 </div>
-               }
              </div>
 
              <!-- PNG DPI -->
@@ -304,27 +298,29 @@ export class LatexEditorComponent {
   copiedSvg = signal(false);
   copiedImage = signal(false);
 
-  // Output size / DPI — slider controls the output HEIGHT (≈ font size)
-  // Default 12pt = standard LaTeX body text size
-  svgExportHeight = signal<number>(12);
+  // Output size / DPI — slider controls the FONT SIZE (text body size).
+  // CodeCogs renders at TeX 10pt body size with \dpi{300}.
+  // Scale factor = sliderValue / CODECOGS_BASE_PT.
+  // Default 12pt = standard LaTeX \12pt document class.
+  svgFontSize = signal<number>(12);
   svgExportUnit = signal<'mm' | 'pt' | 'px'>('pt');
   pngDpi = signal<number>(150);
+
+  /**
+   * CodeCogs renders at TeX 10pt body size when using \dpi{300}.
+   * All scaling is relative to this baseline.
+   */
+  private static readonly CODECOGS_BASE_PT = 10;
 
   /** Native SVG dimensions in pt, parsed from actual SVG source. */
   private svgNativeDims = signal<{ wPt: number; hPt: number } | null>(null);
 
-  /** Aspect ratio (w/h) from the SVG's real pt dimensions — dimensionless and unit-safe. */
-  readonly svgAspectRatio = computed<number | null>(() => {
-    const d = this.svgNativeDims();
-    return d && d.wPt && d.hPt ? d.wPt / d.hPt : null;
-  });
-
   readonly sliderConfig = computed(() => {
     const unit = this.svgExportUnit();
     const configs: Record<string, { min: number; max: number; step: number }> = {
-      px: { min: 8,   max: 200, step: 1 },
-      mm: { min: 2,   max: 50,  step: 1 },
       pt: { min: 6,   max: 72,  step: 1 },
+      px: { min: 8,   max: 96,  step: 1 },
+      mm: { min: 2,   max: 25,  step: 1 },
     };
     return configs[unit] ?? configs['pt'];
   });
@@ -340,18 +336,34 @@ export class LatexEditorComponent {
     px: 1,
   };
 
-  /** Target export height in CSS pixels (96 DPI). */
-  private readonly targetHeightPx = computed(() =>
-    this.toPixels(this.svgExportHeight(), this.svgExportUnit())
-  );
+  /** Convert a value in mm/pt/px to pt (typographic points). */
+  private toPt(value: number, unit: 'mm' | 'pt' | 'px'): number {
+    const factors: Record<string, number> = { mm: 72 / 25.4, pt: 1, px: 72 / 96 };
+    return value * (factors[unit] ?? 1);
+  }
 
-  /** Scaled output dimensions in CSS pixels, deriving width from height + aspect ratio. */
+  /**
+   * Uniform scale factor: desiredFontSize / CodeCogs baseline (10pt).
+   * This scales the entire SVG so that body text matches the slider value.
+   * Taller constructs (fractions, integrals) naturally grow proportionally,
+   * just like in a real LaTeX document.
+   */
+  readonly fontScaleFactor = computed<number>(() => {
+    const desiredPt = this.toPt(this.svgFontSize(), this.svgExportUnit());
+    return desiredPt / LatexEditorComponent.CODECOGS_BASE_PT;
+  });
+
+  /** Scaled output dimensions in CSS pixels, using font-size-based scale factor. */
   private readonly scaledDimsPx = computed<{ wPx: number; hPx: number } | null>(() => {
     const native = this.svgNativeDims();
     if (!native?.wPt || !native?.hPt) return null;
-    const targetH = this.targetHeightPx();
-    const aspectRatio = native.wPt / native.hPt; // w/h
-    return { wPx: targetH * aspectRatio, hPx: targetH };
+    const scale = this.fontScaleFactor();
+    // Convert native pt → px (1pt = 96/72 px) then apply scale
+    const ptToPx = 96 / 72;
+    return {
+      wPx: native.wPt * scale * ptToPx,
+      hPx: native.hPt * scale * ptToPx,
+    };
   });
 
   /** CSS width for the preview image, clamped for usability. */
@@ -360,24 +372,16 @@ export class LatexEditorComponent {
     if (dims) {
       return `${Math.max(24, Math.min(600, dims.wPx))}px`;
     }
-    // Fallback before SVG loads: estimate width from height assuming ~4:1 aspect
-    const fallbackPx = this.targetHeightPx() * 4;
-    return `${Math.max(24, Math.min(600, fallbackPx))}px`;
+    // Fallback before SVG loads
+    return '120px';
   });
 
-  /** Computed width readout below the slider, in the user's selected unit. */
-  readonly scaledOutputWidth = computed<string | null>(() => {
-    const dims = this.scaledDimsPx();
-    if (!dims) return null;
-    const f = LatexEditorComponent.PX_TO_UNIT[this.svgExportUnit()] ?? 1;
-    return (dims.wPx * f).toFixed(1);
-  });
-
-  /** Badge shown in the preview corner — e.g. "50.0 × 16.5 pt". */
+  /** Badge shown in the preview corner — e.g. "50.6 × 35.7 pt @ 12pt". */
   readonly outputSizeLabel = computed<string>(() => {
     const dims = this.scaledDimsPx();
     const unit = this.svgExportUnit();
-    if (!dims) return `h = ${this.svgExportHeight()} ${unit}`;
+    const fontSize = this.svgFontSize();
+    if (!dims) return `${fontSize} ${unit}`;
     const f = LatexEditorComponent.PX_TO_UNIT[unit] ?? 1;
     return `${(dims.wPx * f).toFixed(1)} × ${(dims.hPx * f).toFixed(1)} ${unit}`;
   });
@@ -756,25 +760,25 @@ export class LatexEditorComponent {
     URL.revokeObjectURL(blobUrl);
   }
 
-  onSvgHeightInput(event: Event): void {
+  onFontSizeInput(event: Event): void {
     const val = parseFloat((event.target as HTMLInputElement).value);
-    this.svgExportHeight.set(isNaN(val) ? 12 : val);
+    this.svgFontSize.set(isNaN(val) ? 12 : val);
   }
 
   onSvgUnitChange(event: Event): void {
     const newUnit = (event.target as HTMLSelectElement).value as 'mm' | 'pt' | 'px';
-    // Convert current height to the new unit so the physical size stays the same
-    const currentPx = this.toPixels(this.svgExportHeight(), this.svgExportUnit());
-    const factors: Record<string, number> = { mm: 3.7795275591, pt: 1.3333333333, px: 1 };
-    const converted = Math.round(currentPx / (factors[newUnit] ?? 1));
+    // Convert current font size to pt, then to the new unit
+    const currentPt = this.toPt(this.svgFontSize(), this.svgExportUnit());
+    const ptToUnit: Record<string, number> = { mm: 25.4 / 72, pt: 1, px: 96 / 72 };
+    const converted = Math.round(currentPt * (ptToUnit[newUnit] ?? 1));
     const ranges: Record<string, { min: number; max: number }> = {
-      px: { min: 8,   max: 200 },
-      mm: { min: 2,   max: 50 },
       pt: { min: 6,   max: 72 },
+      px: { min: 8,   max: 96 },
+      mm: { min: 2,   max: 25 },
     };
     const range = ranges[newUnit] ?? ranges['pt'];
     this.svgExportUnit.set(newUnit);
-    this.svgExportHeight.set(Math.max(range.min, Math.min(range.max, converted)));
+    this.svgFontSize.set(Math.max(range.min, Math.min(range.max, converted)));
   }
 
   onPngDpiChange(event: Event): void {
@@ -788,30 +792,21 @@ export class LatexEditorComponent {
   }
 
   /**
-   * Scales an SVG to the user's target export dimensions for Inkscape compatibility.
+   * Scales an SVG for export / clipboard using the font-size-based scale factor.
    *
-   * KEY INSIGHT: Inkscape's clipboard paste ignores width/height attributes and
-   * uses the viewBox dimensions directly as the object size. CodeCogs SVGs use a
-   * matrix transform on <g> to map large absolute coordinates into the viewBox,
-   * so simply changing width/height has no visible effect in Inkscape.
+   * CodeCogs renders at TeX 10pt body size. The slider controls the desired font
+   * size (e.g. 12pt). Scale factor = desiredPt / 10.
    *
-   * SOLUTION: Scale the viewBox to match the target px dimensions and adjust the
-   * <g> matrix transform so paths still map correctly into the new viewBox space.
-   * This makes the SVG self-consistent at the target size regardless of whether
-   * the consumer honours width/height or viewBox.
+   * This means a fraction like V_in/V_out at 12pt will have its body text at 12pt
+   * but the total bounding box will be taller — exactly like in a real LaTeX document.
    *
-   * Steps:
-   *   1. Parse native width/height (pt) and viewBox from CodeCogs SVG
-   *   2. Compute a uniform scale factor: targetWidthPx / nativeWidthPt
-   *   3. Scale the viewBox origin and dimensions by this factor
-   *   4. Scale the <g> matrix transform's translation (e/f) by the same factor
-   *      so the shifted coordinates land inside the new viewBox
-   *   5. Multiply the matrix scale components (a/d) by the factor so path
-   *      geometry scales proportionally
-   *   6. Set width/height to targetPx values (with explicit "px" unit)
+   * For Inkscape clipboard compatibility we scale:
+   *   - width/height attributes (with explicit px units)
+   *   - viewBox (so Inkscape, which reads viewBox as object size, gets the right dims)
+   *   - <g> matrix transform (so path coordinates map correctly into the new viewBox)
    */
-  private scaleSvgForExport(svgText: string, overrideDims?: { wPx: number; hPx: number }): string {
-    const dims = overrideDims ?? this.scaledDimsPx();
+  private scaleSvgForExport(svgText: string, overrideScale?: number): string {
+    const scaleFactor = overrideScale ?? this.fontScaleFactor();
 
     const svgTagMatch = svgText.match(/<svg([^>]*)>/);
     if (!svgTagMatch) return svgText;
@@ -819,7 +814,7 @@ export class LatexEditorComponent {
     const originalTag = svgTagMatch[0];
     let attrs = svgTagMatch[1];
 
-    // ── 1. Parse native width / height (always in pt from CodeCogs) ──
+    // Parse native width / height (always in pt from CodeCogs)
     const wMatch = attrs.match(/\bwidth=['"]([0-9.]+)[a-z%]*['"]/);
     const hMatch = attrs.match(/\bheight=['"]([0-9.]+)[a-z%]*['"]/);
     if (!wMatch || !hMatch) return svgText;
@@ -828,42 +823,32 @@ export class LatexEditorComponent {
     const nativeH = parseFloat(hMatch[1]);
     if (!nativeW || !nativeH) return svgText;
 
-    // ── 2. Compute target pixel dimensions ──
-    let targetW: number;
-    let targetH: number;
-    if (dims) {
-      targetW = dims.wPx;
-      targetH = dims.hPx;
-    } else {
-      // Fallback: derive from target height (slider controls height)
-      const targetHPx = this.targetHeightPx();
-      targetH = targetHPx;
-      targetW = targetHPx * (nativeW / nativeH);
-    }
+    // Target dimensions: native pt × scale factor → output pt, then to px
+    const ptToPx = 96 / 72;
+    const targetW = nativeW * scaleFactor * ptToPx;
+    const targetH = nativeH * scaleFactor * ptToPx;
 
-    // Uniform scale factor from native pt coords → target px coords
-    const scaleFactor = targetW / nativeW;
+    // The combined factor applied to SVG coordinate space
+    const coordScale = scaleFactor * ptToPx;
 
-    // ── 3. Scale the viewBox ──
+    // Scale the viewBox
     const vbMatch = attrs.match(/\bviewBox=['"]([^'"]+)['"]/);
     if (vbMatch) {
       const vbParts = vbMatch[1].trim().split(/[\s,]+/).map(Number);
       if (vbParts.length === 4) {
-        const [minX, minY, vbW, vbH] = vbParts;
-        const newVB = `${(minX * scaleFactor).toFixed(6)} ${(minY * scaleFactor).toFixed(6)} ${(vbW * scaleFactor).toFixed(6)} ${(vbH * scaleFactor).toFixed(6)}`;
+        const newVB = vbParts.map(v => (v * coordScale).toFixed(6)).join(' ');
         attrs = attrs.replace(/\bviewBox=['"][^'"]*['"]/, `viewBox="${newVB}"`);
       }
     } else {
-      // No viewBox — add one at target size
       attrs += ` viewBox="0 0 ${targetW.toFixed(6)} ${targetH.toFixed(6)}"`;
     }
 
-    // ── 4. Replace width / height with explicit px values ──
+    // Replace width / height with explicit px values
     attrs = attrs
       .replace(/\bwidth=['"][^'"]*['"]/, `width="${targetW.toFixed(3)}px"`)
       .replace(/\bheight=['"][^'"]*['"]/, `height="${targetH.toFixed(3)}px"`);
 
-    // Ensure xmlns is present for standalone SVG validity
+    // Ensure xmlns for standalone validity
     let newTag = `<svg${attrs}>`;
     if (!/\bxmlns\s*=/.test(attrs)) {
       newTag = newTag.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
@@ -871,24 +856,19 @@ export class LatexEditorComponent {
 
     let result = svgText.replace(originalTag, newTag);
 
-    // ── 5. Scale the <g> matrix transform ──
-    // CodeCogs SVGs have: <g id='page1' transform='matrix(a 0 0 d e f)'>
-    // a,d = scale components;  e,f = translation
-    // We multiply a,d by scaleFactor and e,f by scaleFactor so the
-    // transformed path coordinates land inside the new (scaled) viewBox.
+    // Scale the <g> matrix transform
     result = result.replace(
       /(<g\s[^>]*transform=['"])matrix\(([^)]+)\)(['"][^>]*>)/,
       (_match, before, matrixStr, after) => {
         const m = matrixStr.trim().split(/[\s,]+/).map(Number);
         if (m.length === 6) {
-          // matrix(a b c d e f) → scale a,d and e,f
-          m[0] *= scaleFactor; // a (scaleX)
-          m[3] *= scaleFactor; // d (scaleY)
-          m[4] *= scaleFactor; // e (translateX)
-          m[5] *= scaleFactor; // f (translateY)
+          m[0] *= coordScale;
+          m[3] *= coordScale;
+          m[4] *= coordScale;
+          m[5] *= coordScale;
           return `${before}matrix(${m.map(v => v.toFixed(6)).join(' ')})${after}`;
         }
-        return _match; // don't touch if unexpected format
+        return _match;
       }
     );
 
