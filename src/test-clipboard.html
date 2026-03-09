@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SVG Clipboard → Inkscape Test</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #f5f5f5; padding: 2rem; color: #333; }
+    h1 { margin-bottom: 0.5rem; }
+    .subtitle { color: #666; margin-bottom: 2rem; font-size: 0.95rem; }
+    .test-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem; }
+    .card {
+      background: white; border-radius: 12px; padding: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #e0e0e0;
+    }
+    .card h2 { font-size: 1rem; margin-bottom: 0.25rem; }
+    .card .dims { font-size: 0.8rem; color: #888; margin-bottom: 1rem; font-family: monospace; }
+    .preview-box {
+      background: #fafafa; border: 1px dashed #ccc; border-radius: 8px;
+      min-height: 120px; display: flex; align-items: center; justify-content: center;
+      padding: 1rem; margin-bottom: 1rem; position: relative;
+    }
+    .preview-box img { max-width: 100%; }
+    .btn-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .btn {
+      padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid #ccc;
+      background: white; cursor: pointer; font-size: 0.85rem; font-weight: 500;
+      transition: all 0.15s;
+    }
+    .btn:hover { border-color: #6366f1; color: #6366f1; }
+    .btn.primary { background: #6366f1; color: white; border-color: #6366f1; }
+    .btn.primary:hover { background: #4f46e5; }
+    .btn.copied { background: #22c55e !important; color: white !important; border-color: #22c55e !important; }
+    .log-section { margin-top: 2rem; }
+    .log-section h2 { margin-bottom: 0.5rem; }
+    #log {
+      background: #1e1e1e; color: #d4d4d4; padding: 1rem; border-radius: 8px;
+      font-family: 'Menlo', 'Monaco', monospace; font-size: 0.8rem;
+      max-height: 400px; overflow-y: auto; white-space: pre-wrap; word-break: break-all;
+    }
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; margin-left: 0.5rem; }
+    .tag-small { background: #dbeafe; color: #1d4ed8; }
+    .tag-large { background: #fce7f3; color: #be185d; }
+    .method-note { font-size: 0.78rem; color: #666; margin-top: 0.5rem; }
+    .info-banner {
+      background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px;
+      padding: 1rem 1.25rem; margin-bottom: 1.5rem; font-size: 0.88rem; color: #1e40af;
+    }
+  </style>
+</head>
+<body>
+  <h1>SVG Clipboard → Inkscape Paste Test</h1>
+  <p class="subtitle">Click a Copy button, then Ctrl+V in Inkscape. The two equations should paste at <strong>different sizes</strong>.</p>
+
+  <div class="info-banner">
+    <strong>How to test:</strong> Copy the small equation, paste in Inkscape. Then copy the large equation, paste in Inkscape.
+    The large one should be visibly bigger. If both appear the same size, the scaling pipeline is broken.
+  </div>
+
+  <div class="test-grid">
+    <!-- Small equation -->
+    <div class="card">
+      <h2>Equation A <span class="tag tag-small">Small (16px wide)</span></h2>
+      <div class="dims" id="dims-small">Loading…</div>
+      <div class="preview-box">
+        <img id="preview-small" alt="Small equation" />
+      </div>
+      <div class="btn-row">
+        <button class="btn primary" onclick="copyAsImage('small')">📋 Copy as Image</button>
+        <button class="btn" onclick="copySvgCode('small')">Copy SVG Code</button>
+        <button class="btn" onclick="downloadSvg('small')">⬇ Download</button>
+      </div>
+      <div class="method-note" id="method-small"></div>
+    </div>
+
+    <!-- Large equation -->
+    <div class="card">
+      <h2>Equation B <span class="tag tag-large">Large (200px wide)</span></h2>
+      <div class="dims" id="dims-large">Loading…</div>
+      <div class="preview-box">
+        <img id="preview-large" alt="Large equation" />
+      </div>
+      <div class="btn-row">
+        <button class="btn primary" onclick="copyAsImage('large')">📋 Copy as Image</button>
+        <button class="btn" onclick="copySvgCode('large')">Copy SVG Code</button>
+        <button class="btn" onclick="downloadSvg('large')">⬇ Download</button>
+      </div>
+      <div class="method-note" id="method-large"></div>
+    </div>
+  </div>
+
+  <div class="log-section">
+    <h2>Debug Log</h2>
+    <div id="log">Ready.\n</div>
+  </div>
+
+<script>
+// ─── CONFIG ────────────────────────────────────────────────────────────
+// Two different LaTeX expressions
+const EQUATIONS = {
+  small: { latex: 'E=mc^2', targetWidthPx: 16 },
+  large: { latex: '\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}', targetWidthPx: 200 },
+};
+
+// Stores fetched + scaled SVG text per key
+const svgCache = {};
+
+// ─── LOGGING ───────────────────────────────────────────────────────────
+function log(msg) {
+  const el = document.getElementById('log');
+  const ts = new Date().toLocaleTimeString();
+  el.textContent += `[${ts}] ${msg}\n`;
+  el.scrollTop = el.scrollHeight;
+}
+
+// ─── FETCH RAW SVG FROM CODECOGS ───────────────────────────────────────
+async function fetchSvgText(latex) {
+  const url = `https://latex.codecogs.com/svg?${encodeURIComponent('\\dpi{300} ' + latex)}`;
+  log(`Fetching SVG: ${url.substring(0, 80)}…`);
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error(`Fetch failed: ${resp.status}`);
+  return resp.text();
+}
+
+// ─── SCALE SVG (mirrors scaleSvgForExport from your app) ───────────────
+// KEY FIX: Inkscape clipboard paste ignores width/height and reads viewBox
+// dimensions as the object size. So we scale viewBox + <g> matrix transform.
+function scaleSvg(svgText, targetWidthPx) {
+  const tagMatch = svgText.match(/<svg([^>]*)>/);
+  if (!tagMatch) { log('ERROR: no <svg> tag found'); return svgText; }
+
+  const originalTag = tagMatch[0];
+  let attrs = tagMatch[1];
+
+  const wMatch = attrs.match(/\bwidth=['"]([0-9.]+)[a-z%]*['"]/);
+  const hMatch = attrs.match(/\bheight=['"]([0-9.]+)[a-z%]*['"]/);
+  if (!wMatch || !hMatch) { log('ERROR: no width/height in SVG'); return svgText; }
+
+  const nativeW = parseFloat(wMatch[1]);
+  const nativeH = parseFloat(hMatch[1]);
+  log(`  Native dims: ${nativeW} × ${nativeH} (raw: "${wMatch[0]}")`);
+
+  const aspectRatio = nativeH / nativeW;
+  const targetH = targetWidthPx * aspectRatio;
+  const scaleFactor = targetWidthPx / nativeW;
+  log(`  Scale factor: ${scaleFactor.toFixed(4)}  →  ${targetWidthPx.toFixed(1)}px × ${targetH.toFixed(1)}px`);
+
+  // Scale viewBox so Inkscape sees target dimensions
+  const vbMatch = attrs.match(/\bviewBox=['"]([^'"]+)['"]/);
+  if (vbMatch) {
+    const vb = vbMatch[1].trim().split(/[\s,]+/).map(Number);
+    if (vb.length === 4) {
+      const newVB = `${(vb[0]*scaleFactor).toFixed(6)} ${(vb[1]*scaleFactor).toFixed(6)} ${(vb[2]*scaleFactor).toFixed(6)} ${(vb[3]*scaleFactor).toFixed(6)}`;
+      attrs = attrs.replace(/\bviewBox=['"][^'"]*['"]/, `viewBox="${newVB}"`);
+      log(`  ViewBox: ${vbMatch[1]}  →  ${newVB}`);
+    }
+  } else {
+    attrs += ` viewBox="0 0 ${targetWidthPx.toFixed(6)} ${targetH.toFixed(6)}"`;
+  }
+
+  // Replace width/height with explicit px
+  attrs = attrs
+    .replace(/\bwidth=['"][^'"]*['"]/, `width="${targetWidthPx.toFixed(3)}px"`)
+    .replace(/\bheight=['"][^'"]*['"]/, `height="${targetH.toFixed(3)}px"`);
+
+  let newTag = `<svg${attrs}>`;
+  if (!/\bxmlns\s*=/.test(attrs)) {
+    newTag = newTag.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+  }
+
+  let result = svgText.replace(originalTag, newTag);
+
+  // Scale <g> matrix transform so paths render correctly in new viewBox
+  result = result.replace(
+    /(<g\s[^>]*transform=['"])matrix\(([^)]+)\)(['"][^>]*>)/,
+    (_match, before, matrixStr, after) => {
+      const m = matrixStr.trim().split(/[\s,]+/).map(Number);
+      if (m.length === 6) {
+        const orig = m.map(v => v.toFixed(4)).join(', ');
+        m[0] *= scaleFactor; m[3] *= scaleFactor;
+        m[4] *= scaleFactor; m[5] *= scaleFactor;
+        const scaled = m.map(v => v.toFixed(6)).join(' ');
+        log(`  Matrix: (${orig})  →  (${scaled})`);
+        return `${before}matrix(${scaled})${after}`;
+      }
+      return _match;
+    }
+  );
+
+  const finalTag = result.match(/<svg[^>]*>/)?.[0] ?? '???';
+  log(`  Final <svg> tag:\n    ${finalTag}`);
+  return result;
+}
+
+// ─── INIT: fetch both equations ────────────────────────────────────────
+async function init() {
+  for (const [key, cfg] of Object.entries(EQUATIONS)) {
+    try {
+      const raw = await fetchSvgText(cfg.latex);
+      const scaled = scaleSvg(raw, cfg.targetWidthPx);
+      svgCache[key] = scaled;
+
+      // Show preview (use blob URL so the browser renders the actual SVG)
+      const blob = new Blob([scaled], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      document.getElementById(`preview-${key}`).src = url;
+
+      // Show dims
+      const wMatch = scaled.match(/width="([^"]+)"/);
+      const hMatch = scaled.match(/height="([^"]+)"/);
+      document.getElementById(`dims-${key}`).textContent =
+        `SVG: width="${wMatch?.[1]}" height="${hMatch?.[1]}"  |  LaTeX: ${cfg.latex}`;
+
+      log(`✓ ${key} equation ready (${cfg.targetWidthPx}px wide)`);
+    } catch (err) {
+      log(`✗ ${key} equation FAILED: ${err.message}`);
+    }
+  }
+}
+
+// ─── COPY AS IMAGE (Async Clipboard API) ───────────────────────────────
+async function copyAsImage(key) {
+  const svgText = svgCache[key];
+  if (!svgText) { log(`No SVG cached for "${key}"`); return; }
+
+  const btn = event.target;
+  try {
+    const svgBlob = new Blob([svgText], { type: 'image/svg+xml' });
+
+    if ('ClipboardItem' in window && 'supports' in ClipboardItem &&
+        ClipboardItem.supports('image/svg+xml')) {
+      // Modern path: native SVG clipboard
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'image/svg+xml': svgBlob,
+          'text/plain': new Blob([svgText], { type: 'text/plain' }),
+        })
+      ]);
+      log(`✓ Copied "${key}" via ClipboardItem (image/svg+xml + text/plain)`);
+      showMethod(key, 'Used: Async Clipboard API (image/svg+xml)');
+    } else {
+      // Fallback: execCommand + clipboardData
+      await new Promise((resolve, reject) => {
+        const dummy = document.createElement('textarea');
+        dummy.value = ' ';
+        dummy.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0';
+        document.body.appendChild(dummy);
+        dummy.focus();
+        dummy.select();
+        document.addEventListener('copy', (e) => {
+          e.preventDefault();
+          e.clipboardData?.setData('image/svg+xml', svgText);
+          e.clipboardData?.setData('text/plain', svgText);
+          document.body.removeChild(dummy);
+          resolve();
+        }, { once: true });
+        if (!document.execCommand('copy')) {
+          document.body.removeChild(dummy);
+          reject(new Error('execCommand failed'));
+        }
+      });
+      log(`✓ Copied "${key}" via execCommand fallback`);
+      showMethod(key, 'Used: execCommand fallback (clipboardData)');
+    }
+
+    flashBtn(btn, 'Copied!');
+  } catch (err) {
+    log(`✗ Copy failed for "${key}": ${err.message}`);
+    flashBtn(btn, 'Failed!');
+  }
+}
+
+// ─── COPY SVG CODE (plain text) ─────────────────────────────────────────
+async function copySvgCode(key) {
+  const svgText = svgCache[key];
+  if (!svgText) return;
+  const btn = event.target;
+  try {
+    await navigator.clipboard.writeText(svgText);
+    log(`✓ Copied "${key}" SVG code as plain text`);
+    showMethod(key, 'Used: clipboard.writeText (plain text only)');
+    flashBtn(btn, 'Copied!');
+  } catch (err) {
+    log(`✗ Copy SVG code failed: ${err.message}`);
+  }
+}
+
+// ─── DOWNLOAD SVG ──────────────────────────────────────────────────────
+function downloadSvg(key) {
+  const svgText = svgCache[key];
+  if (!svgText) return;
+  const blob = new Blob([svgText], { type: 'image/svg+xml' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `test-${key}.svg`;
+  a.click();
+  URL.revokeObjectURL(url);
+  log(`⬇ Downloaded test-${key}.svg`);
+}
+
+// ─── UI HELPERS ─────────────────────────────────────────────────────────
+function flashBtn(btn, text) {
+  const orig = btn.textContent;
+  btn.textContent = text;
+  btn.classList.add('copied');
+  setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2000);
+}
+
+function showMethod(key, text) {
+  document.getElementById(`method-${key}`).textContent = text;
+}
+
+// ─── GO ────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
