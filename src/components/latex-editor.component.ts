@@ -99,12 +99,12 @@ const FEATURES = {
            <div class="pt-3 sm:pt-4 border-t border-gray-200">
              <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2.5">Output Size</div>
 
-             <!-- SVG Width Slider -->
+             <!-- SVG Size Slider (controls height ≈ font size) -->
              <div class="mb-3">
                <div class="flex items-center justify-between mb-1.5">
-                 <span class="text-xs text-gray-500">SVG width</span>
+                 <span class="text-xs text-gray-500">Size</span>
                  <div class="flex items-center gap-1">
-                   <span class="text-xs font-semibold text-indigo-600 min-w-[2.5rem] text-right tabular-nums">{{ svgExportWidth() }}</span>
+                   <span class="text-xs font-semibold text-indigo-600 min-w-[2.5rem] text-right tabular-nums">{{ svgExportHeight() }}</span>
                    <select
                      (change)="onSvgUnitChange($event)"
                      class="px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-700"
@@ -120,14 +120,14 @@ const FEATURES = {
                  [attr.min]="sliderConfig().min"
                  [attr.max]="sliderConfig().max"
                  [attr.step]="sliderConfig().step"
-                 [value]="svgExportWidth()"
-                 (input)="onSvgWidthInput($event)"
+                 [value]="svgExportHeight()"
+                 (input)="onSvgHeightInput($event)"
                  class="w-full h-1.5 rounded-lg appearance-none cursor-pointer accent-indigo-600 bg-gray-200"
                />
-               <!-- Live height readout — shown once the SVG has loaded -->
-               @if (scaledOutputDims()) {
+               <!-- Live width readout — shown once the SVG has loaded -->
+               @if (scaledOutputWidth()) {
                  <div class="text-xs text-gray-400 mt-1">
-                   h ≈ {{ scaledOutputDims()!.h }} {{ svgExportUnit() }}
+                   w ≈ {{ scaledOutputWidth() }} {{ svgExportUnit() }}
                  </div>
                }
              </div>
@@ -304,12 +304,13 @@ export class LatexEditorComponent {
   copiedSvg = signal(false);
   copiedImage = signal(false);
 
-  // Output size / DPI — default 12pt (standard LaTeX body font size)
-  svgExportWidth = signal<number>(12);
+  // Output size / DPI — slider controls the output HEIGHT (≈ font size)
+  // Default 12pt = standard LaTeX body text size
+  svgExportHeight = signal<number>(12);
   svgExportUnit = signal<'mm' | 'pt' | 'px'>('pt');
   pngDpi = signal<number>(150);
 
-  /** Native SVG dimensions in pt, parsed from actual SVG source for accurate h≈ readout. */
+  /** Native SVG dimensions in pt, parsed from actual SVG source. */
   private svgNativeDims = signal<{ wPt: number; hPt: number } | null>(null);
 
   /** Aspect ratio (w/h) from the SVG's real pt dimensions — dimensionless and unit-safe. */
@@ -321,8 +322,8 @@ export class LatexEditorComponent {
   readonly sliderConfig = computed(() => {
     const unit = this.svgExportUnit();
     const configs: Record<string, { min: number; max: number; step: number }> = {
-      px: { min: 8,   max: 600, step: 1 },
-      mm: { min: 2,   max: 150, step: 1 },
+      px: { min: 8,   max: 200, step: 1 },
+      mm: { min: 2,   max: 50,  step: 1 },
       pt: { min: 6,   max: 72,  step: 1 },
     };
     return configs[unit] ?? configs['pt'];
@@ -339,40 +340,44 @@ export class LatexEditorComponent {
     px: 1,
   };
 
-  /** Target export width in CSS pixels (96 DPI). */
-  private readonly targetWidthPx = computed(() =>
-    this.toPixels(this.svgExportWidth(), this.svgExportUnit())
+  /** Target export height in CSS pixels (96 DPI). */
+  private readonly targetHeightPx = computed(() =>
+    this.toPixels(this.svgExportHeight(), this.svgExportUnit())
   );
 
-  /** Scaled output dimensions in CSS pixels, preserving native aspect ratio. */
+  /** Scaled output dimensions in CSS pixels, deriving width from height + aspect ratio. */
   private readonly scaledDimsPx = computed<{ wPx: number; hPx: number } | null>(() => {
     const native = this.svgNativeDims();
     if (!native?.wPt || !native?.hPt) return null;
-    const targetW = this.targetWidthPx();
-    const aspectRatio = native.hPt / native.wPt;
-    return { wPx: targetW, hPx: targetW * aspectRatio };
+    const targetH = this.targetHeightPx();
+    const aspectRatio = native.wPt / native.hPt; // w/h
+    return { wPx: targetH * aspectRatio, hPx: targetH };
   });
 
   /** CSS width for the preview image, clamped for usability. */
   readonly previewDisplayWidth = computed<string>(() => {
     const dims = this.scaledDimsPx();
-    const px = dims ? dims.wPx : this.targetWidthPx();
-    return `${Math.max(24, Math.min(600, px))}px`;
+    if (dims) {
+      return `${Math.max(24, Math.min(600, dims.wPx))}px`;
+    }
+    // Fallback before SVG loads: estimate width from height assuming ~4:1 aspect
+    const fallbackPx = this.targetHeightPx() * 4;
+    return `${Math.max(24, Math.min(600, fallbackPx))}px`;
   });
 
-  /** Scaled height readout below the slider, in the user's selected unit. */
-  readonly scaledOutputDims = computed<{ w: string; h: string } | null>(() => {
+  /** Computed width readout below the slider, in the user's selected unit. */
+  readonly scaledOutputWidth = computed<string | null>(() => {
     const dims = this.scaledDimsPx();
     if (!dims) return null;
     const f = LatexEditorComponent.PX_TO_UNIT[this.svgExportUnit()] ?? 1;
-    return { w: (dims.wPx * f).toFixed(1), h: (dims.hPx * f).toFixed(1) };
+    return (dims.wPx * f).toFixed(1);
   });
 
-  /** Badge shown in the preview corner — e.g. "50.0 x 16.5 mm". */
+  /** Badge shown in the preview corner — e.g. "50.0 × 16.5 pt". */
   readonly outputSizeLabel = computed<string>(() => {
     const dims = this.scaledDimsPx();
     const unit = this.svgExportUnit();
-    if (!dims) return `${this.svgExportWidth()} ${unit}`;
+    if (!dims) return `h = ${this.svgExportHeight()} ${unit}`;
     const f = LatexEditorComponent.PX_TO_UNIT[unit] ?? 1;
     return `${(dims.wPx * f).toFixed(1)} × ${(dims.hPx * f).toFixed(1)} ${unit}`;
   });
@@ -751,26 +756,25 @@ export class LatexEditorComponent {
     URL.revokeObjectURL(blobUrl);
   }
 
-  onSvgWidthInput(event: Event): void {
+  onSvgHeightInput(event: Event): void {
     const val = parseFloat((event.target as HTMLInputElement).value);
-    this.svgExportWidth.set(isNaN(val) ? 12 : val);
+    this.svgExportHeight.set(isNaN(val) ? 12 : val);
   }
 
   onSvgUnitChange(event: Event): void {
     const newUnit = (event.target as HTMLSelectElement).value as 'mm' | 'pt' | 'px';
-    // Convert current value to the new unit so the physical size stays the same
-    const currentPx = this.toPixels(this.svgExportWidth(), this.svgExportUnit());
+    // Convert current height to the new unit so the physical size stays the same
+    const currentPx = this.toPixels(this.svgExportHeight(), this.svgExportUnit());
     const factors: Record<string, number> = { mm: 3.7795275591, pt: 1.3333333333, px: 1 };
     const converted = Math.round(currentPx / (factors[newUnit] ?? 1));
-    // Look up new unit's slider range directly (sliderConfig is reactive, so read the config inline)
     const ranges: Record<string, { min: number; max: number }> = {
-      px: { min: 8,   max: 600 },
-      mm: { min: 2,   max: 150 },
+      px: { min: 8,   max: 200 },
+      mm: { min: 2,   max: 50 },
       pt: { min: 6,   max: 72 },
     };
     const range = ranges[newUnit] ?? ranges['pt'];
     this.svgExportUnit.set(newUnit);
-    this.svgExportWidth.set(Math.max(range.min, Math.min(range.max, converted)));
+    this.svgExportHeight.set(Math.max(range.min, Math.min(range.max, converted)));
   }
 
   onPngDpiChange(event: Event): void {
@@ -831,9 +835,10 @@ export class LatexEditorComponent {
       targetW = dims.wPx;
       targetH = dims.hPx;
     } else {
-      const targetWidthPx = this.targetWidthPx();
-      targetW = targetWidthPx;
-      targetH = targetWidthPx * (nativeH / nativeW);
+      // Fallback: derive from target height (slider controls height)
+      const targetHPx = this.targetHeightPx();
+      targetH = targetHPx;
+      targetW = targetHPx * (nativeW / nativeH);
     }
 
     // Uniform scale factor from native pt coords → target px coords
