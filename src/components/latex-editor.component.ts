@@ -109,9 +109,9 @@ const FEATURES = {
                      (change)="onSvgUnitChange($event)"
                      class="px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-700"
                    >
+                     <option value="pt" [selected]="svgExportUnit() === 'pt'">pt</option>
                      <option value="px" [selected]="svgExportUnit() === 'px'">px</option>
                      <option value="mm" [selected]="svgExportUnit() === 'mm'">mm</option>
-                     <option value="pt" [selected]="svgExportUnit() === 'pt'">pt</option>
                    </select>
                  </div>
                </div>
@@ -304,9 +304,9 @@ export class LatexEditorComponent {
   copiedSvg = signal(false);
   copiedImage = signal(false);
 
-  // Output size / DPI
-  svgExportWidth = signal<number>(50);
-  svgExportUnit = signal<'mm' | 'pt' | 'px'>('mm');
+  // Output size / DPI — default 12pt (standard LaTeX body font size)
+  svgExportWidth = signal<number>(12);
+  svgExportUnit = signal<'mm' | 'pt' | 'px'>('pt');
   pngDpi = signal<number>(150);
 
   /** Native SVG dimensions in pt, parsed from actual SVG source for accurate h≈ readout. */
@@ -321,11 +321,11 @@ export class LatexEditorComponent {
   readonly sliderConfig = computed(() => {
     const unit = this.svgExportUnit();
     const configs: Record<string, { min: number; max: number; step: number }> = {
-      px: { min: 16,  max: 800, step: 1 },
-      mm: { min: 5,   max: 200, step: 1 },
-      pt: { min: 8,   max: 144, step: 1 },
+      px: { min: 8,   max: 600, step: 1 },
+      mm: { min: 2,   max: 150, step: 1 },
+      pt: { min: 6,   max: 72,  step: 1 },
     };
-    return configs[unit] ?? configs['mm'];
+    return configs[unit] ?? configs['pt'];
   });
 
   onPreviewLoad(_event: Event): void {
@@ -761,9 +761,16 @@ export class LatexEditorComponent {
     // Convert current value to the new unit so the physical size stays the same
     const currentPx = this.toPixels(this.svgExportWidth(), this.svgExportUnit());
     const factors: Record<string, number> = { mm: 3.7795275591, pt: 1.3333333333, px: 1 };
-    const converted = +(currentPx / (factors[newUnit] ?? 1)).toFixed(1);
-    this.svgExportWidth.set(converted);
+    const converted = Math.round(currentPx / (factors[newUnit] ?? 1));
+    // Look up new unit's slider range directly (sliderConfig is reactive, so read the config inline)
+    const ranges: Record<string, { min: number; max: number }> = {
+      px: { min: 8,   max: 600 },
+      mm: { min: 2,   max: 150 },
+      pt: { min: 6,   max: 72 },
+    };
+    const range = ranges[newUnit] ?? ranges['pt'];
     this.svgExportUnit.set(newUnit);
+    this.svgExportWidth.set(Math.max(range.min, Math.min(range.max, converted)));
   }
 
   onPngDpiChange(event: Event): void {
