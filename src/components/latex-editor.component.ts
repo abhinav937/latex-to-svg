@@ -639,40 +639,20 @@ export class LatexEditorComponent {
     try {
       const svgText = this.scaleSvgForExport(await this.fetchSvgText());
       const svgBlob = new Blob([svgText], { type: 'image/svg+xml' });
-      const textBlob = new Blob([svgText], { type: 'text/plain' });
 
-      // Build ClipboardItem entries. We always include text/plain as a fallback.
-      // For the SVG itself we try three strategies in order of preference:
-      //
-      // 1. "web image/svg+xml" (Chrome 104+ custom format) — bypasses Chrome's
-      //    SVG sanitizer so the full unsanitized SVG reaches the OS clipboard.
-      //    Inkscape on macOS/Linux reads this type correctly.
-      //
-      // 2. "image/svg+xml" (standard async clipboard) — Chrome sanitizes this,
-      //    which can silently corrupt the SVG. Only used if the web- prefix isn't
-      //    available (i.e. ClipboardItem.supports check passes but web- fails).
-      //
-      // 3. execCommand fallback — for browsers that don't support ClipboardItem
-      //    at all (older Safari, Firefox < 127).
-
-      const clipboardEntries: Record<string, Blob> = { 'text/plain': textBlob };
-
-      const supportsWebType = 'supports' in ClipboardItem && ClipboardItem.supports('web image/svg+xml');
-      const supportsNativeType = 'supports' in ClipboardItem && ClipboardItem.supports('image/svg+xml');
-
-      if (supportsWebType) {
-        // Preferred: unsanitized custom format — Inkscape on Chrome/macOS reads this
-        clipboardEntries['web image/svg+xml'] = svgBlob;
-      } else if (supportsNativeType) {
-        // Standard type — Chrome sanitizes but still better than plain text
-        clipboardEntries['image/svg+xml'] = svgBlob;
-      }
-
-      if (supportsWebType || supportsNativeType) {
-        await navigator.clipboard.write([new ClipboardItem(clipboardEntries)]);
+      if ('supports' in ClipboardItem && ClipboardItem.supports('image/svg+xml')) {
+        // Clipboard API with dual MIME types for maximum Inkscape compatibility:
+        // image/svg+xml — Inkscape's preferred vector clipboard format
+        // text/plain — fallback for Inkscape builds that parse SVG from plain text
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            'image/svg+xml': svgBlob,
+            'text/plain': new Blob([svgText], { type: 'text/plain' }),
+          })
+        ]);
       } else {
-        // Fallback for browsers without ClipboardItem support (older Safari/Firefox):
-        // intercept the native copy event to write both types via event.clipboardData.
+        // Fallback: intercept the native copy event to set both MIME types
+        // via event.clipboardData, bypassing the Async Clipboard API whitelist.
         await new Promise<void>((resolve, reject) => {
           const dummy = document.createElement('textarea');
           dummy.value = ' ';
