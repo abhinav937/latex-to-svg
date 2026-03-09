@@ -3,6 +3,7 @@ import { HomeComponent } from './components/home.component';
 import { HelpComponent } from './components/help.component';
 import { ChangelogComponent } from './components/changelog.component';
 import { NotFoundComponent } from './components/not-found.component';
+import { TestClipboardComponent } from './components/test-clipboard.component';
 
 export const routes: Routes = [
   {
@@ -16,6 +17,10 @@ export const routes: Routes = [
   {
     path: 'changelog',
     component: ChangelogComponent
+  },
+  {
+    path: 'test-clipboard',
+    component: TestClipboardComponent
   },
   {
     path: '404',
