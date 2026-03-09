@@ -786,10 +786,6 @@ export class LatexEditorComponent {
   }
 
   /** Converts a value in mm/pt/px to CSS pixels at 96 DPI. */
-  private toPixels(value: number, unit: 'mm' | 'pt' | 'px'): number {
-    const factors: Record<string, number> = { mm: 3.7795275591, pt: 1.3333333333, px: 1 };
-    return value * (factors[unit] ?? 1);
-  }
 
   /**
    * Scales an SVG for export / clipboard using the font-size-based scale factor.
