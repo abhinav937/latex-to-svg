@@ -33,7 +33,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
         <!-- Easter egg: version lore tooltip -->
         <div class="relative" (click)="toggleLore($event)">
           <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold border border-green-200 cursor-pointer select-none">
-            v2.1
+            v2.2
           </span>
           @if (tooltipVisible()) {
             <div class="absolute top-full right-0 mt-2 w-64 bg-gray-900 text-white text-xs rounded-xl px-3 py-2.5 shadow-xl z-[9999] pointer-events-none">
@@ -50,7 +50,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
         <!-- Easter egg: version lore tooltip (mobile) -->
         <div class="relative" (click)="toggleLore($event)">
           <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold border border-green-200 cursor-pointer select-none">
-            v2.1
+            v2.2
           </span>
           @if (tooltipVisible()) {
             <div class="absolute top-full right-0 mt-2 w-56 bg-gray-900 text-white text-xs rounded-xl px-3 py-2.5 shadow-xl z-[9999] pointer-events-none">
@@ -109,14 +109,14 @@ export class HeaderComponent {
   currentLore = signal({ version: '', lore: '' });
 
   private readonly versionLore = [
-    { version: 'v2.1.0', lore: "SVGs now copy themselves into your clipboard. They're very proud of this achievement." },
-    { version: 'v2.1.0', lore: "Removed the font size slider. It kept making everything exactly the wrong size." },
-    { version: 'v2.1.0', lore: "PNG downloads now work without a canvas. The canvas was getting tired anyway." },
-    { version: 'v2.1.0', lore: "Fixed a bug where Tuesdays felt longer than they should." },
-    { version: 'v2.1.0', lore: "Equations now paste beautifully into Figma. Unlike your feelings about deadlines." },
-    { version: 'v2.1.0', lore: "The SVG clipboard API is now used correctly. It took three engineers and one very long lunch." },
-    { version: 'v2.1.0', lore: "Deprecated: manually eyeballing whether the PNG looked right. Automated: still eyeballing it, but faster." },
-    { version: 'v2.1.0', lore: "No canvases were harmed in the making of this update. One was retired with full honours." },
+    { version: 'v2.2.0', lore: "Inkscape finally pastes equations at the right size. It only took scaling the viewBox, the matrix, and our patience." },
+    { version: 'v2.2.0', lore: "The font size slider is back. It went to therapy and now actually controls font size." },
+    { version: 'v2.2.0', lore: "12pt is the new default. Because 10pt was giving everyone squinting injuries." },
+    { version: 'v2.2.0', lore: "Fractions are now taller than body text. Just like in real LaTeX. Just like in real life." },
+    { version: 'v2.2.0', lore: "We scale the viewBox, the matrix, the width, the height. We scale everything. We are the scalers." },
+    { version: 'v2.2.0', lore: "CodeCogs renders at 10pt. We asked nicely and it agreed to let us multiply by 1.2." },
+    { version: 'v2.2.0', lore: "Dual MIME clipboard: image/svg+xml for the cultured, text/plain for the pragmatic." },
+    { version: 'v2.2.0', lore: "PNG DPI selector added. Choose your resolution like you choose your battles." },
   ];
 
   toggleLore(event?: Event): void {

@@ -54,6 +54,19 @@ interface ChangelogEntry {
 export class ChangelogComponent {
   changelog: ChangelogEntry[] = [
     {
+      version: "2.2.0",
+      date: "Mar 8, 2026",
+      changes: [
+        "Fixed SVG scaling for Inkscape clipboard paste — scales viewBox and matrix transform so pasted equations appear at the correct size",
+        "Added font size slider (6–72 pt) — controls actual text size, not bounding box height. Fractions and integrals grow taller naturally, just like in a real LaTeX document",
+        "Default font size set to 12 pt (standard LaTeX body text)",
+        "Dual MIME clipboard copy — image/svg+xml for native vector paste, plus text/plain fallback for broader compatibility",
+        "SVG exports include explicit px units, xmlns declaration, and preserved viewBox for standalone validity",
+        "PNG DPI selector (72, 96, 150, 300, 600 dpi) for download quality control",
+        "Output size badge in preview corner shows actual dimensions in your chosen unit"
+      ]
+    },
+    {
       version: "2.1.0",
       date: "Mar 5, 2026",
       changes: [
