@@ -4,7 +4,7 @@
 
 A fast, browser-based tool for converting LaTeX equations to SVG and PNG images.
 
-[Report Bug](https://github.com/your-username/latex-to-svg/issues)
+[Report Bug](https://github.com/abhinav937/latex-to-svg/issues)
 
 </div>
 
