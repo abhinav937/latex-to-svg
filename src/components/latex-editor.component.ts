@@ -1,5 +1,4 @@
-import { Component, inject, signal, computed, ElementRef, viewChild, HostListener } from '@angular/core';
-import { GeminiService } from '../services/gemini.service';
+import { Component, inject, signal, computed, ElementRef, viewChild, HostListener, Injector } from '@angular/core';
 import { HistoryService } from '../services/history.service';
 import { RateLimiterService, RateLimit } from '../services/rate-limiter.service';
 import { AutocompleteService, LatexCommand } from '../services/autocomplete.service';
@@ -314,7 +313,7 @@ const HTML_ESC: Record<string, string> = {
   `
 })
 export class LatexEditorComponent {
-  private geminiService = inject(GeminiService);
+  private injector = inject(Injector);
   private historyService = inject(HistoryService);
   private rateLimiter = inject(RateLimiterService);
   autocompleteService = inject(AutocompleteService);
@@ -327,6 +326,7 @@ export class LatexEditorComponent {
 
   latexInput = signal('');
   previewUrl = signal('');
+  renderedLatex = signal('');
   isRendering = signal(false);
   isAiLoading = signal(false);
   copiedUrl = signal(false);
@@ -342,6 +342,8 @@ export class LatexEditorComponent {
   private static readonly CODECOGS_BASE_PT = 10;
 
   private svgNativeDims = signal<{ wPt: number; hPt: number } | null>(null);
+  private svgMetadataController: AbortController | null = null;
+  private renderVersion = 0;
 
   // Snippet tabstop tracking
   activeSnippet = signal<{ baseIndex: number; tabstops: number[]; current: number } | null>(null);
@@ -471,7 +473,7 @@ export class LatexEditorComponent {
   async renderLatex() {
     const code = this.latexInput().trim();
     if (!code) {
-      this.previewUrl.set('');
+      this.clearRenderedOutput();
       return;
     }
 
@@ -487,10 +489,20 @@ export class LatexEditorComponent {
 
     this.isRendering.set(true);
     try {
+      const renderVersion = ++this.renderVersion;
+      this.svgMetadataController?.abort();
+      const controller = new AbortController();
+      this.svgMetadataController = controller;
+
       const url = `https://latex.codecogs.com/svg.image?${encodeURIComponent('\\dpi{300} ' + code)}`;
       this.previewUrl.set(url);
+      this.renderedLatex.set(code);
+      this.svgNativeDims.set(null);
 
-      this.fetchSvgText().then(svgText => {
+      this.fetchSvgText(code, controller.signal).then(svgText => {
+        if (controller.signal.aborted || renderVersion !== this.renderVersion || this.renderedLatex() !== code) {
+          return;
+        }
         const svgTagMatch = svgText.match(/<svg([^>]*)>/);
         if (!svgTagMatch) return;
         const wMatch = svgTagMatch[1].match(/\bwidth=['"]([0-9.]+)[a-z%]*['"]/);
@@ -498,7 +510,9 @@ export class LatexEditorComponent {
         if (wMatch && hMatch) {
           this.svgNativeDims.set({ wPt: parseFloat(wMatch[1]), hPt: parseFloat(hMatch[1]) });
         }
-      }).catch(() => { /* silent */ });
+      }).catch((error: unknown) => {
+        if ((error as Error)?.name === 'AbortError') return;
+      });
 
       this.historyService.addToHistory(code);
     } catch (error: unknown) {
@@ -643,7 +657,9 @@ export class LatexEditorComponent {
 
     this.isAiLoading.set(true);
     try {
-      const fixed = await this.geminiService.fixLatex(this.latexInput());
+      const { GeminiService } = await import('../services/gemini.service');
+      const geminiService = this.injector.get(GeminiService);
+      const fixed = await geminiService.fixLatex(this.latexInput());
       if (fixed) {
         this.latexInput.set(fixed);
         this.historyService.addToHistory(fixed);
@@ -654,12 +670,11 @@ export class LatexEditorComponent {
     }
   }
 
-  private async fetchSvgText(): Promise<string> {
-    const code = this.latexInput().trim();
+  private async fetchSvgText(code = this.renderedLatex().trim(), signal?: AbortSignal): Promise<string> {
     if (!code) throw new Error('No LaTeX to fetch');
 
     const url = `https://latex.codecogs.com/svg?${encodeURIComponent('\\dpi{300} ' + code)}`;
-    const response = await fetch(url);
+    const response = await fetch(url, { signal });
     if (!response.ok) throw new Error(`CodeCogs SVG fetch failed: ${response.status}`);
     return response.text();
   }
@@ -732,7 +747,7 @@ export class LatexEditorComponent {
   }
 
   async copyPngToClipboard() {
-    const code = this.latexInput().trim();
+    const code = this.renderedLatex().trim();
     if (!code || !this.previewUrl()) return;
 
     this.isCopyingPng.set(true);
@@ -799,7 +814,7 @@ export class LatexEditorComponent {
         .replace(/_+/g, '_')
         .replace(/^_|_$/g, '')
         .toLowerCase();
-      return sanitized || 'equation';
+      return `${sanitized || 'equation'}.${extension}`;
     } else {
       const hash = this.simpleHash(latexInput);
       return `equation_${hash}.${extension}`;
@@ -919,14 +934,14 @@ export class LatexEditorComponent {
       const svgText = await this.fetchSvgText();
       const scaled = this.scaleSvgForExport(svgText);
       const blob = new Blob([scaled], { type: 'image/svg+xml' });
-      this.triggerDownload(blob, this.generateFilename(this.latexInput(), 'svg'));
+      this.triggerDownload(blob, this.generateFilename(this.renderedLatex(), 'svg'));
     } catch (error: unknown) {
       console.error('Failed to download SVG:', error);
     }
   }
 
   async downloadPng() {
-    const code = this.latexInput().trim();
+    const code = this.renderedLatex().trim();
     if (!code) return;
 
     try {
@@ -943,16 +958,13 @@ export class LatexEditorComponent {
   }
 
   constructor() {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('ai') === 'true') {
-      this.features.AI_FIX = true;
-    }
+    // Intentionally left blank.
   }
 
   @HostListener('document:keydown', ['$event'])
   onGlobalKeyDown(event: KeyboardEvent) {
     const textarea = this.textareaRef()?.nativeElement;
-    if (!textarea || document.activeElement === textarea) {
+    if (!textarea || document.activeElement === textarea || this.shouldIgnoreGlobalKeydown(event)) {
       return;
     }
 
@@ -980,5 +992,29 @@ export class LatexEditorComponent {
       textarea.selectionStart = textarea.selectionEnd = start + 1;
       this.latexInput.set(textarea.value);
     }
+  }
+
+  private clearRenderedOutput(): void {
+    this.svgMetadataController?.abort();
+    this.svgMetadataController = null;
+    this.previewUrl.set('');
+    this.renderedLatex.set('');
+    this.svgNativeDims.set(null);
+  }
+
+  private shouldIgnoreGlobalKeydown(event: KeyboardEvent): boolean {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return false;
+
+    if (target.closest('app-settings')) return true;
+    if (target.closest('input, textarea, select, button, a, [contenteditable="true"], [role="dialog"]')) {
+      return true;
+    }
+
+    const active = document.activeElement;
+    if (!(active instanceof HTMLElement)) return false;
+
+    if (active.closest('app-settings')) return true;
+    return !!active.closest('input, textarea, select, button, a, [contenteditable="true"], [role="dialog"]');
   }
 }

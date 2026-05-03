@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "node scripts/prepare-dev.js && ng serve",
-    "build": "ng build && node scripts/inject-env.js",
+    "build": "ng build",
     "preview": "ng serve --configuration=production"
   },
   "dependencies": {

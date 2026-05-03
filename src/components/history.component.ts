@@ -44,6 +44,8 @@ import { HistoryService } from '../services/history.service';
                    [src]="'https://latex.codecogs.com/svg.latex?' + encode(item)"
                    alt="preview"
                    class="max-h-full max-w-full object-contain"
+                   loading="lazy"
+                   decoding="async"
                    (error)="onImageError($event)"
                  />
               </div>

@@ -25,7 +25,7 @@ export class SEOService {
 
   private readonly defaultData: SEOData = {
     title: 'LaTeX to SVG Generator - Convert LaTeX Equations to SVG Instantly',
-    description: 'Free online LaTeX to SVG converter with AI-powered syntax fixing. Create beautiful mathematical equations, formulas, and diagrams as SVG images. No installation required.',
+    description: 'Free online LaTeX to SVG converter for equations, formulas, and diagrams. Create clean SVG images instantly with no installation required.',
     keywords: 'LaTeX, SVG, LaTeX to SVG, math equations, formula generator, SVG converter, mathematical notation, equation editor, TexText alternative, Inkscape',
     image: 'https://latex.cabhinav.com/assets/icons/share_preview.png',
     type: 'website',
@@ -133,7 +133,7 @@ export class SEOService {
       '@type': 'WebApplication',
       'name': 'LaTeX to SVG Generator',
       'url': this.baseUrl,
-      'description': 'Free online LaTeX to SVG converter with AI-powered syntax fixing. Create beautiful mathematical equations, formulas, and diagrams as SVG images.',
+      'description': 'Free online LaTeX to SVG converter for equations, formulas, and diagrams. Create clean SVG images instantly with no installation required.',
       'applicationCategory': 'UtilityApplication',
       'operatingSystem': 'Web',
       'offers': {
@@ -148,7 +148,6 @@ export class SEOService {
       },
       'featureList': [
         'Convert LaTeX to SVG',
-        'AI-powered syntax fixing',
         'Real-time preview',
         'History management',
         'Export SVG files',
