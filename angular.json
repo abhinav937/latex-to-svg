@@ -18,6 +18,9 @@
             },
             "browser": "index.tsx",
             "tsConfig": "tsconfig.json",
+            "styles": [
+              "src/styles.css"
+            ],
             "assets": [
               {
                 "glob": "**/*",
@@ -25,14 +28,14 @@
                 "output": "."
               },
               {
+                "glob": "site.webmanifest",
+                "input": "public",
+                "output": "."
+              },
+              {
                 "glob": "**/*",
                 "input": "assets",
                 "output": "assets"
-              },
-              {
-                "glob": "site.webmanifest",
-                "input": ".",
-                "output": "."
               }
             ]
           },

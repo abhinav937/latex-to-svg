@@ -5,9 +5,9 @@ import { HistoryService } from '../services/history.service';
   selector: 'app-history',
   standalone: true,
   template: `
-    <div class="h-full flex flex-col bg-white">
-      <div class="px-4 xl:px-6 py-4 xl:py-5 border-b border-gray-200 flex justify-between items-center bg-gray-50 flex-shrink-0">
-        <h3 class="text-sm xl:text-base font-semibold text-gray-700 flex items-center gap-2 xl:gap-3">
+    <div class="h-full flex flex-col bg-white dark:bg-gray-800">
+      <div class="px-4 xl:px-6 py-4 xl:py-5 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900 flex-shrink-0">
+        <h3 class="text-sm xl:text-base font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2 xl:gap-3">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 xl:h-5 xl:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
@@ -15,7 +15,7 @@ import { HistoryService } from '../services/history.service';
         </h3>
         <button 
           (click)="historyService.clearHistory()" 
-          class="text-xs xl:text-sm text-red-500 hover:text-red-700 hover:bg-red-50 px-2 xl:px-3 py-1 xl:py-1.5 rounded transition-colors"
+          class="text-xs xl:text-sm text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 px-2 xl:px-3 py-1 xl:py-1.5 rounded transition-colors"
           [class.invisible]="historyService.history().length === 0"
           title="Clear all history"
         >
@@ -25,7 +25,7 @@ import { HistoryService } from '../services/history.service';
 
       <div class="flex-1 overflow-y-auto p-3 xl:p-4 space-y-2 xl:space-y-3">
         @if (historyService.history().length === 0) {
-          <div class="text-center py-12 xl:py-16 px-4 text-gray-400">
+          <div class="text-center py-12 xl:py-16 px-4 text-gray-400 dark:text-gray-500">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 xl:h-12 xl:w-12 mx-auto mb-3 xl:mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
             </svg>
@@ -35,20 +35,22 @@ import { HistoryService } from '../services/history.service';
         }
 
         @for (item of historyService.history(); track item) {
-          <div class="group relative bg-white hover:bg-gray-50 border border-gray-200 hover:border-indigo-400 rounded-lg xl:rounded-xl p-3 xl:p-4 transition-all duration-150 shadow-sm hover:shadow-md cursor-pointer">
+          <div class="group relative bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 hover:border-indigo-400 dark:hover:border-indigo-500 rounded-lg xl:rounded-xl p-3 xl:p-4 transition-all duration-150 shadow-sm hover:shadow-md cursor-pointer">
             <!-- Clickable Area for Selection -->
             <div (click)="select.emit(item)" class="space-y-2 xl:space-y-3">
               <!-- Preview Image -->
-              <div class="h-12 xl:h-16 overflow-hidden flex items-center justify-center bg-gray-50 xl:bg-gray-100 rounded-lg xl:rounded-xl border border-gray-100 xl:border-gray-200 p-1 xl:p-2">
+              <div class="h-12 xl:h-16 overflow-hidden flex items-center justify-center bg-white rounded-lg xl:rounded-xl border border-gray-100 xl:border-gray-200 dark:border-gray-600 dark:xl:border-gray-600 p-1 xl:p-2">
                  <img
                    [src]="'https://latex.codecogs.com/svg.latex?' + encode(item)"
                    alt="preview"
                    class="max-h-full max-w-full object-contain"
+                   loading="lazy"
+                   decoding="async"
                    (error)="onImageError($event)"
                  />
               </div>
               <!-- LaTeX Code -->
-              <div class="text-xs xl:text-sm text-gray-600 font-mono truncate leading-relaxed xl:leading-normal px-0.5">
+              <div class="text-xs xl:text-sm text-gray-600 dark:text-gray-300 font-mono truncate leading-relaxed xl:leading-normal px-0.5">
                 {{ item }}
               </div>
             </div>
@@ -56,7 +58,7 @@ import { HistoryService } from '../services/history.service';
             <!-- Delete Button -->
             <button 
               (click)="deleteItem($event, item)"
-              class="absolute top-3 xl:top-4 right-3 xl:right-4 p-1.5 xl:p-2 text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all rounded-lg hover:bg-red-50"
+              class="absolute top-3 xl:top-4 right-3 xl:right-4 p-1.5 xl:p-2 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30"
               title="Remove from history"
               aria-label="Delete"
             >

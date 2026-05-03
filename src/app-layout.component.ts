@@ -4,6 +4,7 @@ import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { HeaderComponent } from './components/header.component';
 import { FooterComponent } from './components/footer.component';
 import { SEOService } from './services/seo.service';
+import { PreferencesService } from './services/preferences.service';
 import { filter } from 'rxjs';
 
 @Component({
@@ -23,6 +24,7 @@ import { filter } from 'rxjs';
 export class AppLayoutComponent implements OnInit {
   private router = inject(Router);
   private seoService = inject(SEOService);
+  private _preferencesService = inject(PreferencesService);
   private destroyRef = inject(DestroyRef);
 
   ngOnInit(): void {

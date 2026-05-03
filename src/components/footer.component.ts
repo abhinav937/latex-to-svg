@@ -6,22 +6,22 @@ import { RouterLink } from '@angular/router';
   standalone: true,
   imports: [RouterLink],
   template: `
-    <footer class="bg-white border-t border-gray-200 mt-auto">
+    <footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-auto">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-5">
         <div class="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
           <!-- Copyright -->
-          <p class="text-xs text-gray-500">
-            © 2025 <a href="https://cabhinav.com" class="text-indigo-600 hover:text-indigo-700 hover:underline" target="_blank" rel="noopener noreferrer">Abhinav Chinnusamy</a>
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            © 2025 <a href="https://cabhinav.com" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 hover:underline" target="_blank" rel="noopener noreferrer">Abhinav Chinnusamy</a>
           </p>
-          
+
           <!-- Divider -->
-          <span class="hidden sm:inline text-gray-300">•</span>
-          
+          <span class="hidden sm:inline text-gray-300 dark:text-gray-600">•</span>
+
           <!-- Icon Links -->
           <div class="flex items-center gap-3 sm:gap-4">
-            <a 
-              routerLink="/" 
-              class="p-2 text-gray-500 hover:text-indigo-600 transition-colors rounded-lg hover:bg-gray-50"
+            <a
+              routerLink="/"
+              class="p-2 text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
               title="Home"
               aria-label="Home"
             >
@@ -32,7 +32,7 @@ import { RouterLink } from '@angular/router';
             
             <a 
               routerLink="/help" 
-              class="p-2 text-gray-500 hover:text-indigo-600 transition-colors rounded-lg hover:bg-gray-50"
+              class="p-2 text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
               title="Help"
               aria-label="Help"
             >
@@ -43,7 +43,7 @@ import { RouterLink } from '@angular/router';
             
             <a 
               routerLink="/changelog" 
-              class="p-2 text-gray-500 hover:text-indigo-600 transition-colors rounded-lg hover:bg-gray-50"
+              class="p-2 text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
               title="Changelog"
               aria-label="Changelog"
             >
@@ -56,7 +56,7 @@ import { RouterLink } from '@angular/router';
               href="https://github.com/abhinav937/latex-to-svg" 
               target="_blank" 
               rel="noopener noreferrer" 
-              class="p-2 text-gray-500 hover:text-indigo-600 transition-colors rounded-lg hover:bg-gray-50"
+              class="p-2 text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
               title="GitHub"
               aria-label="GitHub"
             >

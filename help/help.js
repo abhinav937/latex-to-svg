@@ -163,7 +163,7 @@ $\\mathit{italic}$</code></pre>
         <p>Your last 50 equations are saved automatically in your browser's local storage. The history sidebar (visible on desktop) shows a rendered preview and the LaTeX code for each entry.</p>
         <ul>
           <li><strong>Reuse</strong>: Click any history entry to load it back into the editor</li>
-          <li><strong>Delete one</strong>: Hover over an entry and click the ✕ button</li>
+          <li><strong>Delete one</strong>: Hover over an entry and click the delete icon</li>
           <li><strong>Clear all</strong>: Click the <strong>Clear</strong> button in the history header</li>
         </ul>
       </div>

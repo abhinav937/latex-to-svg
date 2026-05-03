@@ -17,8 +17,8 @@ export class GeminiService {
   };
 
   constructor() {
-    // Gemini service is disabled by default
-    // To enable, set window.GEMINI_API_KEY via environment configuration
+    // Browser-side API keys are intentionally not injected anymore.
+    // If AI is re-enabled, it should call a server endpoint instead of exposing a key in the client.
     try {
       const apiKey = (typeof window !== 'undefined' && (window as any).GEMINI_API_KEY) ||
                      '';
@@ -35,7 +35,7 @@ export class GeminiService {
 
   async fixLatex(brokenLatex: string): Promise<string> {
     if (!this.isEnabled || !this.ai) {
-      console.warn('Gemini service is not enabled. Please configure GEMINI_API_KEY.');
+      console.warn('Gemini service is disabled in the browser. Route AI requests through a server endpoint.');
       return brokenLatex; // Return original if service unavailable
     }
 
