@@ -1,4 +1,5 @@
 import { Component, inject, signal, computed, ElementRef, viewChild, HostListener, Injector, OnDestroy } from '@angular/core';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { HistoryService } from '../services/history.service';
 import { RateLimiterService, RateLimit } from '../services/rate-limiter.service';
 import { AutocompleteService, LatexCommand } from '../services/autocomplete.service';
@@ -322,6 +323,7 @@ const HTML_ESC: Record<string, string> = {
 })
 export class LatexEditorComponent implements OnDestroy {
   private injector = inject(Injector);
+  private sanitizer = inject(DomSanitizer);
   private historyService = inject(HistoryService);
   private rateLimiter = inject(RateLimiterService);
   autocompleteService = inject(AutocompleteService);
@@ -370,13 +372,14 @@ export class LatexEditorComponent implements OnDestroy {
   });
 
   /** Highlighted HTML for the overlay <pre>. */
-  readonly highlightedHtml = computed<string>(() => {
+  readonly highlightedHtml = computed<SafeHtml>(() => {
     const src = this.latexInput();
     // Trailing space ensures the last line has height when text ends with newline
-    if (!this.prefs.prefs().syntaxHighlightingEnabled) {
-      return this.escapeHtml(src) + '\n';
-    }
-    return this.tokenize(src) + '\n';
+    const html = this.prefs.prefs().syntaxHighlightingEnabled
+      ? this.tokenize(src)
+      : this.escapeHtml(src);
+
+    return this.sanitizer.bypassSecurityTrustHtml(`${html}\n`);
   });
 
   onPreviewLoad(_event: Event): void {
