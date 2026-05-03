@@ -7,6 +7,12 @@ interface ColorRow {
   hint: string;
 }
 
+interface ThemeModeOption {
+  value: ThemeMode;
+  label: string;
+  icon: 'sun' | 'moon' | 'desktop';
+}
+
 const COLOR_ROWS: ColorRow[] = [
   { key: 'command',  label: 'Commands',  hint: '\\frac, \\alpha' },
   { key: 'brace',    label: 'Braces',    hint: '{ }' },
@@ -53,7 +59,25 @@ const COLOR_ROWS: ColorRow[] = [
                   [class.bg-indigo-50]="prefs.prefs().theme === mode.value"
                   class="dark:[&.ring-2]:bg-indigo-900/40 px-3 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex flex-col items-center gap-1"
                 >
-                  <span class="text-base">{{ mode.icon }}</span>
+                  <span class="flex h-5 w-5 items-center justify-center text-gray-600 dark:text-gray-300" aria-hidden="true">
+                    @switch (mode.icon) {
+                      @case ('sun') {
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25M12 18.75V21M4.97 4.97l1.59 1.59M17.44 17.44l1.59 1.59M3 12h2.25M18.75 12H21M4.97 19.03l1.59-1.59M17.44 6.56l1.59-1.59M15.75 12A3.75 3.75 0 118.25 12a3.75 3.75 0 017.5 0z" />
+                        </svg>
+                      }
+                      @case ('moon') {
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79A9 9 0 1111.21 3c-.05.32-.08.66-.08 1a8 8 0 008 8c.34 0 .68-.03 1-.08z" />
+                        </svg>
+                      }
+                      @case ('desktop') {
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 5.25h16.5v10.5H3.75V5.25zM9 18.75h6M10.5 15.75v3M13.5 15.75v3" />
+                        </svg>
+                      }
+                    }
+                  </span>
                   <span>{{ mode.label }}</span>
                 </button>
               }
@@ -157,10 +181,10 @@ export class SettingsComponent {
   close = output<void>();
 
   readonly colorRows = COLOR_ROWS;
-  readonly themeModes: { value: ThemeMode; label: string; icon: string }[] = [
-    { value: 'light',  label: 'Light',  icon: '☀️' },
-    { value: 'dark',   label: 'Dark',   icon: '🌙' },
-    { value: 'system', label: 'System', icon: '🖥️' },
+  readonly themeModes: ThemeModeOption[] = [
+    { value: 'light',  label: 'Light',  icon: 'sun' },
+    { value: 'dark',   label: 'Dark',   icon: 'moon' },
+    { value: 'system', label: 'System', icon: 'desktop' },
   ];
 
   setTheme(mode: ThemeMode): void {

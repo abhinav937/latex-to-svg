@@ -123,6 +123,28 @@
     window.tailwind = window.tailwind || {};
     window.tailwind.config = { darkMode: 'class' };
   </script>
+  <script>
+    (() => {
+      const storageKey = 'latex_prefs_v1';
+      let theme = 'system';
+
+      try {
+        const raw = localStorage.getItem(storageKey);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed?.theme === 'light' || parsed?.theme === 'dark' || parsed?.theme === 'system') {
+            theme = parsed.theme;
+          }
+        }
+      } catch {}
+
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const isDark = theme === 'dark' || (theme === 'system' && prefersDark);
+
+      document.documentElement.classList.toggle('dark', isDark);
+      document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
+    })();
+  </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     /* Custom Scrollbar for a cleaner look */

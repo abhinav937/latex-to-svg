@@ -80,9 +80,7 @@ export class PreferencesService {
 
     effect(() => {
       const isDark = this.effectiveTheme() === 'dark';
-      if (typeof document !== 'undefined') {
-        document.documentElement.classList.toggle('dark', isDark);
-      }
+      this.applyTheme(isDark);
     });
   }
 
@@ -126,8 +124,20 @@ export class PreferencesService {
     return window.matchMedia('(prefers-color-scheme: dark)').matches;
   }
 
+  private applyTheme(isDark: boolean): void {
+    if (typeof document === 'undefined') return;
+
+    document.documentElement.classList.toggle('dark', isDark);
+    document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
+
+    if (document.body) {
+      document.body.classList.toggle('dark', isDark);
+    }
+  }
+
   private load(): void {
     try {
+      if (typeof localStorage === 'undefined') return;
       const raw = localStorage.getItem(this.STORAGE_KEY);
       if (!raw) return;
       const parsed = JSON.parse(raw);
@@ -145,6 +155,7 @@ export class PreferencesService {
 
   private save(): void {
     try {
+      if (typeof localStorage === 'undefined') return;
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.prefs()));
     } catch (error: unknown) {
       console.error('Failed to save preferences', error);
