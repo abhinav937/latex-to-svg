@@ -39,7 +39,7 @@ import { HistoryService } from '../services/history.service';
             <!-- Clickable Area for Selection -->
             <div (click)="select.emit(item)" class="space-y-2 xl:space-y-3">
               <!-- Preview Image -->
-              <div class="h-12 xl:h-16 overflow-hidden flex items-center justify-center bg-gray-50 xl:bg-gray-100 dark:bg-gray-700 dark:xl:bg-gray-700 rounded-lg xl:rounded-xl border border-gray-100 xl:border-gray-200 dark:border-gray-600 dark:xl:border-gray-600 p-1 xl:p-2">
+              <div class="h-12 xl:h-16 overflow-hidden flex items-center justify-center bg-white rounded-lg xl:rounded-xl border border-gray-100 xl:border-gray-200 dark:border-gray-600 dark:xl:border-gray-600 p-1 xl:p-2">
                  <img
                    [src]="'https://latex.codecogs.com/svg.latex?' + encode(item)"
                    alt="preview"

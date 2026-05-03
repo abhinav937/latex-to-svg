@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, ElementRef, viewChild, HostListener, Injector } from '@angular/core';
+import { Component, inject, signal, computed, ElementRef, viewChild, HostListener, Injector, OnDestroy } from '@angular/core';
 import { HistoryService } from '../services/history.service';
 import { RateLimiterService, RateLimit } from '../services/rate-limiter.service';
 import { AutocompleteService, LatexCommand } from '../services/autocomplete.service';
@@ -26,7 +26,15 @@ const HTML_ESC: Record<string, string> = {
       <!-- Preview Section -->
       <div class="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col md:flex-row min-h-[200px] sm:min-h-[250px]">
         <div class="flex-1 p-4 sm:p-6 md:p-8 latex-preview-container flex items-center justify-center relative bg-gray-50 dark:bg-gray-900">
-           @if (previewUrl()) {
+           @if (renderError()) {
+             <div class="text-center px-4">
+               <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mx-auto mb-2 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+               </svg>
+               <p class="text-sm text-red-500 dark:text-red-400 font-medium">{{ renderError() }}</p>
+               <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Edit your input to try again</p>
+             </div>
+           } @else if (previewUrl()) {
              <img
                [src]="previewUrl()"
                alt="LaTeX Preview"
@@ -49,7 +57,7 @@ const HTML_ESC: Record<string, string> = {
                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 sm:h-16 sm:w-16 mx-auto mb-2 text-gray-300 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                </svg>
-               <p class="text-sm sm:text-base">Enter LaTeX code and click Render to preview</p>
+               <p class="text-sm sm:text-base">Enter LaTeX code to preview</p>
              </div>
            }
         </div>
@@ -274,7 +282,7 @@ const HTML_ESC: Record<string, string> = {
                 [class.dark:bg-indigo-900\/40]="i === selectedIndex()"
               >
                 @if (autocompleteService.shouldShowPreview(i)) {
-                  <div class="w-16 h-8 flex items-center justify-center bg-gray-50 dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600 flex-shrink-0 overflow-hidden">
+                  <div class="w-16 h-8 flex items-center justify-center bg-white rounded border border-gray-200 dark:border-gray-600 flex-shrink-0 overflow-hidden">
                     <img
                       [src]="autocompleteService.getPreviewUrl(cmd)"
                       alt=""
@@ -312,7 +320,7 @@ const HTML_ESC: Record<string, string> = {
     </div>
   `
 })
-export class LatexEditorComponent {
+export class LatexEditorComponent implements OnDestroy {
   private injector = inject(Injector);
   private historyService = inject(HistoryService);
   private rateLimiter = inject(RateLimiterService);
@@ -329,6 +337,7 @@ export class LatexEditorComponent {
   renderedLatex = signal('');
   isRendering = signal(false);
   isAiLoading = signal(false);
+  renderError = signal<string | null>(null);
   copiedUrl = signal(false);
   copiedSvg = signal(false);
   copiedImage = signal(false);
@@ -344,6 +353,8 @@ export class LatexEditorComponent {
   private svgNativeDims = signal<{ wPt: number; hPt: number } | null>(null);
   private svgMetadataController: AbortController | null = null;
   private renderVersion = 0;
+  private debounceTimerId: ReturnType<typeof setTimeout> | null = null;
+  private readonly AUTO_RENDER_DEBOUNCE_MS = 800;
 
   // Snippet tabstop tracking
   activeSnippet = signal<{ baseIndex: number; tabstops: number[]; current: number } | null>(null);
@@ -488,6 +499,7 @@ export class LatexEditorComponent {
     }
 
     this.isRendering.set(true);
+    this.renderError.set(null);
     try {
       const renderVersion = ++this.renderVersion;
       this.svgMetadataController?.abort();
@@ -503,6 +515,13 @@ export class LatexEditorComponent {
         if (controller.signal.aborted || renderVersion !== this.renderVersion || this.renderedLatex() !== code) {
           return;
         }
+        if (this.isSvgInvalidEquation(svgText)) {
+          this.previewUrl.set('');
+          this.renderedLatex.set('');
+          this.svgNativeDims.set(null);
+          this.renderError.set('Invalid equation — check your LaTeX syntax.');
+          return;
+        }
         const svgTagMatch = svgText.match(/<svg([^>]*)>/);
         if (!svgTagMatch) return;
         const wMatch = svgTagMatch[1].match(/\bwidth=['"]([0-9.]+)[a-z%]*['"]/);
@@ -510,11 +529,14 @@ export class LatexEditorComponent {
         if (wMatch && hMatch) {
           this.svgNativeDims.set({ wPt: parseFloat(wMatch[1]), hPt: parseFloat(hMatch[1]) });
         }
+        this.historyService.addToHistory(code);
       }).catch((error: unknown) => {
         if ((error as Error)?.name === 'AbortError') return;
+        this.previewUrl.set('');
+        this.renderedLatex.set('');
+        this.svgNativeDims.set(null);
+        this.renderError.set('Failed to render — check your LaTeX syntax.');
       });
-
-      this.historyService.addToHistory(code);
     } catch (error: unknown) {
       console.error('Failed to render LaTeX:', error);
     } finally {
@@ -528,6 +550,7 @@ export class LatexEditorComponent {
     // Any text edit invalidates snippet tabstops (offsets become unreliable)
     if (this.activeSnippet()) this.activeSnippet.set(null);
     this.checkAutocomplete(input);
+    this.scheduleAutoRender();
   }
 
   private checkAutocomplete(textarea: HTMLTextAreaElement) {
@@ -595,6 +618,10 @@ export class LatexEditorComponent {
 
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
+      if (this.debounceTimerId !== null) {
+        clearTimeout(this.debounceTimerId);
+        this.debounceTimerId = null;
+      }
       this.renderLatex();
     }
   }
@@ -1000,6 +1027,31 @@ export class LatexEditorComponent {
     this.previewUrl.set('');
     this.renderedLatex.set('');
     this.svgNativeDims.set(null);
+    this.renderError.set(null);
+  }
+
+  private scheduleAutoRender(): void {
+    if (this.debounceTimerId !== null) {
+      clearTimeout(this.debounceTimerId);
+    }
+    if (!this.latexInput().trim()) {
+      this.clearRenderedOutput();
+      return;
+    }
+    this.debounceTimerId = setTimeout(() => {
+      this.debounceTimerId = null;
+      this.renderLatex();
+    }, this.AUTO_RENDER_DEBOUNCE_MS);
+  }
+
+  private isSvgInvalidEquation(svgText: string): boolean {
+    return /Invalid/i.test(svgText);
+  }
+
+  ngOnDestroy(): void {
+    if (this.debounceTimerId !== null) {
+      clearTimeout(this.debounceTimerId);
+    }
   }
 
   private shouldIgnoreGlobalKeydown(event: KeyboardEvent): boolean {

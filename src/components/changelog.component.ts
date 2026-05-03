@@ -54,6 +54,16 @@ interface ChangelogEntry {
 export class ChangelogComponent {
   changelog: ChangelogEntry[] = [
     {
+      version: "2.3.0",
+      date: "May 3, 2026",
+      changes: [
+        "Equations now render automatically as you type — no need to press Enter or click Render",
+        "Invalid equations show a friendly error message in the preview box instead of a broken image",
+        "Invalid equations are no longer saved to history",
+        "Dark mode fix — math previews in autocomplete suggestions and history cards now have a white background so equations are always visible",
+      ]
+    },
+    {
       version: "2.2.0",
       date: "Mar 8, 2026",
       changes: [

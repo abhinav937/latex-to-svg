@@ -48,7 +48,7 @@ import { SettingsComponent } from './settings.component';
         <!-- Easter egg: version lore tooltip -->
         <div class="relative" (click)="toggleLore($event)">
           <span class="px-3 py-1 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 rounded-full text-xs font-semibold border border-green-200 dark:border-green-800 cursor-pointer select-none">
-            v2.2
+            v2.3
           </span>
           @if (tooltipVisible()) {
             <div class="absolute top-full right-0 mt-2 w-64 bg-gray-900 text-white text-xs rounded-xl px-3 py-2.5 shadow-xl z-[9999] pointer-events-none">
@@ -76,7 +76,7 @@ import { SettingsComponent } from './settings.component';
 
         <div class="relative" (click)="toggleLore($event)">
           <span class="px-2 py-1 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 rounded-full text-xs font-semibold border border-green-200 dark:border-green-800 cursor-pointer select-none">
-            v2.2
+            v2.3
           </span>
           @if (tooltipVisible()) {
             <div class="absolute top-full right-0 mt-2 w-56 bg-gray-900 text-white text-xs rounded-xl px-3 py-2.5 shadow-xl z-[9999] pointer-events-none">
@@ -139,12 +139,17 @@ export class HeaderComponent {
   currentLore = signal({ version: '', lore: '' });
 
   private readonly versionLore = [
+    { version: 'v2.3.0', lore: "You stopped pressing Enter. The editor noticed. It renders for you now." },
+    { version: 'v2.3.0', lore: "800ms of silence and the SVG appears. Patience is a virtue. Debouncing is an engineering virtue." },
+    { version: 'v2.3.0', lore: "Invalid equations now get a polite error instead of a cryptic image. Growth." },
+    { version: 'v2.3.0', lore: "We don't log invalid equations to history anymore. Some mistakes deserve to be forgotten." },
+    { version: 'v2.3.0', lore: "Dark mode previews now have white backgrounds. The math was always there. We just let it breathe." },
+    { version: 'v2.3.0', lore: "Auto-render: because clicking a button 40 times per session was character-building but unnecessary." },
     { version: 'v2.2.0', lore: "Inkscape finally pastes equations at the right size. It only took scaling the viewBox, the matrix, and our patience." },
     { version: 'v2.2.0', lore: "The font size slider is back. It went to therapy and now actually controls font size." },
     { version: 'v2.2.0', lore: "12pt is the new default. Because 10pt was giving everyone squinting injuries." },
     { version: 'v2.2.0', lore: "Fractions are now taller than body text. Just like in real LaTeX. Just like in real life." },
     { version: 'v2.2.0', lore: "We scale the viewBox, the matrix, the width, the height. We scale everything. We are the scalers." },
-    { version: 'v2.2.0', lore: "CodeCogs renders at 10pt. We asked nicely and it agreed to let us multiply by 1.2." },
     { version: 'v2.2.0', lore: "Dual MIME clipboard: image/svg+xml for the cultured, text/plain for the pragmatic." },
     { version: 'v2.2.0', lore: "PNG DPI selector added. Choose your resolution like you choose your battles." },
   ];
