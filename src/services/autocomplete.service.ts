@@ -13,7 +13,6 @@ interface ScoredCommand {
   score: number;
 }
 
-// Number of suggestions to show preview images for
 const PREVIEW_LIMIT = 4;
 
 @Injectable({
@@ -23,16 +22,12 @@ export class AutocompleteService {
   private commands: LatexCommand[] = [];
   private isLoaded = signal(false);
 
-  // Cache for preview URLs to avoid repeated requests
   private previewCache = new Map<string, string>();
 
   constructor() {
     this.loadCommands();
   }
 
-  /**
-   * Get preview URL for a command example (cached)
-   */
   getPreviewUrl(cmd: LatexCommand): string {
     const example = cmd.example;
     if (this.previewCache.has(example)) {
@@ -44,9 +39,6 @@ export class AutocompleteService {
     return url;
   }
 
-  /**
-   * Check if a suggestion should show preview (only first N)
-   */
   shouldShowPreview(index: number): boolean {
     return index < PREVIEW_LIMIT;
   }
@@ -64,30 +56,42 @@ export class AutocompleteService {
   }
 
   /**
-   * Fuzzy search - matches characters in order but not necessarily consecutively
+   * Subsequence-fuzzy score. Returns 0 if `term` is not a subsequence of `text`.
+   * Otherwise rewards: start anchoring, consecutive runs, and match density.
    */
-  private fuzzyMatch(searchTerm: string, text: string): boolean {
-    const searchLower = searchTerm.toLowerCase();
-    const textLower = text.toLowerCase();
-    let searchIndex = 0;
+  private fuzzyScore(term: string, text: string): number {
+    const t = term.toLowerCase();
+    const s = text.toLowerCase();
+    if (!t) return 0;
 
-    for (let i = 0; i < textLower.length && searchIndex < searchLower.length; i++) {
-      if (textLower[i] === searchLower[searchIndex]) {
-        searchIndex++;
+    let ti = 0;
+    let firstIdx = -1;
+    let lastIdx = -1;
+    let consecutiveBonus = 0;
+    let prevMatchIdx = -2;
+
+    for (let i = 0; i < s.length && ti < t.length; i++) {
+      if (s[i] === t[ti]) {
+        if (firstIdx === -1) firstIdx = i;
+        lastIdx = i;
+        if (i === prevMatchIdx + 1) consecutiveBonus += 4;
+        prevMatchIdx = i;
+        ti++;
       }
     }
-    return searchIndex === searchLower.length;
+    if (ti < t.length) return 0;
+
+    const span = Math.max(1, lastIdx - firstIdx + 1);
+    const density = t.length / span;
+    const startBonus = firstIdx === 0 ? 8 : 0;
+    return Math.round(10 * density + consecutiveBonus + startBonus);
   }
 
-  /**
-   * Filter and rank commands based on search term
-   */
-  filterCommands(searchTerm: string, maxResults: number = 6): LatexCommand[] {
+  filterCommands(searchTerm: string, maxResults: number = 8): LatexCommand[] {
     if (!searchTerm || !this.isLoaded()) {
       return [];
     }
 
-    // Remove leading backslash for search
     const term = searchTerm.startsWith('\\') ? searchTerm.slice(1) : searchTerm;
     if (!term) {
       return [];
@@ -96,32 +100,26 @@ export class AutocompleteService {
     const scored: ScoredCommand[] = [];
 
     for (const cmd of this.commands) {
-      const cmdName = cmd.command.slice(1); // Remove backslash
+      const cmdName = cmd.command.slice(1);
       let score = 0;
 
-      // Exact match (highest priority)
       if (cmdName === term) {
         score = 100;
-      }
-      // Starts with search term
-      else if (cmdName.startsWith(term)) {
+      } else if (cmdName.startsWith(term)) {
         score = 50 + (term.length / cmdName.length) * 30;
-      }
-      // Contains search term
-      else if (cmdName.includes(term)) {
+      } else if (cmdName.includes(term)) {
         score = 25;
-      }
-      // Fuzzy match on command name
-      else if (this.fuzzyMatch(term, cmdName)) {
-        score = 15;
-      }
-      // Match in description
-      else if (cmd.description.toLowerCase().includes(term.toLowerCase())) {
-        score = 10;
-      }
-      // Fuzzy match on description
-      else if (this.fuzzyMatch(term, cmd.description)) {
-        score = 5;
+      } else {
+        const fuzzyOnName = this.fuzzyScore(term, cmdName);
+        if (fuzzyOnName > 0) {
+          // Bumped from 15 → 30 base; strong fuzzy can beat weak `includes`.
+          score = 30 + fuzzyOnName;
+        } else if (cmd.description.toLowerCase().includes(term.toLowerCase())) {
+          score = 10;
+        } else {
+          const fuzzyOnDesc = this.fuzzyScore(term, cmd.description);
+          if (fuzzyOnDesc > 0) score = 5 + Math.min(fuzzyOnDesc, 10);
+        }
       }
 
       if (score > 0) {
@@ -129,7 +127,6 @@ export class AutocompleteService {
       }
     }
 
-    // Sort by score descending, then alphabetically
     scored.sort((a, b) => {
       if (b.score !== a.score) {
         return b.score - a.score;
@@ -141,30 +138,28 @@ export class AutocompleteService {
   }
 
   /**
-   * Get the command string to insert (command + empty argument placeholders)
+   * Returns the snippet text plus tabstop offsets for every `{}` placeholder.
+   * `cursorOffset` points to the first tabstop (or end of text if none).
    */
-  getInsertText(cmd: LatexCommand): { text: string; cursorOffset: number } {
+  getInsertText(cmd: LatexCommand): { text: string; cursorOffset: number; tabstops: number[] } {
     let text = cmd.command;
-    let cursorOffset = cmd.command.length;
+    const tabstops: number[] = [];
 
     if (cmd.arguments) {
-      // Replace argument placeholders with empty braces
       const args = cmd.arguments.replace(/\{[^}]*\}/g, '{}');
       text += args;
 
-      // Position cursor inside first brace if there is one
-      const firstBraceIndex = text.indexOf('{}');
-      if (firstBraceIndex !== -1) {
-        cursorOffset = firstBraceIndex + 1;
+      for (let i = 0; i < text.length - 1; i++) {
+        if (text[i] === '{' && text[i + 1] === '}') {
+          tabstops.push(i + 1);
+        }
       }
     }
 
-    return { text, cursorOffset };
+    const cursorOffset = tabstops.length > 0 ? tabstops[0] : text.length;
+    return { text, cursorOffset, tabstops };
   }
 
-  /**
-   * Extract the partial command being typed at cursor position
-   */
   getPartialCommand(text: string, cursorPosition: number): { term: string; startIndex: number } | null {
     const beforeCursor = text.substring(0, cursorPosition);
     const match = beforeCursor.match(/\\([a-zA-Z]*)$/);

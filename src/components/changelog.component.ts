@@ -12,13 +12,13 @@ interface ChangelogEntry {
   standalone: true,
   imports: [RouterLink],
   template: `
-    <div class="min-h-screen bg-gray-50">
+    <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div class="max-w-5xl mx-auto px-6 py-12">
 
         <!-- Header -->
         <div class="mb-12">
-          <h1 class="text-3xl font-light text-gray-900 mb-2">Changelog</h1>
-          <p class="text-gray-500">What's new in LaTeX to SVG</p>
+          <h1 class="text-3xl font-light text-gray-900 dark:text-gray-100 mb-2">Changelog</h1>
+          <p class="text-gray-500 dark:text-gray-400">What's new in LaTeX to SVG</p>
         </div>
 
         <!-- Entries -->
@@ -26,12 +26,12 @@ interface ChangelogEntry {
           @for (entry of changelog; track entry.version) {
             <section>
               <div class="flex items-baseline gap-3 mb-4">
-                <h2 class="text-lg font-medium text-gray-900">{{ entry.version }}</h2>
-                <span class="text-sm text-gray-400">{{ entry.date }}</span>
+                <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100">{{ entry.version }}</h2>
+                <span class="text-sm text-gray-400 dark:text-gray-500">{{ entry.date }}</span>
               </div>
               <ul class="space-y-2">
                 @for (change of entry.changes; track change) {
-                  <li class="text-gray-600 pl-4 border-l-2 border-gray-200">{{ change }}</li>
+                  <li class="text-gray-600 dark:text-gray-300 pl-4 border-l-2 border-gray-200 dark:border-gray-700">{{ change }}</li>
                 }
               </ul>
             </section>
@@ -39,11 +39,11 @@ interface ChangelogEntry {
         </div>
 
         <!-- Links -->
-        <section class="pt-12 mt-12 border-t border-gray-200">
+        <section class="pt-12 mt-12 border-t border-gray-200 dark:border-gray-700">
           <div class="flex gap-6 text-sm">
-            <a href="https://github.com/abhinav937/latex-to-svg" target="_blank" class="text-gray-500 hover:text-gray-900 transition-colors">GitHub</a>
-            <a routerLink="/help" class="text-gray-500 hover:text-gray-900 transition-colors">Help</a>
-            <a routerLink="/" class="text-gray-500 hover:text-gray-900 transition-colors">Back to app</a>
+            <a href="https://github.com/abhinav937/latex-to-svg" target="_blank" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">GitHub</a>
+            <a routerLink="/help" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">Help</a>
+            <a routerLink="/" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">Back to app</a>
           </div>
         </section>
 
