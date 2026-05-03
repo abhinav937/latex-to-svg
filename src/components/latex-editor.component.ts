@@ -56,14 +56,14 @@ const HTML_ESC: Record<string, string> = {
         </div>
 
         <!-- Quick Actions / Info -->
-        <div class="w-full md:w-64 bg-gray-50 dark:bg-gray-900 border-t md:border-t-0 md:border-l border-gray-200 dark:border-gray-700 p-4 sm:p-5 flex flex-col gap-3 sm:gap-4">
-           <div class="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Quick Actions</div>
+        <div class="w-full md:w-56 bg-gray-50 dark:bg-gray-900 border-t md:border-t-0 md:border-l border-gray-200 dark:border-gray-700 p-3 sm:p-4 flex flex-col gap-2.5">
+           <div class="text-[11px] sm:text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-[0.14em]">Quick Actions</div>
 
            @if (features.COPY_SVG_URL) {
              <button
                (click)="copySvgUrl()"
-               class="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-indigo-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all shadow-sm group">
-               <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-400 group-hover:text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+               class="flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-indigo-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all shadow-sm group min-h-9">
+               <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 sm:h-3.5 sm:w-3.5 text-gray-400 group-hover:text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                </svg>
                <span class="truncate">{{ copiedUrl() ? 'Copied URL!' : 'Copy URL' }}</span>
@@ -73,8 +73,8 @@ const HTML_ESC: Record<string, string> = {
            <button
              (click)="copySvgCode()"
              [disabled]="!previewUrl()"
-             class="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-indigo-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all shadow-sm group disabled:opacity-40 disabled:cursor-not-allowed">
-             <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-400 group-hover:text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+             class="flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-indigo-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all shadow-sm group disabled:opacity-40 disabled:cursor-not-allowed min-h-9">
+             <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 sm:h-3.5 sm:w-3.5 text-gray-400 group-hover:text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
              </svg>
              <span class="truncate">{{ copiedSvg() ? 'Copied SVG!' : 'Copy SVG Code' }}</span>
@@ -83,8 +83,8 @@ const HTML_ESC: Record<string, string> = {
            <button
              (click)="copySvgAsImage()"
              [disabled]="!previewUrl()"
-             class="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-indigo-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all shadow-sm group disabled:opacity-40 disabled:cursor-not-allowed">
-             <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-400 group-hover:text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+             class="flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-indigo-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all shadow-sm group disabled:opacity-40 disabled:cursor-not-allowed min-h-9">
+             <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 sm:h-3.5 sm:w-3.5 text-gray-400 group-hover:text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
              </svg>
              <span class="truncate">{{ copiedImage() ? 'Copied!' : 'Copy as Image' }}</span>
@@ -93,8 +93,8 @@ const HTML_ESC: Record<string, string> = {
            <button
              (click)="copyPngToClipboard()"
              [disabled]="!previewUrl() || isCopyingPng()"
-             class="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-indigo-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all shadow-sm group disabled:opacity-40 disabled:cursor-not-allowed">
-             <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-400 group-hover:text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+             class="flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-indigo-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all shadow-sm group disabled:opacity-40 disabled:cursor-not-allowed min-h-9">
+             <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 sm:h-3.5 sm:w-3.5 text-gray-400 group-hover:text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
              </svg>
              <span class="truncate">{{ copiedPng() ? 'Copied PNG!' : (isCopyingPng() ? 'Copying...' : 'Copy as PNG') }}</span>
@@ -103,8 +103,8 @@ const HTML_ESC: Record<string, string> = {
            <button
              (click)="downloadSvg()"
              [disabled]="!previewUrl()"
-             class="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-indigo-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all shadow-sm group disabled:opacity-40 disabled:cursor-not-allowed">
-             <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-400 group-hover:text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+             class="flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-indigo-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all shadow-sm group disabled:opacity-40 disabled:cursor-not-allowed min-h-9">
+             <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 sm:h-3.5 sm:w-3.5 text-gray-400 group-hover:text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
              </svg>
              <span class="truncate">Download SVG</span>
@@ -113,25 +113,25 @@ const HTML_ESC: Record<string, string> = {
            <button
              (click)="downloadPng()"
              [disabled]="!previewUrl()"
-             class="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-indigo-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all shadow-sm group disabled:opacity-40 disabled:cursor-not-allowed">
-             <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-400 group-hover:text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+             class="flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-indigo-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all shadow-sm group disabled:opacity-40 disabled:cursor-not-allowed min-h-9">
+             <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 sm:h-3.5 sm:w-3.5 text-gray-400 group-hover:text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
              </svg>
              <span class="truncate">Download PNG</span>
            </button>
 
            <!-- Output Size -->
-           <div class="pt-3 sm:pt-4 border-t border-gray-200 dark:border-gray-700">
-             <div class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2.5">Output Size</div>
+           <div class="pt-2.5 border-t border-gray-200 dark:border-gray-700">
+             <div class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-[0.14em] mb-2">Output Size</div>
 
-             <div class="mb-3">
-               <div class="flex items-center justify-between mb-1.5">
+             <div class="mb-2.5">
+               <div class="flex items-center justify-between mb-1">
                  <span class="text-xs text-gray-500 dark:text-gray-400">Font size</span>
                  <div class="flex items-center gap-1">
                    <span class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 min-w-[2.5rem] text-right tabular-nums">{{ svgFontSize() }}</span>
                    <select
                      (change)="onSvgUnitChange($event)"
-                     class="px-1.5 py-0.5 text-xs border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200"
+                     class="px-1.5 py-0.5 text-[11px] border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200"
                    >
                      <option value="pt" [selected]="svgExportUnit() === 'pt'">pt</option>
                      <option value="px" [selected]="svgExportUnit() === 'px'">px</option>
@@ -154,7 +154,7 @@ const HTML_ESC: Record<string, string> = {
                <span class="text-xs text-gray-500 dark:text-gray-400 w-8 flex-shrink-0">PNG</span>
                <select
                  (change)="onPngDpiChange($event)"
-                 class="flex-1 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200"
+                 class="flex-1 px-2 py-1 text-[11px] border border-gray-300 dark:border-gray-600 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200"
                >
                  <option value="72"  [selected]="pngDpi() === 72">72 dpi</option>
                  <option value="96"  [selected]="pngDpi() === 96">96 dpi</option>
@@ -165,7 +165,7 @@ const HTML_ESC: Record<string, string> = {
              </div>
            </div>
 
-           <div class="pt-3 sm:pt-4 border-t border-gray-200 dark:border-gray-700">
+           <div class="pt-2.5 border-t border-gray-200 dark:border-gray-700">
              <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
                Uses <span class="font-semibold text-gray-700 dark:text-gray-200">CodeCogs API</span> for rendering.
              </p>
