@@ -54,6 +54,15 @@ interface ChangelogEntry {
 export class ChangelogComponent {
   changelog: ChangelogEntry[] = [
     {
+      version: "2.4.1",
+      date: "Sep 30, 2026",
+      changes: [
+        "GET formulas keep plus signs, so a+b=c no longer renders as ab = c",
+        "Invalid LaTeX returns 400 instead of an image of the broken formula",
+        "Colors and dpi values outside the documented range return 400 instead of being ignored or clamped",
+      ]
+    },
+    {
       version: "2.4.0",
       date: "Sep 30, 2026",
       changes: [

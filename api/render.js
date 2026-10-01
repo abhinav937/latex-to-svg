@@ -1,3 +1,6 @@
+import katex from "katex";
+import "katex/contrib/mhchem";
+
 /**
  * Image API for agents and anything else that can fetch a URL.
  *
@@ -25,7 +28,24 @@ const NAMED_COLORS = {
   red: "ff0000",
   green: "008000",
   blue: "0000ff",
-  transparent: "",
+  cyan: "00ffff",
+  magenta: "ff00ff",
+  yellow: "ffff00",
+  orange: "ffa500",
+  purple: "800080",
+  gray: "808080",
+  grey: "808080",
+  brown: "a52a2a",
+  pink: "ffc0cb",
+  violet: "ee82ee",
+  teal: "008080",
+  lime: "00ff00",
+  navy: "000080",
+  maroon: "800000",
+  olive: "808000",
+  silver: "c0c0c0",
+  gold: "ffd700",
+  indigo: "4b0082",
 };
 
 const BLOCKED = /\\(?:input|include|write18|openout|openin|import|special)\b/i;
@@ -43,9 +63,9 @@ function spec() {
       tex: "LaTeX source. Aliases: latex, formula, q. $...$ and $$...$$ wrappers are stripped.",
       format:
         "svg (default), png, gif, pdf, or json. The extension form works too: /api/render.png",
-      dpi: "Integer 72–600. Default 300.",
-      fg: "Foreground color. Hex RRGGBB (with or without #) or white, black, red, green, blue.",
-      bg: "Background color, same form as fg. Omit for a transparent SVG or PNG.",
+      dpi: "Integer from 72 to 600. Default 300. Anything else is rejected.",
+      fg: "Foreground. 6-digit hex RRGGBB, with or without #, or a color name. Invalid values are rejected.",
+      bg: "Background, same form as fg. Omit it, or pass transparent, for a transparent SVG or PNG.",
       download: "Pass 1 to download the file instead of displaying it inline.",
     },
     examples: {
@@ -60,8 +80,11 @@ function spec() {
       textPlain: "POST the raw LaTeX as text/plain and put format, dpi, fg, or bg in the query string.",
     },
     notes: [
-      "Plus signs are plus signs. You do not need to encode + as %2B.",
-      "Images are cached for a day.",
+      "Plus signs in the query are plus signs. A space has to be %20.",
+      "dpi outside 72–600 is a 400, not a clamped image.",
+      "Unknown colors are a 400, not a black image.",
+      "Invalid LaTeX is a 400 JSON error, not an image.",
+      "Images are cached for a day. Errors are not cached.",
       `GET formulas can be ${MAX_GET} characters. POST formulas can be ${MAX_POST}.`,
       "GET /api or GET /api/render with no formula returns this description.",
       "A short agent card also lives at /llms.txt.",
@@ -137,10 +160,28 @@ export default async function handler(req, res) {
       });
     }
 
-    const dpi = clampDpi(first(query.dpi, fromBody.dpi), 300);
-    const fg = cleanColor(first(query.fg, query.color, fromBody.fg, fromBody.color));
-    const bg = cleanColor(first(query.bg, query.background, fromBody.bg, fromBody.background));
+    const dpiResult = parseDpi(first(query.dpi, fromBody.dpi));
+    if (dpiResult.error) {
+      return sendJson(res, 400, { error: "bad_dpi", message: dpiResult.error });
+    }
+    const dpi = dpiResult.dpi;
+
+    const fgResult = parseColor(first(query.fg, query.color, fromBody.fg, fromBody.color), "fg");
+    if (fgResult.error) {
+      return sendJson(res, 400, { error: "bad_color", message: fgResult.error, field: "fg" });
+    }
+    const bgResult = parseColor(first(query.bg, query.background, fromBody.bg, fromBody.background), "bg");
+    if (bgResult.error) {
+      return sendJson(res, 400, { error: "bad_color", message: bgResult.error, field: "bg" });
+    }
+    const fg = fgResult.color;
+    const bg = bgResult.color;
     const download = String(first(query.download, fromBody.download) || "") === "1";
+
+    const latexError = validateLatex(tex);
+    if (latexError) {
+      return sendJson(res, 400, { error: "invalid_latex", message: latexError });
+    }
 
     if (format === "json") {
       const links = {};
@@ -234,24 +275,58 @@ function buildFormula(tex, dpi, fg, bg) {
 }
 
 function colorCommand(kind, value) {
-  if (/^[0-9a-fA-F]{6}$/.test(value)) return `\\${kind}{${value.toLowerCase()}}`;
-  if (kind === "fg") return `\\color{${value}}`;
-  return `\\${kind}{${value}}`;
+  return `\\${kind}{${value.toLowerCase()}}`;
 }
 
-function cleanColor(value) {
-  if (value == null || value === "") return "";
-  let v = String(value).trim().replace(/^#/, "").toLowerCase();
-  if (Object.prototype.hasOwnProperty.call(NAMED_COLORS, v)) return NAMED_COLORS[v];
-  if (/^[0-9a-f]{6}$/.test(v)) return v;
-  if (/^[a-z]{1,32}$/.test(v)) return v;
-  return "";
+function parseColor(value, field) {
+  if (value == null || value === "") return { color: "" };
+  const v = String(value).trim().replace(/^#/, "").toLowerCase();
+  if (v === "transparent") {
+    if (field === "fg") return { error: "fg cannot be transparent." };
+    return { color: "" };
+  }
+  if (Object.prototype.hasOwnProperty.call(NAMED_COLORS, v)) return { color: NAMED_COLORS[v] };
+  if (/^[0-9a-f]{6}$/.test(v)) return { color: v };
+  const names = Object.keys(NAMED_COLORS).join(", ");
+  return {
+    error: `${field} must be a 6-digit hex color (RRGGBB) or one of: ${names}.`,
+  };
 }
 
-function clampDpi(value, fallback) {
-  const n = Number.parseInt(String(value ?? ""), 10);
-  if (!Number.isFinite(n)) return fallback;
-  return Math.min(600, Math.max(72, n));
+function parseDpi(value) {
+  if (value == null || value === "") return { dpi: 300 };
+  const raw = String(value).trim();
+  if (!/^\d+$/.test(raw)) {
+    return { error: "dpi must be an integer from 72 to 600." };
+  }
+  const n = Number(raw);
+  if (n < 72 || n > 600) {
+    return { error: "dpi must be an integer from 72 to 600." };
+  }
+  return { dpi: n };
+}
+
+function validateLatex(tex) {
+  try {
+    katex.renderToString(tex, {
+      throwOnError: true,
+      displayMode: true,
+      strict: "ignore",
+      trust: false,
+      macros: {
+        "\\dpi": "",
+        "\\fg": "",
+        "\\bg": "",
+      },
+    });
+    return null;
+  } catch (error) {
+    const message = String(error?.message || "Invalid LaTeX")
+      .replace(/^KaTeX parse error:\s*/i, "")
+      .split("\n")[0]
+      .trim();
+    return message || "Invalid LaTeX.";
+  }
 }
 
 function stripDelimiters(tex) {
