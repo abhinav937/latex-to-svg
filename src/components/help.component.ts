@@ -111,23 +111,17 @@ import { RouterLink } from '@angular/router';
             The URL is the image. Fetch it, embed it, or hand it to another tool.
           </p>
           <div class="space-y-3">
-            <div class="p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
-              <p class="text-xs text-gray-400 dark:text-gray-500 mb-2">SVG</p>
-              <code class="text-sm text-gray-700 dark:text-gray-200 font-mono break-all">https://latex.cabhinav.com/api/render.svg?tex=\frac{a}{b}</code>
-            </div>
-            <div class="p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
-              <p class="text-xs text-gray-400 dark:text-gray-500 mb-2">PNG, 300 dpi</p>
-              <code class="text-sm text-gray-700 dark:text-gray-200 font-mono break-all">https://latex.cabhinav.com/api/render.png?tex=E=mc^2&dpi=300</code>
-            </div>
-            <div class="p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
-              <p class="text-xs text-gray-400 dark:text-gray-500 mb-2">Describe the API (no formula)</p>
-              <code class="text-sm text-gray-700 dark:text-gray-200 font-mono break-all">https://latex.cabhinav.com/api/render</code>
-            </div>
+            @for (item of apiExamples; track item.label) {
+              <div class="p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+                <p class="text-xs text-gray-400 dark:text-gray-500 mb-2">{{ item.label }}</p>
+                <code class="text-sm text-gray-700 dark:text-gray-200 font-mono break-all">{{ item.url }}</code>
+              </div>
+            }
           </div>
           <p class="text-gray-600 dark:text-gray-300 mt-4">
-            Formats: svg, png, gif, pdf. Optional: dpi (72–600), fg and bg as hex colors.
-            POST JSON <code class="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded font-mono text-sm">{ "tex": "\\\\alpha", "format": "png" }</code> for longer formulas.
-            <code class="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded font-mono text-sm">$...$</code> wrappers are stripped. A machine-readable card is at
+            Formats are svg, png, gif, and pdf. dpi runs from 72 to 600. fg and bg take a hex color.
+            POST the same path with JSON for longer formulas. Dollar wrappers are stripped.
+            A machine-readable card is at
             <a href="https://latex.cabhinav.com/llms.txt" class="text-indigo-600 dark:text-indigo-400 hover:underline">/llms.txt</a>.
           </p>
         </section>
@@ -170,5 +164,11 @@ export class HelpComponent {
     { code: '\\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}', label: 'Quadratic formula' },
     { code: '\\int_0^\\infty e^{-x} dx', label: 'Integral' },
     { code: '\\sum_{i=1}^n i = \\frac{n(n+1)}{2}', label: 'Summation' }
+  ];
+
+  apiExamples = [
+    { label: 'SVG', url: 'https://latex.cabhinav.com/api/render.svg?tex=\\frac{a}{b}' },
+    { label: 'PNG, 300 dpi', url: 'https://latex.cabhinav.com/api/render.png?tex=E=mc^2&dpi=300' },
+    { label: 'Describe the API', url: 'https://latex.cabhinav.com/api/render' }
   ];
 }
