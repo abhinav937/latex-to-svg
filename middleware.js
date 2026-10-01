@@ -17,8 +17,19 @@ export default function middleware(request) {
   const extMatch = pathname.match(/^\/api\/render\.([a-z0-9]+)$/i);
   const isRender = pathname === "/api/render" || pathname === "/api/render/";
 
-  if (!extMatch && !isRender) return next();
-  if (!extMatch && !rawQuery.includes("+")) return next();
+  const headers = new Headers(request.headers);
+  headers.set("x-latex-plus-fixed", "1");
+  const seen = [`url ${request.url}`];
+  for (const [key, value] of request.headers) {
+    if (/cookie|authorization|token|secret|signature/i.test(key)) continue;
+    if (/url|uri|path|query|invoke|forward|original|match|vercel|rewrite/i.test(key)) {
+      seen.push(`${key} ${value.slice(0, 240)}`);
+    }
+  }
+  headers.set("x-latex-seen", seen.join(" || ").slice(0, 3500));
+
+  if (!extMatch && !isRender) return next({ request: { headers } });
+  if (!extMatch && !rawQuery.includes("+")) return next({ request: { headers } });
 
   const safeQuery = rawQuery.replace(/\+/g, "%2B");
   const format = extMatch ? extMatch[1].toLowerCase() : "";
@@ -27,8 +38,5 @@ export default function middleware(request) {
   const dest = new URL(hashless);
   dest.pathname = "/api/render";
   dest.search = query ? `?${query}` : "";
-
-  const headers = new Headers(request.headers);
-  headers.set("x-latex-plus-fixed", "1");
   return rewrite(dest, { request: { headers } });
 }

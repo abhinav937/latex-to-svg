@@ -106,6 +106,12 @@ export default async function handler(req, res) {
 
   try {
     const query = parseQuery(req.url || "");
+    if (query.debug === "1") {
+      return sendJson(res, 200, {
+        url: req.url || "",
+        seen: req.headers["x-latex-seen"] || null,
+      });
+    }
     const fromBody = req.method === "POST" ? normalizeBody(await readBody(req)) : {};
     const format = String(
       first(query.format, fromBody.format, extensionFromPath(req.url || "")) || ""
