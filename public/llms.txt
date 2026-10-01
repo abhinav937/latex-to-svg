@@ -13,8 +13,8 @@ The site is https://latex.cabhinav.com. No API key.
 - Links only: https://latex.cabhinav.com/api/render?tex=\alpha&format=json
 - This API, as JSON: https://latex.cabhinav.com/api/render
 
-Parameters: tex (aliases latex, formula, q), tex64 (formula as unpadded base64url), format (svg, png, gif, pdf, json), dpi (72-600, default 300), fg, bg (hex RRGGBB or white/black/red/green/blue), download=1.
+Parameters: tex (aliases latex, formula, q), tex64 or b64 (formula as unpadded base64url), format (svg, png, gif, pdf, json), dpi (72-600, default 300, including gif), fg, bg (6-digit hex, or white, black, red, green, blue, cyan, magenta, yellow, orange, purple, gray, grey, brown, pink, violet, teal, lime, navy, maroon, olive, silver, gold, indigo), download=1.
 
-POST https://latex.cabhinav.com/api/render with JSON {"tex":"\\alpha","format":"png"} when the formula is too long for a URL. text/plain bodies are also accepted. JSON may send tex64 instead of tex.
+POST https://latex.cabhinav.com/api/render with JSON {"tex":"\\alpha","format":"png"} when the formula is too long for a URL. text/plain bodies are also accepted. JSON accepts tex, latex, formula, q, tex64, or b64. tex must be a string. A JSON array or malformed JSON is 400, not the API description.
 
-Dollar wrappers are stripped. A raw plus sign in a GET query is a space. For a plus, write %2B, POST the formula, or use tex64. https://latex.cabhinav.com/api/render.svg?tex64=YStiPWM is a+b=c. Do not send tex and tex64 together. dpi must be an integer from 72 to 600 (default 300) or the response is 400. fg and bg must be 6-digit hex or a color name, or the response is 400. Invalid LaTeX returns 400 JSON, not an image. GET limit 4000 characters, POST limit 12000.
+Dollar wrappers are stripped. A raw plus sign in a GET query is a space. For a plus, write %2B, POST the formula, or use tex64. https://latex.cabhinav.com/api/render.svg?tex64=YStiPWM is a+b=c. Do not send tex and tex64 together. dpi must be an integer from 72 to 600 (default 300) or the response is 400. fg and bg must be 6-digit hex or a color name, or the response is 400. Invalid LaTeX returns 400 JSON, not an image. pmod, mod, hbox, href, and url are rejected because they would be drawn as raw text. GET limit 4000 characters, POST limit 12000. A bad percent-encoding such as %FF is 400.

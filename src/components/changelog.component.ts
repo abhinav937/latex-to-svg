@@ -54,6 +54,17 @@ interface ChangelogEntry {
 export class ChangelogComponent {
   changelog: ChangelogEntry[] = [
     {
+      version: "2.4.4",
+      date: "Sep 30, 2026",
+      changes: [
+        "POST formulas can be 12000 characters. Ones that do not fit in an upstream URL still render",
+        "GIF honors dpi. Invalid percent-encoding and malformed JSON return 400 instead of 500",
+        "A non-string tex, an empty POST, a JSON array, or a q alias in JSON no longer returns the API description",
+        "pmod, mod, hbox, href, and url return 400 instead of an image of the command",
+        "b64 is an alias of tex64. SVG titles no longer start with extra spaces",
+      ]
+    },
+    {
       version: "2.4.3",
       date: "Sep 30, 2026",
       changes: [
