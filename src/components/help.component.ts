@@ -103,6 +103,35 @@ import { RouterLink } from '@angular/router';
           </div>
         </section>
 
+
+        <!-- Agent API -->
+        <section class="mb-12">
+          <h2 class="text-sm font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-4">API for AI agents</h2>
+          <p class="text-gray-600 dark:text-gray-300 mb-4">
+            The URL is the image. Fetch it, embed it, or hand it to another tool.
+          </p>
+          <div class="space-y-3">
+            <div class="p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+              <p class="text-xs text-gray-400 dark:text-gray-500 mb-2">SVG</p>
+              <code class="text-sm text-gray-700 dark:text-gray-200 font-mono break-all">https://latex.cabhinav.com/api/render.svg?tex=\frac{a}{b}</code>
+            </div>
+            <div class="p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+              <p class="text-xs text-gray-400 dark:text-gray-500 mb-2">PNG, 300 dpi</p>
+              <code class="text-sm text-gray-700 dark:text-gray-200 font-mono break-all">https://latex.cabhinav.com/api/render.png?tex=E=mc^2&dpi=300</code>
+            </div>
+            <div class="p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+              <p class="text-xs text-gray-400 dark:text-gray-500 mb-2">Describe the API (no formula)</p>
+              <code class="text-sm text-gray-700 dark:text-gray-200 font-mono break-all">https://latex.cabhinav.com/api/render</code>
+            </div>
+          </div>
+          <p class="text-gray-600 dark:text-gray-300 mt-4">
+            Formats: svg, png, gif, pdf. Optional: dpi (72–600), fg and bg as hex colors.
+            POST JSON <code class="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded font-mono text-sm">{ "tex": "\\\\alpha", "format": "png" }</code> for longer formulas.
+            <code class="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded font-mono text-sm">$...$</code> wrappers are stripped. A machine-readable card is at
+            <a href="https://latex.cabhinav.com/llms.txt" class="text-indigo-600 dark:text-indigo-400 hover:underline">/llms.txt</a>.
+          </p>
+        </section>
+
         <!-- History -->
         <section class="mb-12">
           <h2 class="text-sm font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-4">History</h2>

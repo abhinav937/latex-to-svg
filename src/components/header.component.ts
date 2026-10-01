@@ -48,7 +48,7 @@ import { SettingsComponent } from './settings.component';
         <!-- Easter egg: version lore tooltip -->
         <div class="relative" (click)="toggleLore($event)">
           <span class="px-3 py-1 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 rounded-full text-xs font-semibold border border-green-200 dark:border-green-800 cursor-pointer select-none">
-            v2.3
+            v2.4
           </span>
           @if (tooltipVisible()) {
             <div class="absolute top-full right-0 mt-2 w-64 bg-gray-900 text-white text-xs rounded-xl px-3 py-2.5 shadow-xl z-[9999] pointer-events-none">
@@ -76,7 +76,7 @@ import { SettingsComponent } from './settings.component';
 
         <div class="relative" (click)="toggleLore($event)">
           <span class="px-2 py-1 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 rounded-full text-xs font-semibold border border-green-200 dark:border-green-800 cursor-pointer select-none">
-            v2.3
+            v2.4
           </span>
           @if (tooltipVisible()) {
             <div class="absolute top-full right-0 mt-2 w-56 bg-gray-900 text-white text-xs rounded-xl px-3 py-2.5 shadow-xl z-[9999] pointer-events-none">
@@ -139,6 +139,9 @@ export class HeaderComponent {
   currentLore = signal({ version: '', lore: '' });
 
   private readonly versionLore = [
+    { version: 'v2.4.0', lore: "Give an agent a link. Get an SVG back. No installation, no feelings." },
+    { version: 'v2.4.0', lore: "SVG, PNG, GIF, or PDF. The URL is the image. The image is the URL." },
+    { version: 'v2.4.0', lore: "Plus signs stay plus signs. Math has enough surprises already." },
     { version: 'v2.3.0', lore: "You stopped pressing Enter. The editor noticed. It renders for you now." },
     { version: 'v2.3.0', lore: "800ms of silence and the SVG appears. Patience is a virtue. Debouncing is an engineering virtue." },
     { version: 'v2.3.0', lore: "Invalid equations now get a polite error instead of a cryptic image. Growth." },

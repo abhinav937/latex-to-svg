@@ -72,3 +72,19 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ## License
 
 MIT
+
+## Agent API
+
+The URL is the image. No key required.
+
+```
+https://latex.cabhinav.com/api/render.svg?tex=\frac{a}{b}
+https://latex.cabhinav.com/api/render.png?tex=E=mc^2&dpi=300
+https://latex.cabhinav.com/api/render.svg?tex=\alpha&fg=ffffff&bg=111827
+```
+
+`GET /api/render` with no formula returns a JSON description for agents.
+`POST /api/render` accepts `{ "tex", "format", "dpi", "fg", "bg" }` and returns the image bytes.
+Formats: `svg` (default), `png`, `gif`, `pdf`, `json`.
+
+`$...$` and `$$...$$` wrappers are removed. `+` stays a plus sign. Max 4,000 characters on GET, 12,000 on POST.

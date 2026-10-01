@@ -54,6 +54,15 @@ interface ChangelogEntry {
 export class ChangelogComponent {
   changelog: ChangelogEntry[] = [
     {
+      version: "2.4.0",
+      date: "Sep 30, 2026",
+      changes: [
+        "Agent API: a link returns the image. SVG, PNG, GIF, or PDF from /api/render",
+        "POST a formula as JSON when it is too long for a URL",
+        "Copy API link in the editor copies a stable latex.cabhinav.com URL",
+      ]
+    },
+    {
       version: "2.3.0",
       date: "May 3, 2026",
       changes: [

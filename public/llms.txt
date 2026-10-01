@@ -1,0 +1,20 @@
+# LaTeX to SVG
+
+> Render a LaTeX formula to an image. The URL is the image.
+
+The site is https://latex.cabhinav.com. No API key.
+
+## Render
+
+- SVG: https://latex.cabhinav.com/api/render.svg?tex=\frac{a}{b}
+- PNG: https://latex.cabhinav.com/api/render.png?tex=E=mc^2&dpi=300
+- GIF: https://latex.cabhinav.com/api/render.gif?tex=\alpha
+- PDF: https://latex.cabhinav.com/api/render.pdf?tex=\int_0^1 x^2\,dx
+- Links only: https://latex.cabhinav.com/api/render?tex=\alpha&format=json
+- This API, as JSON: https://latex.cabhinav.com/api/render
+
+Parameters: tex (aliases latex, formula, q), format (svg, png, gif, pdf, json), dpi (72-600, default 300), fg, bg (hex RRGGBB or white/black/red/green/blue), download=1.
+
+POST https://latex.cabhinav.com/api/render with JSON {"tex":"\\alpha","format":"png"} when the formula is too long for a URL. text/plain bodies are also accepted.
+
+Dollar wrappers are stripped. A plus sign is a plus sign; encode spaces as %20. GET limit 4000 characters, POST limit 12000.

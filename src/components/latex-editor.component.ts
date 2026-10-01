@@ -6,7 +6,7 @@ import { AutocompleteService, LatexCommand } from '../services/autocomplete.serv
 import { PreferencesService } from '../services/preferences.service';
 
 const FEATURES = {
-  COPY_SVG_URL: false,
+  COPY_SVG_URL: true,
   AI_FIX: false,
 };
 
@@ -74,7 +74,7 @@ const HTML_ESC: Record<string, string> = {
                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 sm:h-3.5 sm:w-3.5 text-gray-400 group-hover:text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                </svg>
-               <span class="truncate">{{ copiedUrl() ? 'Copied URL!' : 'Copy URL' }}</span>
+               <span class="truncate">{{ copiedUrl() ? 'Copied link!' : 'Copy API link' }}</span>
              </button>
            }
 
@@ -710,9 +710,10 @@ export class LatexEditorComponent implements OnDestroy {
   }
 
   copySvgUrl() {
-    const url = this.previewUrl();
-    if (!url) return;
+    const code = this.renderedLatex().trim();
+    if (!code) return;
 
+    const url = `https://latex.cabhinav.com/api/render.svg?tex=${encodeURIComponent(code)}&dpi=300`;
     navigator.clipboard.writeText(url).then(() => {
       this.copiedUrl.set(true);
       setTimeout(() => this.copiedUrl.set(false), 2000);
