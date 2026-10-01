@@ -122,7 +122,8 @@ import { RouterLink } from '@angular/router';
             Formats are svg, png, gif, and pdf. dpi must be an integer from 72 to 600.
             fg and bg must be a 6-digit hex color or a color name.
             Invalid LaTeX, colors, and dpi values return an error instead of an image.
-            A raw plus in a GET link is a space. Write %2B for a plus sign, or POST the formula.
+            A raw plus in a GET link is a space. Write %2B, POST the formula, or pass tex64 as base64url.
+            YStiPWM is a+b=c.
             POST the same path with JSON for longer formulas. Dollar wrappers are stripped.
             A machine-readable card is at
             <a href="https://latex.cabhinav.com/llms.txt" class="text-indigo-600 dark:text-indigo-400 hover:underline">/llms.txt</a>.
@@ -172,6 +173,7 @@ export class HelpComponent {
   apiExamples = [
     { label: 'SVG', url: 'https://latex.cabhinav.com/api/render.svg?tex=\\frac{a}{b}' },
     { label: 'PNG, 300 dpi', url: 'https://latex.cabhinav.com/api/render.png?tex=E=mc^2&dpi=300' },
+    { label: 'Plus sign as base64url', url: 'https://latex.cabhinav.com/api/render.svg?tex64=YStiPWM' },
     { label: 'Describe the API', url: 'https://latex.cabhinav.com/api/render' }
   ];
 }

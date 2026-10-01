@@ -60,7 +60,9 @@ function spec() {
     methods: ["GET", "POST", "HEAD"],
     formats: ["svg", "png", "gif", "pdf", "json"],
     parameters: {
-      tex: "LaTeX source. Aliases: latex, formula, q. $...$ and $$...$$ wrappers are stripped.",
+      tex: "LaTeX source. Aliases: latex, formula, q. $...$ and $$...$$ wrappers are stripped. A raw + in a GET query is a space; write %2B for a plus sign.",
+      tex64:
+        "The same formula as unpadded base64url. Use this when the source contains +. Example: YStiPWM is a+b=c. Do not send tex and tex64 together.",
       format:
         "svg (default), png, gif, pdf, or json. The extension form works too: /api/render.png",
       dpi: "Integer from 72 to 600. Default 300. Anything else is rejected.",
@@ -73,6 +75,7 @@ function spec() {
       png: `${SITE}/api/render.png?tex=${encodeURIComponent("E=mc^2")}&dpi=300`,
       dark: `${SITE}/api/render.svg?tex=${encodeURIComponent("\\int_0^\\infty e^{-x^2}\\,dx")}&fg=ffffff&bg=111827`,
       json: `${SITE}/api/render?tex=${encodeURIComponent("\\alpha+\\beta")}&format=json`,
+      plus: `${SITE}/api/render.svg?tex64=YStiPWM`,
     },
     post: {
       contentType: "application/json",
@@ -80,7 +83,7 @@ function spec() {
       textPlain: "POST the raw LaTeX as text/plain and put format, dpi, fg, or bg in the query string.",
     },
     notes: [
-      "A raw + in a GET query is a space. Write %2B for a plus sign, or POST the formula.",
+      "A raw + in a GET query is a space. For a plus sign use %2B, POST, or tex64 (base64url). /api/render.svg?tex64=YStiPWM is a+b=c.",
       "dpi outside 72–600 is a 400, not a clamped image.",
       "Unknown colors are a 400, not a black image.",
       "Invalid LaTeX is a 400 JSON error, not an image.",
@@ -113,6 +116,22 @@ export default async function handler(req, res) {
       .toLowerCase()
       .replace(/^\./, "");
 
+    const tex64Raw = first(query.tex64, fromBody.tex64);
+    let texFrom64 = "";
+    if (tex64Raw != null && tex64Raw !== "") {
+      if (String(tex64Raw).length > (req.method === "POST" ? MAX_POST : MAX_GET) * 2) {
+        return sendJson(res, 413, {
+          error: "too_long",
+          message: "tex64 is too long.",
+        });
+      }
+      const decoded = decodeTex64(tex64Raw);
+      if (decoded.error) {
+        return sendJson(res, 400, { error: "bad_tex64", message: decoded.error });
+      }
+      texFrom64 = decoded.tex;
+    }
+
     const texRaw = first(
       query.tex,
       query.latex,
@@ -122,13 +141,23 @@ export default async function handler(req, res) {
       fromBody.latex,
       fromBody.formula
     );
-    const tex = typeof texRaw === "string" ? stripDelimiters(texRaw) : "";
+    if (texFrom64 && texRaw != null && texRaw !== "") {
+      return sendJson(res, 400, {
+        error: "both_tex",
+        message: "Pass tex or tex64, not both.",
+      });
+    }
+    const tex = texFrom64
+      ? stripDelimiters(texFrom64)
+      : typeof texRaw === "string"
+        ? stripDelimiters(texRaw)
+        : "";
 
     if (!tex) {
       if (format && format !== "json") {
         return sendJson(res, 400, {
           error: "missing_tex",
-          message: "Pass the formula as tex, latex, formula, or q.",
+          message: "Pass the formula as tex, latex, formula, q, or tex64.",
           ...spec(),
         });
       }
@@ -189,7 +218,15 @@ export default async function handler(req, res) {
         links[key] = canonicalUrl(tex, key, { dpi, fg, bg });
       }
       res.setHeader("Cache-Control", "public, max-age=86400");
-      return sendJson(res, 200, { tex, dpi, fg: fg || null, bg: bg || null, links, image: links.svg });
+      return sendJson(res, 200, {
+        tex,
+        tex64: encodeTex64(tex),
+        dpi,
+        fg: fg || null,
+        bg: bg || null,
+        links,
+        image: links.svg,
+      });
     }
 
     const chosen = FORMATS[format] || FORMATS.svg;
@@ -253,6 +290,37 @@ export default async function handler(req, res) {
     res.end(bytes);
   } catch {
     return sendJson(res, 500, { error: "internal_error", message: "Render failed." });
+  }
+}
+
+function encodeTex64(tex) {
+  return Buffer.from(tex, "utf8").toString("base64url");
+}
+
+function decodeTex64(value) {
+  const raw = String(value).trim();
+  if (!raw) return { error: "tex64 is empty." };
+  if (/[+/]/.test(raw) || /\s/.test(raw)) {
+    return { error: "tex64 must be base64url, which uses - and _ instead of + and /." };
+  }
+  if (!/^[A-Za-z0-9_-]+={0,2}$/.test(raw)) {
+    return { error: "tex64 must be unpadded or padded base64url." };
+  }
+  if (raw.replace(/=+$/, "").length % 4 === 1) {
+    return { error: "tex64 is not valid base64url." };
+  }
+  let bytes;
+  try {
+    bytes = Buffer.from(raw, "base64url");
+  } catch {
+    return { error: "tex64 is not valid base64url." };
+  }
+  try {
+    const tex = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+    if (!tex.trim()) return { error: "tex64 decoded to an empty formula." };
+    return { tex };
+  } catch {
+    return { error: "tex64 is not valid UTF-8." };
   }
 }
 

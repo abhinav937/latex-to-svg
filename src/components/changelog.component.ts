@@ -54,10 +54,18 @@ interface ChangelogEntry {
 export class ChangelogComponent {
   changelog: ChangelogEntry[] = [
     {
+      version: "2.4.3",
+      date: "Sep 30, 2026",
+      changes: [
+        "tex64 takes the formula as base64url, so a plus sign never sits in the query string. YStiPWM is a+b=c",
+        "A raw plus in tex= is still a space. Use %2B, POST, or tex64",
+      ]
+    },
+    {
       version: "2.4.2",
       date: "Sep 30, 2026",
       changes: [
-        "A raw plus in a GET link is a space. Write %2B, or POST the formula. The host decodes + before this API can see it",
+        "A raw plus in a GET link is a space. The host decodes + before this API can see it",
       ]
     },
     {
