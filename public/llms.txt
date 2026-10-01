@@ -17,4 +17,4 @@ Parameters: tex (aliases latex, formula, q), format (svg, png, gif, pdf, json), 
 
 POST https://latex.cabhinav.com/api/render with JSON {"tex":"\\alpha","format":"png"} when the formula is too long for a URL. text/plain bodies are also accepted.
 
-Dollar wrappers are stripped. A plus sign in the query is a plus sign; encode a space as %20. dpi must be an integer from 72 to 600 (default 300) or the response is 400. fg and bg must be 6-digit hex or a color name, or the response is 400. Invalid LaTeX returns 400 JSON, not an image. GET limit 4000 characters, POST limit 12000.
+Dollar wrappers are stripped. A raw plus sign in a GET query is a space; write %2B for a plus, or POST the formula so + is preserved. dpi must be an integer from 72 to 600 (default 300) or the response is 400. fg and bg must be 6-digit hex or a color name, or the response is 400. Invalid LaTeX returns 400 JSON, not an image. GET limit 4000 characters, POST limit 12000.

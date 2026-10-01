@@ -87,4 +87,4 @@ https://latex.cabhinav.com/api/render.svg?tex=\alpha&fg=ffffff&bg=111827
 `POST /api/render` accepts `{ "tex", "format", "dpi", "fg", "bg" }` and returns the image bytes.
 Formats: `svg` (default), `png`, `gif`, `pdf`, `json`.
 
-`$...$` and `$$...$$` wrappers are removed. A `+` in the query stays a plus sign; encode spaces as `%20`. `dpi` must be an integer from 72 to 600. Invalid LaTeX, colors, and dpi values return `400` JSON instead of an image. Max 4,000 characters on GET, 12,000 on POST.
+`$...$` and `$$...$$` wrappers are removed. A raw `+` in a GET query is a space, because the host decodes it before the API runs — write `%2B` for a plus sign, or POST the formula. `dpi` must be an integer from 72 to 600. Invalid LaTeX, colors, and dpi values return `400` JSON instead of an image. Max 4,000 characters on GET, 12,000 on POST.

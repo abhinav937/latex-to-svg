@@ -122,7 +122,7 @@ import { RouterLink } from '@angular/router';
             Formats are svg, png, gif, and pdf. dpi must be an integer from 72 to 600.
             fg and bg must be a 6-digit hex color or a color name.
             Invalid LaTeX, colors, and dpi values return an error instead of an image.
-            A plus sign in the link stays a plus sign.
+            A raw plus in a GET link is a space. Write %2B for a plus sign, or POST the formula.
             POST the same path with JSON for longer formulas. Dollar wrappers are stripped.
             A machine-readable card is at
             <a href="https://latex.cabhinav.com/llms.txt" class="text-indigo-600 dark:text-indigo-400 hover:underline">/llms.txt</a>.

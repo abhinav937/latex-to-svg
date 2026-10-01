@@ -80,7 +80,7 @@ function spec() {
       textPlain: "POST the raw LaTeX as text/plain and put format, dpi, fg, or bg in the query string.",
     },
     notes: [
-      "Plus signs in the query are plus signs. A space has to be %20.",
+      "A raw + in a GET query is a space. Write %2B for a plus sign, or POST the formula.",
       "dpi outside 72–600 is a 400, not a clamped image.",
       "Unknown colors are a 400, not a black image.",
       "Invalid LaTeX is a 400 JSON error, not an image.",
@@ -106,12 +106,6 @@ export default async function handler(req, res) {
 
   try {
     const query = parseQuery(req.url || "");
-    if (query.debug === "1") {
-      return sendJson(res, 200, {
-        url: req.url || "",
-        seen: req.headers["x-latex-seen"] || null,
-      });
-    }
     const fromBody = req.method === "POST" ? normalizeBody(await readBody(req)) : {};
     const format = String(
       first(query.format, fromBody.format, extensionFromPath(req.url || "")) || ""
@@ -360,7 +354,8 @@ function parseQuery(url) {
     const eq = part.indexOf("=");
     const rawKey = eq === -1 ? part : part.slice(0, eq);
     const rawVal = eq === -1 ? "" : part.slice(eq + 1);
-    // Keep "+" as plus. Spaces must be %20.
+    // If a raw "+" reaches us, keep it. On Vercel it does not: the platform
+    // rewrites it to a space before this function, or middleware, runs.
     const key = decodeURIComponent(rawKey.replace(/\+/g, "%2B"));
     const val = decodeURIComponent(rawVal.replace(/\+/g, "%2B"));
     if (out[key] === undefined) out[key] = val;

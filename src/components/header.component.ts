@@ -141,7 +141,7 @@ export class HeaderComponent {
   private readonly versionLore = [
     { version: 'v2.4.0', lore: "Give an agent a link. Get an SVG back. No installation, no feelings." },
     { version: 'v2.4.0', lore: "SVG, PNG, GIF, or PDF. The URL is the image. The image is the URL." },
-    { version: 'v2.4.0', lore: "Plus signs stay plus signs. Math has enough surprises already." },
+    { version: 'v2.4.0', lore: "A raw plus in a GET link is a space. %2B is the plus you meant." },
     { version: 'v2.3.0', lore: "You stopped pressing Enter. The editor noticed. It renders for you now." },
     { version: 'v2.3.0', lore: "800ms of silence and the SVG appears. Patience is a virtue. Debouncing is an engineering virtue." },
     { version: 'v2.3.0', lore: "Invalid equations now get a polite error instead of a cryptic image. Growth." },

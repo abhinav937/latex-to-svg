@@ -4,39 +4,26 @@ export const config = {
   matcher: "/api/:path*",
 };
 
-// Vercel turns a raw "+" in a function query into a space. Rewrite those
-// requests so the function sees %2B, which it already decodes as plus.
+// /api/render.svg (png, gif, pdf, json) is this function with ?format= set.
+// A raw "+" never arrives here: the platform has already turned it into a space.
 export default function middleware(request) {
-  if (request.headers.get("x-latex-plus-fixed") === "1") return next();
+  if (request.headers.get("x-latex-rewrite") === "1") return next();
 
-  const raw = request.url;
-  const hashless = raw.split("#")[0];
-  const qIndex = hashless.indexOf("?");
-  const rawQuery = qIndex === -1 ? "" : hashless.slice(qIndex + 1);
-  const pathname = new URL(hashless).pathname;
+  const raw = request.url.split("#")[0];
+  const qIndex = raw.indexOf("?");
+  const pathname = new URL(raw).pathname;
   const extMatch = pathname.match(/^\/api\/render\.([a-z0-9]+)$/i);
-  const isRender = pathname === "/api/render" || pathname === "/api/render/";
+  if (!extMatch) return next();
+
+  const rawQuery = qIndex === -1 ? "" : raw.slice(qIndex + 1);
+  const format = extMatch[1].toLowerCase();
+  const query = rawQuery ? `${rawQuery}&format=${format}` : `format=${format}`;
 
   const headers = new Headers(request.headers);
-  headers.set("x-latex-plus-fixed", "1");
-  const seen = [`url ${request.url}`];
-  for (const [key, value] of request.headers) {
-    if (/cookie|authorization|token|secret|signature/i.test(key)) continue;
-    if (/url|uri|path|query|invoke|forward|original|match|vercel|rewrite/i.test(key)) {
-      seen.push(`${key} ${value.slice(0, 240)}`);
-    }
-  }
-  headers.set("x-latex-seen", seen.join(" || ").slice(0, 3500));
+  headers.set("x-latex-rewrite", "1");
 
-  if (!extMatch && !isRender) return next({ request: { headers } });
-  if (!extMatch && !rawQuery.includes("+")) return next({ request: { headers } });
-
-  const safeQuery = rawQuery.replace(/\+/g, "%2B");
-  const format = extMatch ? extMatch[1].toLowerCase() : "";
-  const query = format ? (safeQuery ? `${safeQuery}&format=${format}` : `format=${format}`) : safeQuery;
-
-  const dest = new URL(hashless);
+  const dest = new URL(raw);
   dest.pathname = "/api/render";
-  dest.search = query ? `?${query}` : "";
+  dest.search = `?${query}`;
   return rewrite(dest, { request: { headers } });
 }
