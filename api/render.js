@@ -133,7 +133,24 @@ export default async function handler(req, res) {
       }
       throw error;
     }
-    const fromBody = req.method === "POST" ? normalizeBody(await readBody(req)) : {};
+    let fromBody = {};
+    if (req.method === "POST") {
+      try {
+        fromBody = normalizeBody(await readBody(req));
+      } catch (error) {
+        const type = String(req.headers?.["content-type"] || req.headers?.["Content-Type"] || "");
+        if (type.includes("json") || error instanceof SyntaxError) {
+          return sendJson(res, 400, {
+            error: "bad_json",
+            message: "The request body is not valid JSON.",
+          });
+        }
+        return sendJson(res, 400, {
+          error: "bad_body",
+          message: "Could not read the request body.",
+        });
+      }
+    }
     if (fromBody.__badJson) {
       return sendJson(res, 400, {
         error: "bad_json",
